@@ -12,7 +12,7 @@ async function main() {
   // wrapped matic address
   const WETH_ADDRESS = 0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270;
 
-  const FactoryContract = await ethers.getContractFactory("UniswapV2Factory")
+  // const FactoryContract = await ethers.getContractFactory("UniswapV2Factory")
   console.log(deployer.address)
 
 //   const factory = await FactoryContract.deploy(deployer.address)
