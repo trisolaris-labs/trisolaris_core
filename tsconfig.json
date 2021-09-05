@@ -1,20 +1,18 @@
-// {
-//   "compilerOptions": {
-//     "target": "es2018",
-//     "module": "commonjs",
-//     "strict": true,
-//     "esModuleInterop": true,
-//     "outDir": "dist"
-//   },
-//   "include": ["./scripts", "./test"],
-//   "files": ["./hardhat.config.ts"]
-// }
-
-
 {
-    "compilerOptions": {    
-      "module": "commonjs",
-      "resolveJsonModule": true,
-      "esModuleInterop": true
-    }
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["es6"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es6"
+  },
+  "exclude": ["node_modules"],
+  "files": ["./hardhat.config.ts"],
+  "include": ["tasks/**/*.ts", "test/**/*.ts", "typechain/**/*.d.ts", "typechain/**/*.ts", "./scripts"]
 }
