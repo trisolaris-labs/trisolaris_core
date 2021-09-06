@@ -1278,6 +1278,7 @@ __metadata:
     eslint: ^7.32.0
     eslint-config-prettier: ^8.3.0
     ethereum-waffle: ^3.4.0
+    ethereumjs-util: ^7.0.4
     ethers: ^5.4.6
     fs-extra: ^10.0.0
     hardhat: ^2.6.2
@@ -6068,7 +6069,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethereumjs-util@npm:^7.1.0":
+"ethereumjs-util@npm:^7.0.4, ethereumjs-util@npm:^7.1.0":
   version: 7.1.0
   resolution: "ethereumjs-util@npm:7.1.0"
   dependencies:
