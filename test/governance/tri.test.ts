@@ -1,10 +1,10 @@
-import { ethers } from "hardhat";
-import { Contract, BigNumber, utils, constants } from 'ethers'
+import { ethers, waffle } from "hardhat";
+import { Contract, BigNumber, utils, constants, Wallet } from 'ethers'
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { Tri__factory } from "../../typechain"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ecsign } from 'ethereumjs-util';
+import { fromRpcSig, ecrecover, Address, ecsign } from 'ethereumjs-util';
 
 chai.use(solidity);
 const { expect } = chai;
@@ -24,6 +24,9 @@ describe('Tri', () => {
 	let wallet1: SignerWithAddress
   beforeEach(async () => {
     [deployer, wallet0, wallet1] = await ethers.getSigners();
+    ethers.provider.listAccounts()
+
+    ethers
     const triFactory = new Tri__factory(deployer);
 		tri = await triFactory.deploy(deployer.address);
   })
@@ -79,13 +82,13 @@ describe('Tri', () => {
   
   /*
   it('permit', async () => {
+    const deployerWallet = await ethers.getSigner(deployer.address);
     const domainSeparator = utils.keccak256(
       utils.defaultAbiCoder.encode(
         ['bytes32', 'bytes32', 'uint256', 'address'],
         [DOMAIN_TYPEHASH, utils.keccak256(utils.toUtf8Bytes('Trisolaris')), 1, tri.address]
       )
     )
-
     const owner = deployer.address
     const spender = wallet0.address
     const value = 123
@@ -107,9 +110,12 @@ describe('Tri', () => {
         ]
       )
     )
-
-    const { v, r, s } = ecsign(Buffer.from(digest.slice(2), 'hex'), Buffer.from(deployer.privateKey.slice(2), 'hex'))
-
+    const signature = await deployer.signMessage(Buffer.from(digest.slice(2)));
+    const { v, r, s } = fromRpcSig(signature)
+    const address = ecrecover(Buffer.from(digest), v, r, s)
+    console.log(Address.fromPublicKey(address).toString())
+    console.log(deployer.address)
+    await tri.mint(deployer.address, value)
     await tri.permit(owner, spender, value, deadline, v, utils.hexlify(r), utils.hexlify(s))
     expect(await tri.allowance(owner, spender)).to.eq(value)
     expect(await tri.nonces(owner)).to.eq(1)
@@ -117,5 +123,4 @@ describe('Tri', () => {
     await tri.connect(wallet0).transferFrom(owner, spender, value)
   })
   */
-
 })

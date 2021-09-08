@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract Vester {
     using SafeMath for uint;
 
-    address public uni;
+    address public tri;
     address public recipient;
 
     uint public vestingAmount;
@@ -17,7 +17,7 @@ contract Vester {
     uint public lastUpdate;
 
     constructor(
-        address uni_,
+        address tri_,
         address recipient_,
         uint vestingAmount_,
         uint vestingBegin_,
@@ -28,7 +28,7 @@ contract Vester {
         require(vestingCliff_ >= vestingBegin_, "Vester::constructor: cliff is too early");
         require(vestingEnd_ > vestingCliff_, "Vester::constructor: end is too early");
 
-        uni = uni_;
+        tri = tri_;
         recipient = recipient_;
 
         vestingAmount = vestingAmount_;
@@ -48,16 +48,16 @@ contract Vester {
         require(block.timestamp >= vestingCliff, "Vester::claim: not time yet");
         uint amount;
         if (block.timestamp >= vestingEnd) {
-            amount = IGov(uni).balanceOf(address(this));
+            amount = ITri(tri).balanceOf(address(this));
         } else {
             amount = vestingAmount.mul(block.timestamp - lastUpdate).div(vestingEnd - vestingBegin);
             lastUpdate = block.timestamp;
         }
-        IGov(uni).transfer(recipient, amount);
+        ITri(tri).transfer(recipient, amount);
     }
 }
 
-interface IGov {
+interface ITri {
     function balanceOf(address account) external view returns (uint);
     function transfer(address dst, uint rawAmount) external returns (bool);
 }
