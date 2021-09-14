@@ -51,6 +51,16 @@ const config: HardhatUserConfig = {
         },
         chainId: 3,
     },
+    polygon: {
+      url: "https://rpc-mainnet.maticvigil.com",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic: mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 137,
+    },
     auroraTestnet: {
       url: "https://testnet.aurora.dev",
       accounts: {
