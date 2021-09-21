@@ -70,7 +70,17 @@ const config: HardhatUserConfig = {
         path: "m/44'/60'/0'/0",
       },
       chainId: 1313161555,
-  }
+    },
+    aurora: {
+      url: "https://mainnet.aurora.dev/",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic: mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 1313161554,
+    }
   },
   paths: {
     artifacts: "./artifacts",
