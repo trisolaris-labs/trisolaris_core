@@ -22,11 +22,11 @@ async function main(): Promise<void> {
     const factory = <UniswapV2Factory>await uniFactory.deploy(deployer.address);
     await factory.deployed();
     console.log(`Factory address: ${factory.address}`)
-
-    // wrapped matic address
-    const WETH_ADDRESS = "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270";
+    
+    // wrapped eth address
+    const WETH_ADDRESS_AURORA_MAINNET = "0x0b20972b45ffb8e5d4d37af4024e1bf0b03f15ae";
     const uniRouter: UniswapV2Router02__factory = await ethers.getContractFactory("UniswapV2Router02");
-    const router = <UniswapV2Router02>await uniRouter.deploy(factory.address, WETH_ADDRESS);
+    const router = <UniswapV2Router02>await uniRouter.deploy(factory.address, WETH_ADDRESS_AURORA_MAINNET);
     await router.deployed();
     console.log(`Router address: ${router.address}`)
 }
