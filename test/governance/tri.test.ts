@@ -25,8 +25,6 @@ describe('Tri', () => {
   beforeEach(async () => {
     [deployer, wallet0, wallet1] = await ethers.getSigners();
     ethers.provider.listAccounts()
-
-    ethers
     const triFactory = new Tri__factory(deployer);
 		tri = await triFactory.deploy(deployer.address);
   })
@@ -80,19 +78,21 @@ describe('Tri', () => {
     expect(await tri.getCurrentVotes(wallet1.address)).to.equal(wallet0Tokens)
   });
   
-  /*
   it('permit', async () => {
-    const deployerWallet = await ethers.getSigner(deployer.address);
+    const [wallet] = waffle.provider.getWallets()
+    const network = await ethers.provider.getNetwork()
+    
+    expect(await tri.DOMAIN_TYPEHASH()).equals(DOMAIN_TYPEHASH);
     const domainSeparator = utils.keccak256(
       utils.defaultAbiCoder.encode(
         ['bytes32', 'bytes32', 'uint256', 'address'],
-        [DOMAIN_TYPEHASH, utils.keccak256(utils.toUtf8Bytes('Trisolaris')), 1, tri.address]
+        [DOMAIN_TYPEHASH, utils.keccak256(utils.toUtf8Bytes('Trisolaris')), network.chainId, tri.address]
       )
     )
-    const owner = deployer.address
+    const owner = wallet.address
     const spender = wallet0.address
     const value = 123
-    const nonce = await tri.nonces(deployer.address)
+    const nonce = await tri.nonces(wallet.address)
     const deadline = constants.MaxUint256
     const digest = utils.keccak256(
       utils.solidityPack(
@@ -110,17 +110,14 @@ describe('Tri', () => {
         ]
       )
     )
-    const signature = await deployer.signMessage(Buffer.from(digest.slice(2)));
-    const { v, r, s } = fromRpcSig(signature)
-    const address = ecrecover(Buffer.from(digest), v, r, s)
-    console.log(Address.fromPublicKey(address).toString())
-    console.log(deployer.address)
-    await tri.mint(deployer.address, value)
+    
+    const { v, r, s } = ecsign(Buffer.from(digest.slice(2), 'hex'), Buffer.from(wallet.privateKey.slice(2), 'hex'))
+    
+    await tri.mint(wallet.address, value)
     await tri.permit(owner, spender, value, deadline, v, utils.hexlify(r), utils.hexlify(s))
     expect(await tri.allowance(owner, spender)).to.eq(value)
     expect(await tri.nonces(owner)).to.eq(1)
 
     await tri.connect(wallet0).transferFrom(owner, spender, value)
   })
-  */
 })
