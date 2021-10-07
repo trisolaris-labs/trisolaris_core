@@ -12,16 +12,17 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [deployer] = await ethers.getSigners();
+    const [_, deployer] = await ethers.getSigners();
+    
+
     console.log(`Deploying contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
     const uniFactory: UniswapV2Factory__factory = await ethers.getContractFactory("UniswapV2Factory");
-    const FACTORY_ADDRESS_AURORA_MAINNET = "0xc906CF5B816E75d5e352B305673e4c64Fc821BDC";
-    const factory = <UniswapV2Factory> uniFactory.attach(FACTORY_ADDRESS_AURORA_MAINNET);
-    // await factory.deployed();
+    const factory = await uniFactory.deploy(deployer.address);
+    await factory.deployed();
     console.log(`Factory address: ${factory.address}`)
     const initHash = await factory.INIT_CODE_PAIR_HASH();
     console.log(initHash.toString())
