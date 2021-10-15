@@ -14,7 +14,7 @@ contract Tri {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public totalSupply = 0; // 1 billion Tri
+    uint public totalSupply = 0; // 500 million Tri
 
     /// @notice Address which may mint new tokens
     address public minter;
