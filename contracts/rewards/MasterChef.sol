@@ -44,17 +44,13 @@ contract MasterChef is Ownable {
     }
     // The Tri TOKEN!
     Tri public tri;
-    // Block number when bonus SUSHI period ends.
-    uint256 public bonusEndBlock;
     // SUSHI tokens created per block.
     uint256 public sushiPerBlock;
-    // Bonus muliplier for early sushi makers.
-    uint256 public constant BONUS_MULTIPLIER = 10;
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when SUSHI mining starts.
     uint256 public startBlock;
@@ -69,17 +65,22 @@ contract MasterChef is Ownable {
     constructor(
         Tri _tri,
         uint256 _sushiPerBlock,
-        uint256 _startBlock,
-        uint256 _bonusEndBlock
+        uint256 _startBlock
     ) public {
         tri = _tri;
         sushiPerBlock = _sushiPerBlock;
-        bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
     }
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
+    }
+
+    // updateSushiPerBlock, can update the sushi per block only onwer can update this field
+    function updateSushiPerBlock(
+        uint256 _sushiPerBlock
+    ) public onlyOwner {
+        sushiPerBlock = _sushiPerBlock;
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
@@ -126,16 +127,7 @@ contract MasterChef is Ownable {
         view
         returns (uint256)
     {
-        if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
-        } else if (_from >= bonusEndBlock) {
-            return _to.sub(_from);
-        } else {
-            return
-                bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
-                    _to.sub(bonusEndBlock)
-                );
-        }
+        return _to.sub(_from);
     }
 
     // View function to see pending SUSHIs on frontend.
