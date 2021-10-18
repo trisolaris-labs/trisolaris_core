@@ -34,17 +34,17 @@ describe("MasterChef", function () {
     expect(minter).to.equal(this.chef.address)
   })
 
-  it("should allow owner and only owner to update sushi per block", async function () {
+  it("should allow owner and only owner to update tri per block", async function () {
     this.chef = await this.MasterChef.deploy(this.tri.address, "1000", "0")
     await this.chef.deployed()
 
-    expect(await this.chef.sushiPerBlock()).to.equal(1000)
+    expect(await this.chef.triPerBlock()).to.equal(1000)
 
-    await expect(this.chef.connect(this.bob).updateSushiPerBlock(1, { from: this.bob.address })).to.be.revertedWith("Ownable: caller is not the owner")
+    await expect(this.chef.connect(this.bob).updateTriPerBlock(1, { from: this.bob.address })).to.be.revertedWith("Ownable: caller is not the owner")
 
-    await this.chef.connect(this.alice).updateSushiPerBlock(1, { from: this.alice.address })
+    await this.chef.connect(this.alice).updateTriPerBlock(1, { from: this.alice.address })
 
-    expect(await this.chef.sushiPerBlock()).to.equal(1)
+    expect(await this.chef.triPerBlock()).to.equal(1)
   })
 
   context("With ERC/LP token added to the field", function () {
@@ -223,16 +223,16 @@ describe("MasterChef", function () {
       await advanceBlockTo("419")
       await this.chef.add("20", this.lp2.address, true)
       // Alice should have 10*1000 pending reward
-      expect(await this.chef.pendingSushi(0, this.alice.address)).to.equal("1000")
+      expect(await this.chef.pendingTri(0, this.alice.address)).to.equal("1000")
       // Bob deposits 10 LP2s at block 425
       await advanceBlockTo("424")
       await this.chef.connect(this.bob).deposit(1, "5", { from: this.bob.address })
       // Alice should have 1000 + 5*1/3*100 = 1166 pending reward
-      expect(await this.chef.pendingSushi(0, this.alice.address)).to.equal("1166")
+      expect(await this.chef.pendingTri(0, this.alice.address)).to.equal("1166")
       await advanceBlockTo("430")
       // At block 430. Bob should get 5*2/3*100 = 333. Alice should get ~166 more.
-      expect(await this.chef.pendingSushi(0, this.alice.address)).to.equal("1333")
-      expect(await this.chef.pendingSushi(1, this.bob.address)).to.equal("333")
+      expect(await this.chef.pendingTri(0, this.alice.address)).to.equal("1333")
+      expect(await this.chef.pendingTri(1, this.bob.address)).to.equal("333")
     })
 
   })
