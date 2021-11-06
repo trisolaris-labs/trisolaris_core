@@ -97,26 +97,28 @@ describe("MasterChef", function () {
       await this.chef.connect(this.bob).deposit(0, "100")
       await advanceBlockTo("89")
 
-      await this.chef.connect(this.bob).deposit(0, "0") // block 90
+      await this.chef.connect(this.bob).harvest(0) // block 90
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
       await advanceBlockTo("94")
 
-      await this.chef.connect(this.bob).deposit(0, "0") // block 95
+      await this.chef.connect(this.bob).harvest(0) // block 95
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
       await advanceBlockTo("99")
 
-      await this.chef.connect(this.bob).deposit(0, "0") // block 100
+      await this.chef.connect(this.bob).harvest(0) // block 100
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
       await advanceBlockTo("100")
 
-      await this.chef.connect(this.bob).deposit(0, "0") // block 101
+      await this.chef.connect(this.bob).harvest(0); // block 101
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("100")
 
       await advanceBlockTo("104")
-      await this.chef.connect(this.bob).deposit(0, "0") // block 105
+      await this.chef.connect(this.bob).harvest(0) // block 105
 
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("500")
       expect(await this.tri.totalSupply()).to.equal("500")
+      expect((await this.chef.userInfo(0, this.bob.address)).amount).to.equal("100")
+      expect((await this.chef.userInfo(0, this.bob.address)).rewardDebt).to.equal("500")
     })
 
     it("should not distribute TRIs if no one deposit", async function () {

@@ -60,7 +60,6 @@ contract MasterChef is Ownable {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event Harvest(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(
         address indexed user,
         uint256 indexed pid,
@@ -244,6 +243,12 @@ contract MasterChef is Ownable {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
+    // Harvest TRI rewards from MasterChef pools.
+    function harvest(uint256 _pid) public returns (address) {
+        // TODO: verify the msg.sender here
+        deposit(_pid, 0);
+    }
+
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
@@ -274,30 +279,6 @@ contract MasterChef is Ownable {
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
-    }
-
-    /// @notice Harvest proceeds for transaction sender.
-    /// @param _pid The index of the pool. See `poolInfo`.
-    function harvest(uint256 _pid) public {
-        PoolInfo memory pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        
-        uint256 pending =
-            user.amount.mul(pool.accTriPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
-        if (pending != 0) {        
-            safeTriTransfer(msg.sender, pending);
-        }
-        user.rewardDebt = user.amount.mul(pool.accTriPerShare).div(1e12);
-
-        // Rewarder
-        IRewarder _rewarder = rewarder[_pid];
-        if (address(_rewarder) != address(0)) {
-            _rewarder.onTriReward(_pid, msg.sender, msg.sender, 0, user.amount);
-        }
-        emit Harvest(msg.sender, _pid, pending);
     }
 
     // Safe tri transfer function, just in case if rounding error causes pool to not have enough TRIs.
