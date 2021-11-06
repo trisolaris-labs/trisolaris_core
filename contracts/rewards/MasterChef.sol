@@ -55,8 +55,9 @@ contract MasterChef is Ownable {
     uint256 public totalAllocPoint = 0;
     // The block number when TRI mining starts.
     uint256 public startBlock;
-    /// @notice Address of each `IRewarder` contract in MCV2.
+    /// @notice Address of each `IRewarder` contract.
     IRewarder[] public rewarder;
+
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event Harvest(address indexed user, uint256 indexed pid, uint256 amount);
@@ -65,9 +66,24 @@ contract MasterChef is Ownable {
         uint256 indexed pid,
         uint256 amount
     );
-    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken, IRewarder indexed rewarder);
-    event LogSetPool(uint256 indexed pid, uint256 allocPoint, IRewarder indexed rewarder, bool overwrite);
-    event LogUpdatePool(uint256 indexed pid, uint64 lastRewardBlock, uint256 lpSupply, uint256 accSushiPerShare);
+    event LogPoolAddition(
+        uint256 indexed pid, 
+        uint256 allocPoint, 
+        IERC20 indexed lpToken, 
+        IRewarder indexed rewarder
+    );
+    event LogSetPool(
+        uint256 indexed pid, 
+        uint256 allocPoint, 
+        IRewarder indexed rewarder, 
+        bool overwrite
+    );
+    event LogUpdatePool(
+        uint256 indexed pid, 
+        uint256 lastRewardBlock, 
+        uint256 lpSupply, 
+        uint256 accSushiPerShare
+    );
 
     constructor(
         Tri _tri,
@@ -117,7 +133,7 @@ contract MasterChef is Ownable {
         emit LogPoolAddition(poolInfo.length.sub(1), _allocPoint, _lpToken, _rewarder);
     }
 
-    // Update the given pool's TRI allocation point. Can only be called by the owner.
+    // Update the given pool's TRI allocation point or rewarder. Can only be called by the owner.
     function set(
         uint256 _pid,
         uint256 _allocPoint,
@@ -198,6 +214,7 @@ contract MasterChef is Ownable {
             triReward.mul(1e12).div(lpSupply)
         );
         pool.lastRewardBlock = block.number;
+        emit LogUpdatePool(_pid, pool.lastRewardBlock, lpSupply, pool.accTriPerShare);
     }
 
     // Deposit LP tokens to MasterChef for TRI allocation.
@@ -262,14 +279,17 @@ contract MasterChef is Ownable {
     /// @notice Harvest proceeds for transaction sender.
     /// @param _pid The index of the pool. See `poolInfo`.
     function harvest(uint256 _pid) public {
-        // TODO: need to check math of this contract
-        updatePool(_pid);
         PoolInfo memory pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
+        
         uint256 pending =
             user.amount.mul(pool.accTriPerShare).div(1e12).sub(
                 user.rewardDebt
             );
+        if (pending != 0) {        
+            safeTriTransfer(msg.sender, pending);
+        }
         user.rewardDebt = user.amount.mul(pool.accTriPerShare).div(1e12);
 
         // Rewarder
@@ -277,12 +297,6 @@ contract MasterChef is Ownable {
         if (address(_rewarder) != address(0)) {
             _rewarder.onTriReward(_pid, msg.sender, msg.sender, 0, user.amount);
         }
-
-        // Interactions
-        if (pending != 0) {        
-            safeTriTransfer(msg.sender, pending);
-        }
-        
         emit Harvest(msg.sender, _pid, pending);
     }
 

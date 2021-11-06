@@ -14,6 +14,7 @@ describe("MasterChef", function () {
     this.MasterChef = await ethers.getContractFactory("MasterChef")
     this.TriToken = await ethers.getContractFactory("Tri")
     this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.minter)
+    this.ZeroAddress = "0x0000000000000000000000000000000000000000"
   })
 
   beforeEach(async function () {
@@ -71,7 +72,7 @@ describe("MasterChef", function () {
       this.chef = await this.MasterChef.deploy(this.tri.address, "100", "100")
       await this.chef.deployed()
 
-      await this.chef.add("100", this.lp.address, true)
+      await this.chef.add("100", this.lp.address, this.ZeroAddress, true)
 
       await this.lp.connect(this.bob).approve(this.chef.address, "1000")
 
@@ -84,14 +85,13 @@ describe("MasterChef", function () {
       expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
     })
 
-    it("should give out SUSHIs only after farming time", async function () {
+    it("should give out TRIs only after farming time", async function () {
       // 100 per block farming rate starting at block 100 with bonus until block 1000
       this.chef = await this.MasterChef.deploy(this.tri.address, "100", "100")
       await this.chef.deployed()
-
       await this.tri.connect(this.minter).setMinter(this.chef.address)
 
-      await this.chef.add("100", this.lp.address, true)
+      await this.chef.add("100", this.lp.address, this.ZeroAddress, true)
 
       await this.lp.connect(this.bob).approve(this.chef.address, "1000")
       await this.chef.connect(this.bob).deposit(0, "100")
@@ -119,13 +119,13 @@ describe("MasterChef", function () {
       expect(await this.tri.totalSupply()).to.equal("500")
     })
 
-    it("should not distribute SUSHIs if no one deposit", async function () {
+    it("should not distribute TRIs if no one deposit", async function () {
       // 100 per block farming rate starting at block 200 with bonus until block 1000
       this.chef = await this.MasterChef.deploy(this.tri.address, "100", "200")
       await this.chef.deployed()
       await this.tri.connect(this.minter).setMinter(this.chef.address)
       
-      await this.chef.add("100", this.lp.address, true)
+      await this.chef.add("100", this.lp.address, this.ZeroAddress, true)
       await this.lp.connect(this.bob).approve(this.chef.address, "1000")
       await advanceBlockTo("199")
       expect(await this.tri.totalSupply()).to.equal("0")
@@ -143,12 +143,12 @@ describe("MasterChef", function () {
       expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
     })
 
-    it("should distribute SUSHIs properly for each staker", async function () {
+    it("should distribute TRIs properly for each staker", async function () {
       // 1000 per block farming rate starting at block 300
       this.chef = await this.MasterChef.deploy(this.tri.address, "1000", "300")
       await this.chef.deployed()
       await this.tri.connect(this.minter).setMinter(this.chef.address)
-      await this.chef.add("100", this.lp.address, true)
+      await this.chef.add("100", this.lp.address, this.ZeroAddress, true)
       await this.lp.connect(this.alice).approve(this.chef.address, "1000", {
         from: this.alice.address,
       })
@@ -208,20 +208,20 @@ describe("MasterChef", function () {
       expect(await this.lp.balanceOf(this.carol.address)).to.equal("1000")
     })
 
-    it("should give proper SUSHIs allocation to each pool", async function () {
+    it("should give proper TRIs allocation to each pool", async function () {
       // 100 per block farming rate starting at block 400
       this.chef = await this.MasterChef.deploy(this.tri.address, "100", "400")
       await this.tri.connect(this.minter).setMinter(this.chef.address)
       await this.lp.connect(this.alice).approve(this.chef.address, "1000", { from: this.alice.address })
       await this.lp2.connect(this.bob).approve(this.chef.address, "1000", { from: this.bob.address })
       // Add first LP to the pool with allocation 1
-      await this.chef.add("10", this.lp.address, true)
+      await this.chef.add("10", this.lp.address, this.ZeroAddress, true)
       // Alice deposits 10 LPs at block 410
       await advanceBlockTo("409")
       await this.chef.connect(this.alice).deposit(0, "10", { from: this.alice.address })
       // Add LP2 to the pool with allocation 2 at block 420
       await advanceBlockTo("419")
-      await this.chef.add("20", this.lp2.address, true)
+      await this.chef.add("20", this.lp2.address, this.ZeroAddress, true)
       // Alice should have 10*1000 pending reward
       expect(await this.chef.pendingTri(0, this.alice.address)).to.equal("1000")
       // Bob deposits 10 LP2s at block 425
