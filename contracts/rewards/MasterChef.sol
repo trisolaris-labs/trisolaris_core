@@ -216,20 +216,20 @@ contract MasterChef is Ownable {
         emit LogUpdatePool(_pid, pool.lastRewardBlock, lpSupply, pool.accTriPerShare);
     }
 
-    // Deposit LP tokens to MasterChef for TRI allocation.
-    function deposit(uint256 _pid, uint256 _amount) public {
+    // Internal deposit function to deposit LP tokens to MasterChef for TRI allocation.
+    function _deposit(uint256 _pid, uint256 _amount, address userAddress) internal {
         PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        UserInfo storage user = userInfo[_pid][userAddress];
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending =
                 user.amount.mul(pool.accTriPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
-            safeTriTransfer(msg.sender, pending);
+            safeTriTransfer(userAddress, pending);
         }
         pool.lpToken.safeTransferFrom(
-            address(msg.sender),
+            address(userAddress),
             address(this),
             _amount
         );
@@ -238,15 +238,19 @@ contract MasterChef is Ownable {
         // Rewarder
         IRewarder _rewarder = rewarder[_pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onTriReward(_pid, msg.sender, msg.sender, 0, user.amount);
+            _rewarder.onTriReward(_pid, userAddress, userAddress, 0, user.amount);
         }
-        emit Deposit(msg.sender, _pid, _amount);
+        emit Deposit(userAddress, _pid, _amount);
+    }
+
+    // Deposit LP tokens to MasterChef for TRI allocation.
+    function deposit(uint256 _pid, uint256 _amount) public {
+        _deposit(_pid, _amount, msg.sender);
     }
 
     // Harvest TRI rewards from MasterChef pools.
     function harvest(uint256 _pid) public returns (address) {
-        // TODO: verify the msg.sender here
-        deposit(_pid, 0);
+        _deposit(_pid, 0, msg.sender);
     }
 
     // Withdraw LP tokens from MasterChef.
