@@ -11,7 +11,6 @@ contract RewarderMock is IRewarder {
     using SafeERC20 for IERC20;
     uint256 private immutable rewardMultiplier;
     IERC20 private immutable rewardToken;
-    uint256 private constant REWARD_TOKEN_DIVISOR = 1e18;
     address private immutable MASTERCHEF;
 
     constructor (uint256 _rewardMultiplier, IERC20 _rewardToken, address _MASTERCHEF) public {
@@ -34,7 +33,7 @@ contract RewarderMock is IRewarder {
         IERC20[] memory _rewardTokens = new IERC20[](1);
         _rewardTokens[0] = (rewardToken);
         uint256[] memory _rewardAmounts = new uint256[](1);
-        _rewardAmounts[0] = triAmount.mul(rewardMultiplier) / REWARD_TOKEN_DIVISOR;
+        _rewardAmounts[0] = triAmount.mul(rewardMultiplier);
         return (_rewardTokens, _rewardAmounts);
     }
 
