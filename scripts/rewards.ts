@@ -30,7 +30,7 @@ async function main(): Promise<void> {
     await chef.deployed()
     console.log(`Chef address: ${chef.address}`)
     const decimals = ethers.BigNumber.from("1000000000000000000");
-    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(3).div(100);
+    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(30).div(100);
     await tri.mint(deployer.address, transferAmount)
     await tri.connect(deployer).setMinter(chef.address)
 }
