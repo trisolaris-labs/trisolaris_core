@@ -2,7 +2,6 @@
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { Tri, Tri__factory, MasterChef, MasterChef__factory } from "../typechain";
 import { ethers } from 'hardhat';
 
 
@@ -27,10 +26,11 @@ async function main(): Promise<void> {
     await tri.deployed()
     console.log(`Tri address: ${tri.address}`)
 
-    const chef = await masterChef.deploy(tri.address, "1000", "0", "1000")
+    const chef = await masterChef.deploy(tri.address, "1000", "0")
     await chef.deployed()
     console.log(`Chef address: ${chef.address}`)
-    const transferAmount = ethers.BigNumber.from("100000000000000000000");
+    const decimals = ethers.BigNumber.from("1000000000000000000");
+    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(3).div(100);
     await tri.mint(deployer.address, transferAmount)
     await tri.connect(deployer).setMinter(chef.address)
 }
