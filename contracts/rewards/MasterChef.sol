@@ -136,8 +136,8 @@ contract MasterChef is Ownable {
     function set(
         uint256 _pid,
         uint256 _allocPoint,
-        IRewarder _rewarder,
         bool _withUpdate,
+        IRewarder _rewarder,
         bool overwrite
     ) public onlyOwner {
         if (_withUpdate) {
@@ -154,7 +154,7 @@ contract MasterChef is Ownable {
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to)
         public
-        view
+        pure
         returns (uint256)
     {
         return _to.sub(_from);
@@ -221,13 +221,14 @@ contract MasterChef is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][userAddress];
         updatePool(_pid);
+        uint256 pending = 0;
         if (user.amount > 0) {
-            uint256 pending =
+            pending =
                 user.amount.mul(pool.accTriPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
             safeTriTransfer(userAddress, pending);
-        }
+        } 
         pool.lpToken.safeTransferFrom(
             address(userAddress),
             address(this),
@@ -238,7 +239,7 @@ contract MasterChef is Ownable {
         // Rewarder
         IRewarder _rewarder = rewarder[_pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onTriReward(_pid, userAddress, userAddress, 0, user.amount);
+            _rewarder.onTriReward(_pid, userAddress, userAddress, pending, user.amount);
         }
         emit Deposit(userAddress, _pid, _amount);
     }
@@ -270,7 +271,7 @@ contract MasterChef is Ownable {
         // Rewarder
         IRewarder _rewarder = rewarder[_pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onTriReward(_pid, msg.sender, msg.sender, 0, user.amount);
+            _rewarder.onTriReward(_pid, msg.sender, msg.sender, pending, user.amount);
         }
         emit Withdraw(msg.sender, _pid, _amount);
     }

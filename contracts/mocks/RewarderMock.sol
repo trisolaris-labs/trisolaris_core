@@ -20,8 +20,8 @@ contract RewarderMock is IRewarder {
         MASTERCHEF = _MASTERCHEF;
     }
 
-    function onTriReward (uint256 pid, address user, address to, uint256 triAmount, uint256) onlyMC override external {
-        uint256 pendingReward = triAmount.mul(rewardMultiplier) / REWARD_TOKEN_DIVISOR;
+    function onTriReward (uint256, address, address to, uint256 triAmount, uint256) onlyMC override external {
+        uint256 pendingReward = triAmount.mul(rewardMultiplier);
         uint256 rewardBal = rewardToken.balanceOf(address(this));
         if (pendingReward > rewardBal) {
             rewardToken.safeTransfer(to, rewardBal);
@@ -30,7 +30,7 @@ contract RewarderMock is IRewarder {
         }
     }
     
-    function pendingTokens(uint256 pid, address user, uint256 triAmount) override external view returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+    function pendingTokens(uint256, address, uint256 triAmount) override external view returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
         IERC20[] memory _rewardTokens = new IERC20[](1);
         _rewardTokens[0] = (rewardToken);
         uint256[] memory _rewardAmounts = new uint256[](1);
