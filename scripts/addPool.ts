@@ -11,10 +11,12 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [deployer] = await ethers.getSigners();
-    
+    const allocPoint = 1
+    const lpAddress = "0xb0c5eFFD0eA4D4d274971374d696Fa08860Ea709"
+    const zeroAddress = "0x0000000000000000000000000000000000000000"
 
-    console.log(`Deploying contracts with ${deployer.address}`);
+    const [deployer] = await ethers.getSigners();
+    console.log(`Adding pools contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
@@ -22,17 +24,27 @@ async function main(): Promise<void> {
     const masterChef = await ethers.getContractFactory("MasterChef")
     const triToken = await ethers.getContractFactory("Tri")
 
-    const tri = await triToken.deploy(deployer.address)
-    await tri.deployed()
+    const tri = triToken.attach("0x2CB45Edb4517d5947aFdE3BEAbF95A582506858B")
     console.log(`Tri address: ${tri.address}`)
-
-    const chef = await masterChef.deploy(tri.address, "1000", "0")
-    await chef.deployed()
+    const chef = masterChef.attach("0x43A1dD21a5237C6F5eEC94747C28aa3f5C8fa1c7")
     console.log(`Chef address: ${chef.address}`)
-    const decimals = ethers.BigNumber.from("1000000000000000000");
-    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(30).div(100);
-    await tri.mint(deployer.address, transferAmount)
-    await tri.connect(deployer).setMinter(chef.address)
+
+    const poolLength = await chef.poolLength();
+    let canAddPool = true;
+    for(let i = 0; i < poolLength.toNumber(); i++) {
+        let poolInfo = await chef.poolInfo(i);
+        if (poolInfo.lpToken === lpAddress) {
+            canAddPool = false
+        }
+    }
+    if (canAddPool) {
+        console.log("adding pool", lpAddress)
+        const tx = await chef.add(allocPoint, lpAddress, zeroAddress, true);
+        console.log(tx)
+        const receipt = await tx.wait()
+        console.log(receipt.logs)
+    }
+    
 }
 
 // We recommend this pattern to be able to use async/await everywhere
