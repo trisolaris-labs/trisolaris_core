@@ -24,10 +24,12 @@ async function main(): Promise<void> {
     await tri.deployed()
     console.log(`Tri address: ${tri.address}`)
 
-    const chef = await masterChef.deploy(tri.address, "1000", "0")
+    const decimals = ethers.BigNumber.from("1000000000000000000");
+    const triPerBlock = decimals.mul(10);
+    const chef = await masterChef.deploy(tri.address, triPerBlock, "0")
     await chef.deployed()
     console.log(`Chef address: ${chef.address}`)
-    const decimals = ethers.BigNumber.from("1000000000000000000");
+
     const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(30).div(100);
     await tri.mint(deployer.address, transferAmount)
     await tri.connect(deployer).setMinter(chef.address)
