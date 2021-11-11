@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract Tri {
     /// @notice EIP-20 token name for this token
-    string public constant name = "Trisolaris";
+    string public constant name = "Fake Trisolaris";
 
     /// @notice EIP-20 token symbol for this token
-    string public constant symbol = "TRI";
+    string public constant symbol = "FTRI";
 
     /// @notice EIP-20 token decimals for this token
     uint8 public constant decimals = 18;

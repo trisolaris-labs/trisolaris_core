@@ -6,31 +6,25 @@ import { ethers } from 'hardhat';
 
 
 async function main(): Promise<void> {
-    // Hardhat always runs the compile task when running scripts through it.
-    // If this runs in a standalone fashion you may want to call compile manually
-    // to make sure everything is compiled
-    // await run("compile");
-    // We get the contract to deploy
+
     const [deployer] = await ethers.getSigners();
-    console.log(`Deploying contracts with ${deployer.address}`);
+    console.log(`Adding pools contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
     const masterChef = await ethers.getContractFactory("MasterChef")
-    const triToken = await ethers.getContractFactory("Tri")
 
-    const tri = await triToken.deploy(deployer.address)
-    await tri.deployed()
-    console.log(`Tri address: ${tri.address}`)
-
-    const chef = await masterChef.deploy(tri.address, "1000", "0")
-    await chef.deployed()
+    const chef = masterChef.attach("0x474b825a605c45836Ac50398473059D4c4c6d3Db")
     console.log(`Chef address: ${chef.address}`)
+
     const decimals = ethers.BigNumber.from("1000000000000000000");
-    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(30).div(100);
-    await tri.mint(deployer.address, transferAmount)
-    await tri.connect(deployer).setMinter(chef.address)
+    const newTriPerBlock = decimals.mul(10);
+
+    const tx = await chef.updateTriPerBlock(newTriPerBlock);
+    console.log(tx)
+    const receipt = await tx.wait()
+    console.log(receipt.logs)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
