@@ -11,35 +11,17 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const vestingAmount = ethers.BigNumber.from("1000000000000000000").mul(1000000);
-    const recepient = "0x1232726DA91B25D22239C5707FE85E8F078F3532";
-    const vestingBegin = 1636416000; // 9th 00:00
-    const vestingCliff = 1636502400; // 10th 00:00
-    const vestingEnd = 1636675200; // 12th 00:00
-
-
     const [deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const triToken = await ethers.getContractFactory("Tri")
     const vester = await ethers.getContractFactory("Vester")
+    const treasuryVester = vester.attach("0x657a2cf442249f74806E79E5BE662FD3933A9b5c")
 
-    const tri = triToken.attach("0x2CB45Edb4517d5947aFdE3BEAbF95A582506858B")
-    console.log(`Tri address: ${tri.address}`)
-
-    const treasuryVester = await vester.deploy(
-        tri.address,
-        recepient,
-        vestingAmount,
-        vestingBegin,
-        vestingCliff,
-        vestingEnd,
-    );
     console.log(`Vester address: ${treasuryVester.address}`)
-    const tx = await tri.transfer(treasuryVester.address, vestingAmount);
+    const tx = await treasuryVester.claim();
     const receipt = await tx.wait();
     console.log(receipt.logs);
 }
