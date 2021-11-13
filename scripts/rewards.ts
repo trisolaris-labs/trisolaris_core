@@ -11,7 +11,14 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [deployer] = await ethers.getSigners();
+    
+    // Constants
+    const decimals = ethers.BigNumber.from("1000000000000000000");
+    const triPerBlock = decimals.mul(5); 
+    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(3145).div(10000); // 3145 percent
+    const startBlock = "52811000" // Tuesday 16th 1PM GMT
+
+    const [_, deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
@@ -24,13 +31,11 @@ async function main(): Promise<void> {
     await tri.deployed()
     console.log(`Tri address: ${tri.address}`)
 
-    const decimals = ethers.BigNumber.from("1000000000000000000");
-    const triPerBlock = decimals.mul(10);
-    const chef = await masterChef.deploy(tri.address, triPerBlock, "0")
+    
+    const chef = await masterChef.deploy(tri.address, triPerBlock, startBlock)
     await chef.deployed()
     console.log(`Chef address: ${chef.address}`)
 
-    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(30).div(100);
     await tri.mint(deployer.address, transferAmount)
     await tri.connect(deployer).setMinter(chef.address)
 }
