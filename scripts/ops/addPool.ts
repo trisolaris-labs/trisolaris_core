@@ -12,8 +12,8 @@ async function main(): Promise<void> {
     // await run("compile");
     // We get the contract to deploy
     const allocPoint = 1
-    const lpAddress = "0xb0c5eFFD0eA4D4d274971374d696Fa08860Ea709"
-    const zeroAddress = "0x0000000000000000000000000000000000000000"
+    const lpAddress = "0x2F41AF687164062f118297cA10751F4b55478ae1"
+    const rewarderAddress = "0x0000000000000000000000000000000000000000"
 
     const [deployer] = await ethers.getSigners();
     console.log(`Adding pools contracts with ${deployer.address}`);
@@ -24,9 +24,9 @@ async function main(): Promise<void> {
     const masterChef = await ethers.getContractFactory("MasterChef")
     const triToken = await ethers.getContractFactory("Tri")
 
-    const tri = triToken.attach("0x2CB45Edb4517d5947aFdE3BEAbF95A582506858B")
+    const tri = triToken.attach("0x0029050f71704940D77Cfe71D0F1FB868DeeFa03")
     console.log(`Tri address: ${tri.address}`)
-    const chef = masterChef.attach("0x43A1dD21a5237C6F5eEC94747C28aa3f5C8fa1c7")
+    const chef = masterChef.attach("0x474b825a605c45836Ac50398473059D4c4c6d3Db")
     console.log(`Chef address: ${chef.address}`)
 
     const poolLength = await chef.poolLength();
@@ -39,7 +39,7 @@ async function main(): Promise<void> {
     }
     if (canAddPool) {
         console.log("adding pool", lpAddress)
-        const tx = await chef.add(allocPoint, lpAddress, zeroAddress, true);
+        const tx = await chef.add(allocPoint, lpAddress, rewarderAddress, true);
         console.log(tx)
         const receipt = await tx.wait()
         console.log(receipt.logs)

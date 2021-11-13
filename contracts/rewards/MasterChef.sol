@@ -280,10 +280,18 @@ contract MasterChef is Ownable {
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+
         pool.lpToken.safeTransfer(address(msg.sender), user.amount);
-        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
+        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+
+        // resolve double reward vulnerability: 
+        // https://traderjoe-xyz.medium.com/security-announcement-double-rewards-removed-due-to-vulnerability-8c4401f225fb
+        IRewarder _rewarder = rewarder[_pid];
+        if (address(_rewarder) != address(0)) {
+            _rewarder.onTriReward(_pid, msg.sender, msg.sender, 0, 0);
+        }
     }
 
     // Safe tri transfer function, just in case if rounding error causes pool to not have enough TRIs.
