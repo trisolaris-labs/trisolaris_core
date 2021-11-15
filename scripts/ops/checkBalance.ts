@@ -11,33 +11,19 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    
-    // Constants
-    const decimals = ethers.BigNumber.from("1000000000000000000");
-    const triPerBlock = decimals.mul(5); 
-    const transferAmount = ethers.BigNumber.from("500000000").mul(decimals).mul(33).div(100); // 33 percent
-    const startBlock = "52811000" // Tuesday 16th 1PM GMT
-
     const [_, deployer] = await ethers.getSigners();
-    console.log(`Deploying contracts with ${deployer.address}`);
+    console.log(`Adding pools contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const masterChef = await ethers.getContractFactory("MasterChef")
     const triToken = await ethers.getContractFactory("Tri")
 
-    const tri = await triToken.connect(deployer).deploy(deployer.address)
-    await tri.deployed()
+    const tri = triToken.attach("0xFa94348467f64D5A457F75F8bc40495D33c65aBB")
     console.log(`Tri address: ${tri.address}`)
-
     
-    const chef = await masterChef.connect(deployer).deploy(tri.address, triPerBlock, startBlock)
-    await chef.deployed()
-    console.log(`Chef address: ${chef.address}`)
-
-    await tri.connect(deployer).mint(deployer.address, transferAmount)
-    await tri.connect(deployer).setMinter(chef.address)
+    console.log((await tri.balanceOf(deployer.address)).toString())
+    console.log((await tri.totalSupply()).toString())
 }
 
 // We recommend this pattern to be able to use async/await everywhere
