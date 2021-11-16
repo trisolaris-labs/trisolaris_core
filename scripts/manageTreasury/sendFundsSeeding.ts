@@ -11,45 +11,26 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const allocPoint = 30
-    const lpAddresses = [
-        "0x84b123875F0F36B966d0B6Ca14b31121bd9676AD"
-    ]
-    const rewarderAddress = "0x0000000000000000000000000000000000000000"
-
     const [_, deployer] = await ethers.getSigners();
-    console.log(`Adding pools contracts with ${deployer.address}`);
+    console.log(`Deployer address ${deployer.address}`);
 
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const masterChef = await ethers.getContractFactory("MasterChef")
     const triToken = await ethers.getContractFactory("Tri")
 
     const tri = triToken.attach("0xFa94348467f64D5A457F75F8bc40495D33c65aBB")
     console.log(`Tri address: ${tri.address}`)
-    const chef = masterChef.attach("0x1f1Ed214bef5E83D8f5d0eB5D7011EB965D0D79B")
-    console.log(`Chef address: ${chef.address}`)
 
-    for(let j=0; j<lpAddresses.length; j++) {
-        let lpAddress = lpAddresses[j];
-        const poolLength = await chef.poolLength();
-        let canAddPool = true;
-        for(let i = 0; i < poolLength.toNumber(); i++) {
-            let poolInfo = await chef.poolInfo(i);
-            if (poolInfo.lpToken === lpAddress) {
-                canAddPool = false
-            }
-        }
-        if (canAddPool) {
-            console.log("adding pool", lpAddress)
-            const tx = await chef.connect(deployer).add(allocPoint, lpAddress, rewarderAddress, true);
-            console.log(tx)
-            const receipt = await tx.wait()
-            console.log(receipt.logs)
-        }
-    }
+    const receiverAddress = "0x1232726DA91B25D22239C5707FE85E8F078F3532"
+
+    const decimals = ethers.BigNumber.from("1000000000000000000");
+    const transferAmount = decimals.mul("166000");
+    console.log("Sending ", transferAmount.toString(), " to ", receiverAddress)
     
+    const tx = await tri.connect(deployer).transfer(receiverAddress, transferAmount);
+    const receipt = await tx.wait()
+    console.log(receipt)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
