@@ -3,6 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
+import { triAddress, donRecepientAddress, decimals } from './constants';
 
 
 async function main(): Promise<void> {
@@ -14,11 +15,11 @@ async function main(): Promise<void> {
     const [deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
 
-    const vestingAmount = ethers.BigNumber.from("1000000000000000000").mul(1000000);
-    const vestingBegin = 1636814700; 
-    const vestingCliff = 1636814701; 
-    const vestingEnd = 1636814710; 
-    const recepient = deployer.address;
+    const vestingAmount = decimals.mul(1)
+    const vestingBegin = 1637280000; // 19th Nov 2021 00:00 UTC
+    const vestingCliff = 1639872000; // 19th Dec 2021 00:00 UTC
+    const vestingEnd = 1668816000; // 19th Nov 2022 00:00 UTC
+    const recepient = donRecepientAddress;
     
 
     const balance = await deployer.getBalance();
@@ -27,8 +28,10 @@ async function main(): Promise<void> {
     const triToken = await ethers.getContractFactory("Tri")
     const vester = await ethers.getContractFactory("Vester")
 
-    const tri = triToken.attach("0x0029050f71704940D77Cfe71D0F1FB868DeeFa03")
+    const tri = triToken.attach(triAddress)
     console.log(`Tri address: ${tri.address}`)
+
+    console.log(vestingAmount.toString())
 
     const treasuryVester = await vester.deploy(
         tri.address,
@@ -39,6 +42,7 @@ async function main(): Promise<void> {
         vestingEnd,
     );
     console.log(`Vester address: ${treasuryVester.address}`)
+    
     const tx = await tri.transfer(treasuryVester.address, vestingAmount);
     const receipt = await tx.wait();
     console.log(receipt.logs);

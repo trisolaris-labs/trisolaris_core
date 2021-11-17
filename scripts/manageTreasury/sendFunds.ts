@@ -3,6 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
+import { triAddress, decimals, kRecepientAddress } from '../constants';
 
 
 async function main(): Promise<void> {
@@ -19,18 +20,17 @@ async function main(): Promise<void> {
 
     const triToken = await ethers.getContractFactory("Tri")
 
-    const tri = triToken.attach("0xFa94348467f64D5A457F75F8bc40495D33c65aBB")
+    const tri = triToken.attach(triAddress)
     console.log(`Tri address: ${tri.address}`)
 
-    const receiverAddress = "0x1232726DA91B25D22239C5707FE85E8F078F3532"
+    const receiverAddress = kRecepientAddress
 
-    const decimals = ethers.BigNumber.from("1000000000000000000");
-    const transferAmount = decimals.mul("166000");
+    const transferAmount = decimals.mul(1);
     console.log("Sending ", transferAmount.toString(), " to ", receiverAddress)
     
     const tx = await tri.connect(deployer).transfer(receiverAddress, transferAmount);
     const receipt = await tx.wait()
-    console.log(receipt)
+    console.log(receipt)    
 }
 
 // We recommend this pattern to be able to use async/await everywhere
