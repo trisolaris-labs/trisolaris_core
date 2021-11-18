@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
-import { triAddress, donRecepientAddress, decimals } from './constants';
+import { triAddress, babooRecepientAddress, decimals, totalSupply } from './constants';
 
 
 async function main(): Promise<void> {
@@ -12,28 +12,49 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [deployer] = await ethers.getSigners();
+    const [_, deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
-
-    const vestingAmount = decimals.mul(1)
-    const vestingBegin = 1637280000; // 19th Nov 2021 00:00 UTC
-    const vestingCliff = 1639872000; // 19th Dec 2021 00:00 UTC
-    const vestingEnd = 1668816000; // 19th Nov 2022 00:00 UTC
-    const recepient = donRecepientAddress;
-    
-
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
+    const vestingBegin = 1637280000; // 19th Nov 2021 00:00 UTC
+    const vestingCliff = 1639872000; // 19th Dec 2021 00:00 UTC
+    const vestingEnd = 1668816000; // 19th Nov 2022 00:00 UTC
+    
+    // Things to change
+    const recepient = babooRecepientAddress;
+    const vestingAmount = totalSupply.mul(4).div(100) // 4% of supply
+    const vestingContractAddress = "0x0A0Dc69d4d6042a961E7f6D9e87B53df0C079E2b"
+    
+    
     const triToken = await ethers.getContractFactory("Tri")
-    const vester = await ethers.getContractFactory("Vester")
+    const vesterContract = await ethers.getContractFactory("Vester")
 
     const tri = triToken.attach(triAddress)
-    console.log(`Tri address: ${tri.address}`)
+    const vester = vesterContract.attach(vestingContractAddress)
 
-    console.log(vestingAmount.toString())
+    const triBalance = await tri.balanceOf(deployer.address)
+    console.log(`Tri balance: ${triBalance.toString()}`)
 
-    const treasuryVester = await vester.deploy(
+    const onChainTriAddress = await vester.tri()
+    const onChainRecepient = await vester.recipient()
+    const onChainVestingAmount = await vester.vestingAmount()
+    const onChainVestingBegin = await vester.vestingBegin()
+    const onChainVestingCliff = await vester.vestingCliff()
+    const onChainVestingEnd = await vester.vestingEnd()
+
+    if (
+        onChainTriAddress === triAddress &&
+        onChainRecepient === recepient &&
+        onChainVestingAmount === vestingAmount &&
+        onChainVestingBegin.toNumber() === vestingBegin &&
+        onChainVestingCliff.toNumber() === vestingCliff &&
+        onChainVestingEnd.toNumber() === vestingEnd
+        ) {
+        console.log("reached here")
+    }
+    /*
+    const treasuryVester = await vester.connect(deployer).deploy(
         tri.address,
         recepient,
         vestingAmount,
@@ -42,10 +63,13 @@ async function main(): Promise<void> {
         vestingEnd,
     );
     console.log(`Vester address: ${treasuryVester.address}`)
-    
+    */
+
+    /*
     const tx = await tri.transfer(treasuryVester.address, vestingAmount);
     const receipt = await tx.wait();
     console.log(receipt.logs);
+    */
 }
 
 // We recommend this pattern to be able to use async/await everywhere
