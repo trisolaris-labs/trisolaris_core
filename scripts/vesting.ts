@@ -3,6 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
+import { triAddress, babooRecepientAddress, chainRecepientAddress, totalSupply, donRecepientAddress, dfRecepientAddress, kRecepientAddress, decimals } from './constants';
 
 
 async function main(): Promise<void> {
@@ -11,26 +12,66 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [deployer] = await ethers.getSigners();
+    const [_, deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
-
-    const vestingAmount = ethers.BigNumber.from("1000000000000000000").mul(1000000);
-    const vestingBegin = 1636814700; 
-    const vestingCliff = 1636814701; 
-    const vestingEnd = 1636814710; 
-    const recepient = deployer.address;
-    
-
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
+    const vestingBegin = 1637280000; // 19th Nov 2021 00:00 UTC
+    const vestingCliff = 1639872000; // 19th Dec 2021 00:00 UTC
+    const vestingEnd = 1668816000; // 19th Nov 2022 00:00 UTC
+    
     const triToken = await ethers.getContractFactory("Tri")
-    const vester = await ethers.getContractFactory("Vester")
+    const vesterContract = await ethers.getContractFactory("Vester")
+    const tri = triToken.attach(triAddress)
+    const triBalance = await tri.balanceOf(deployer.address)
+    console.log(`Tri balance: ${triBalance.toString()}`)
 
-    const tri = triToken.attach("0x0029050f71704940D77Cfe71D0F1FB868DeeFa03")
-    console.log(`Tri address: ${tri.address}`)
+    // Things to change
+    const vestingOptions = [
+        {
+            recepient: babooRecepientAddress,
+            vestingAmount: totalSupply.mul(4).div(100), // 4% of supply
+            vestingContractAddress: "0x0A0Dc69d4d6042a961E7f6D9e87B53df0C079E2b",
+        }
+    ]
+    
 
-    const treasuryVester = await vester.deploy(
+    for (let i = 0; i < vestingOptions.length; i++) {
+        let vestingOption = vestingOptions[i];
+        console.log("Working on ", vestingOption.recepient)
+
+        const vester = vesterContract.attach(vestingOption.vestingContractAddress)
+        const onChainTriAddress = await vester.tri()
+        const onChainRecepient = await vester.recipient()
+        const onChainVestingAmount = await vester.vestingAmount()
+        const onChainVestingBegin = await vester.vestingBegin()
+        const onChainVestingCliff = await vester.vestingCliff()
+        const onChainVestingEnd = await vester.vestingEnd()
+        const triBalance = await tri.balanceOf(vestingOption.vestingContractAddress)
+
+        if (
+            onChainTriAddress === triAddress &&
+            onChainRecepient === vestingOption.recepient &&
+            onChainVestingAmount.eq(vestingOption.vestingAmount) &&
+            onChainVestingBegin.toNumber() === vestingBegin &&
+            onChainVestingCliff.toNumber() === vestingCliff &&
+            onChainVestingEnd.toNumber() === vestingEnd &&
+            triBalance.eq("0")
+            ) {
+            console.log("reached here")
+            console.log(vestingOption.vestingAmount.div(decimals).toString())
+            const tx = await tri.connect(deployer).transfer(
+                vestingOption.vestingContractAddress, 
+                vestingOption.vestingAmount
+            );
+            const receipt = await tx.wait();
+            console.log(receipt.logs);
+        }
+    }
+
+    /*
+    const treasuryVester = await vester.connect(deployer).deploy(
         tri.address,
         recepient,
         vestingAmount,
@@ -39,9 +80,13 @@ async function main(): Promise<void> {
         vestingEnd,
     );
     console.log(`Vester address: ${treasuryVester.address}`)
+    */
+
+    /*
     const tx = await tri.transfer(treasuryVester.address, vestingAmount);
     const receipt = await tx.wait();
     console.log(receipt.logs);
+    */
 }
 
 // We recommend this pattern to be able to use async/await everywhere

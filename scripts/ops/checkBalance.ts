@@ -3,6 +3,14 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
+import { 
+    triAddress, 
+    babooRecepientAddress, 
+    chainRecepientAddress, 
+    donRecepientAddress, 
+    kRecepientAddress, 
+    dfRecepientAddress 
+} from '../constants';
 
 
 async function main(): Promise<void> {
@@ -19,10 +27,15 @@ async function main(): Promise<void> {
 
     const triToken = await ethers.getContractFactory("Tri")
 
-    const tri = triToken.attach("0xFa94348467f64D5A457F75F8bc40495D33c65aBB")
+    const tri = triToken.attach(triAddress)
     console.log(`Tri address: ${tri.address}`)
     
-    console.log((await tri.balanceOf(deployer.address)).toString())
+    console.log("Deployer balance", (await tri.balanceOf(deployer.address)).toString())
+    console.log("Baboo balance", (await tri.balanceOf(babooRecepientAddress)).toString())
+    console.log("Don balance", (await tri.balanceOf(donRecepientAddress)).toString())
+    console.log("Chain balance", (await tri.balanceOf(chainRecepientAddress)).toString())
+    console.log("Df balance", (await tri.balanceOf(dfRecepientAddress)).toString())
+    console.log("K balance", (await tri.balanceOf(kRecepientAddress)).toString())
     console.log((await tri.totalSupply()).toString())
 }
 
