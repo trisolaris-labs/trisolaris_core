@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
-import { triAddress, babooRecepientAddress, decimals, totalSupply } from './constants';
+import { triAddress, babooRecepientAddress, chainRecepientAddress, totalSupply, donRecepientAddress, dfRecepientAddress, kRecepientAddress, decimals } from './constants';
 
 
 async function main(): Promise<void> {
@@ -21,38 +21,55 @@ async function main(): Promise<void> {
     const vestingCliff = 1639872000; // 19th Dec 2021 00:00 UTC
     const vestingEnd = 1668816000; // 19th Nov 2022 00:00 UTC
     
-    // Things to change
-    const recepient = babooRecepientAddress;
-    const vestingAmount = totalSupply.mul(4).div(100) // 4% of supply
-    const vestingContractAddress = "0x0A0Dc69d4d6042a961E7f6D9e87B53df0C079E2b"
-    
-    
     const triToken = await ethers.getContractFactory("Tri")
     const vesterContract = await ethers.getContractFactory("Vester")
-
     const tri = triToken.attach(triAddress)
-    const vester = vesterContract.attach(vestingContractAddress)
-
     const triBalance = await tri.balanceOf(deployer.address)
     console.log(`Tri balance: ${triBalance.toString()}`)
 
-    const onChainTriAddress = await vester.tri()
-    const onChainRecepient = await vester.recipient()
-    const onChainVestingAmount = await vester.vestingAmount()
-    const onChainVestingBegin = await vester.vestingBegin()
-    const onChainVestingCliff = await vester.vestingCliff()
-    const onChainVestingEnd = await vester.vestingEnd()
+    // Things to change
+    const vestingOptions = [
+        {
+            recepient: babooRecepientAddress,
+            vestingAmount: totalSupply.mul(4).div(100), // 4% of supply
+            vestingContractAddress: "0x0A0Dc69d4d6042a961E7f6D9e87B53df0C079E2b",
+        }
+    ]
+    
 
-    if (
-        onChainTriAddress === triAddress &&
-        onChainRecepient === recepient &&
-        onChainVestingAmount === vestingAmount &&
-        onChainVestingBegin.toNumber() === vestingBegin &&
-        onChainVestingCliff.toNumber() === vestingCliff &&
-        onChainVestingEnd.toNumber() === vestingEnd
-        ) {
-        console.log("reached here")
+    for (let i = 0; i < vestingOptions.length; i++) {
+        let vestingOption = vestingOptions[i];
+        console.log("Working on ", vestingOption.recepient)
+
+        const vester = vesterContract.attach(vestingOption.vestingContractAddress)
+        const onChainTriAddress = await vester.tri()
+        const onChainRecepient = await vester.recipient()
+        const onChainVestingAmount = await vester.vestingAmount()
+        const onChainVestingBegin = await vester.vestingBegin()
+        const onChainVestingCliff = await vester.vestingCliff()
+        const onChainVestingEnd = await vester.vestingEnd()
+        const triBalance = await tri.balanceOf(vestingOption.vestingContractAddress)
+
+        if (
+            onChainTriAddress === triAddress &&
+            onChainRecepient === vestingOption.recepient &&
+            onChainVestingAmount.eq(vestingOption.vestingAmount) &&
+            onChainVestingBegin.toNumber() === vestingBegin &&
+            onChainVestingCliff.toNumber() === vestingCliff &&
+            onChainVestingEnd.toNumber() === vestingEnd &&
+            triBalance.eq("0")
+            ) {
+            console.log("reached here")
+            console.log(vestingOption.vestingAmount.div(decimals).toString())
+            const tx = await tri.connect(deployer).transfer(
+                vestingOption.vestingContractAddress, 
+                vestingOption.vestingAmount
+            );
+            const receipt = await tx.wait();
+            console.log(receipt.logs);
+        }
     }
+
     /*
     const treasuryVester = await vester.connect(deployer).deploy(
         tri.address,
