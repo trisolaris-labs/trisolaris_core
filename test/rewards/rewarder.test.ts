@@ -77,100 +77,86 @@ describe("Rewarder", function () {
   })
 
 
-  /*
-  context("With Rewards contract on a ERC/LP token", function () {
+  context("With rewarder contract added to a LP pool", function () {
     beforeEach(async function () {
-      this.lp = await this.ERC20Mock.deploy("LPToken", "LP", "10000000000")
-
       await this.lp.transfer(this.alice.address, "1000")
-
       await this.lp.transfer(this.bob.address, "1000")
-
       await this.lp.transfer(this.carol.address, "1000")
 
-      this.lp2 = await this.ERC20Mock.deploy("LPToken2", "LP2", "10000000000")
+      this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp.address, "0", this.chef.address)
+      await this.rewarder.deployed()
 
-      await this.lp2.transfer(this.alice.address, "1000")
-
-      await this.lp2.transfer(this.bob.address, "1000")
-
-      await this.lp2.transfer(this.carol.address, "1000")
-
-      this.rewardToken = await this.ERC20Mock.deploy("RToken", "RWT", "10000000000")
-      // The mock rewarder sends same amount of rewardToken == triAmount
-    })
-  
-    it("should set rewarder address after creation of pool", async function () {
-      // 100 per block farming rate starting at block 100 with bonus until block 1000
-      this.chef = await this.MasterChef.deploy(this.tri.address, "100", 0)
-      await this.chef.deployed()
-      const rewarder = await this.RewarderMock.deploy(1, this.rewardToken.address, this.chef.address)
-
-      await this.chef.add("100", this.lp.address, this.ZeroAddress, true)
-      expect(await this.chef.rewarder(0)).to.equal(this.ZeroAddress)
-
-      // does not update when there is no overwrite
-      let overwrite = false
-      await this.chef.set(0, 100, false, rewarder.address, overwrite)
-      expect(await this.chef.rewarder(0)).to.equal(this.ZeroAddress)
-
-      // does update when there is overwrite
-      overwrite = true
-      await this.chef.set(0, 100, false, rewarder.address, overwrite)
-      expect(await this.chef.rewarder(0)).to.equal(rewarder.address)
+      await this.rewardToken.transfer(this.rewarder.address, "100000")
     })
 
-    it("should give out TRIs and reward Token only after farming time", async function () {
-      // 100 per block farming rate starting at block 100
-      this.chef = await this.MasterChef.deploy(this.tri.address, "100", "1000")
-      await this.chef.deployed()
-
-      const rewarder = await this.RewarderMock.deploy(1, this.rewardToken.address, this.chef.address)
-      await this.rewardToken.transfer(rewarder.address, "100000")
-
-      await this.tri.connect(this.minter).setMinter(this.chef.address)
-      await this.chef.add("100", this.lp.address, rewarder.address, true)
-
+    it("should give out TRIs and reward Tokens only after farming time", async function () {
+      await this.chef.add("100", this.lp.address, this.rewarder.address, true)
       await this.lp.connect(this.bob).approve(this.chef.address, "1000")
-      await this.chef.connect(this.bob).deposit(0, "100")
-      await advanceBlockTo("89")
+      
+      await advanceBlockTo("99")
+      await this.chef.connect(this.bob).deposit(0, "100") // at block 100 bob deposits 100 lp tokens 
+      await this.rewarder.setRewardRate(0)
+      
+      // no rewards given when tokenPerBlock is 0
+      await advanceBlockTo("104")
+      await this.chef.connect(this.bob).harvest(0) // block 105
+      expect(await this.tri.balanceOf(this.bob.address)).to.equal("5000")
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("0")
 
-      await this.chef.connect(this.bob).harvest(0) // block 90
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
-      await advanceBlockTo("94")
+      // reward tokens start accruing when we set a token Per block
+      await advanceBlockTo("109")
+      await this.rewarder.setRewardRate(1)
+      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("100")
+      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("0")
 
-      await this.chef.connect(this.bob).harvest(0) // block 95
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
-      await advanceBlockTo("999")
+      await advanceBlockTo("114")
+      await this.chef.connect(this.bob).harvest(0) // block 110
+      expect(await this.tri.balanceOf(this.bob.address)).to.equal("15000")
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("5")
 
-      await this.chef.connect(this.bob).harvest(0) // block 1000
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
-      await advanceBlockTo("1000")
+      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("100")
+      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("5")
 
-      await this.chef.connect(this.bob).harvest(0); // block 1001
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("100")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("100")
-
-      await advanceBlockTo("1004")
-      await this.chef.connect(this.bob).harvest(0) // block 1005
-
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("500")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("500")
-      expect(await this.tri.totalSupply()).to.equal("500")
-      expect((await this.chef.userInfo(0, this.bob.address)).amount).to.equal("100")
-      expect((await this.chef.userInfo(0, this.bob.address)).rewardDebt).to.equal("500")
+      await this.chef.connect(this.bob).withdraw(0, 100)
     })
 
+    it("should not give reward tokens or TRI after emergency withdraw", async function () {
+      await this.chef.add("100", this.lp.address, this.rewarder.address, true)
+      await this.lp.connect(this.bob).approve(this.chef.address, "1000")
+      
+      expect(await this.chef.poolLength()).to.equal(1)
+      await advanceBlockTo("198")
+      await this.rewarder.setRewardRate(1)
+      expect(await this.lp.balanceOf(this.chef.address)).to.equal(0)
+      await this.chef.connect(this.bob).deposit(0, "100") // at block 200 bob deposits 100 lp tokens 
+      
+      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("100")
+      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("1")
+      let pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
+      expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
+
+      await advanceBlockTo("205")
+      pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
+      expect(pendingRewards.rewardAmounts[0]).to.equal(5) 
+      // no rewards given when tokenPerBlock is 0
+      await advanceBlockTo("209")
+      await this.chef.connect(this.bob).emergencyWithdraw(0) // block 210
+      expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
+      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("0")
+      
+      pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
+      expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
+
+      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("0")
+      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("0")
+    })
+
+    /*
     it("should distribute TRIs and rewardToken properly for each staker", async function () {
       // 1000 per block farming rate starting at block 3000
-      this.chef = await this.MasterChef.deploy(this.tri.address, "1000", "3000")
-      await this.chef.deployed()
-      await this.tri.connect(this.minter).setMinter(this.chef.address)
-      
-      const rewarder = await this.RewarderMock.deploy(1, this.rewardToken.address, this.chef.address)
-      await this.rewardToken.transfer(rewarder.address, "100000")
-
-      await this.chef.add("100", this.lp.address, rewarder.address, true)
+      await this.chef.add("100", this.lp.address, this.rewarder.address, true)
+      await this.rewarder.setRewardRate(1000)
       await this.lp.connect(this.alice).approve(this.chef.address, "1000", {
         from: this.alice.address,
       })
@@ -180,6 +166,7 @@ describe("Rewarder", function () {
       await this.lp.connect(this.carol).approve(this.chef.address, "1000", {
         from: this.carol.address,
       })
+
       // Alice deposits 10 LPs at block 3010
       await advanceBlockTo("3009")
       await this.chef.connect(this.alice).deposit(0, "10", { from: this.alice.address })
@@ -235,52 +222,7 @@ describe("Rewarder", function () {
       expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
       expect(await this.lp.balanceOf(this.carol.address)).to.equal("1000")
     })
-
-    it("should give proper TRIs and rewardToken allocation to each pool", async function () {
-      // 100 per block farming rate starting at block 4000
-      this.chef = await this.MasterChef.deploy(this.tri.address, "100", "4000")
-      await this.tri.connect(this.minter).setMinter(this.chef.address)
-      await this.lp.connect(this.alice).approve(this.chef.address, "1000", { from: this.alice.address })
-      await this.lp2.connect(this.bob).approve(this.chef.address, "1000", { from: this.bob.address })
-      const rewarder = await this.RewarderMock.deploy(1, this.rewardToken.address, this.chef.address)
-      await this.rewardToken.transfer(rewarder.address, "100000")
-      
-
-      // Add first LP to the pool with allocation 10
-      await this.chef.add("10", this.lp.address, this.ZeroAddress, true)
-      // Alice deposits 10 LPs at block 410
-      await advanceBlockTo("4009")
-      await this.chef.connect(this.alice).deposit(0, "10", { from: this.alice.address })
-      // Add LP2 to the pool with allocation 2 at block 420
-      await advanceBlockTo("4019")
-      // we are adding rewarder token to the second LP pool
-      await this.chef.add("20", this.lp2.address, rewarder.address, true)
-      // Alice should have 10*1000 pending reward
-      expect(await this.chef.pendingTri(0, this.alice.address)).to.equal("1000")
-      // Bob deposits 10 LP2s at block 425
-      await advanceBlockTo("4024")
-      await this.chef.connect(this.bob).deposit(1, "5", { from: this.bob.address })
-      // Alice should have 1000 + 5*1/3*100 = 1166 pending reward
-      expect(await this.chef.pendingTri(0, this.alice.address)).to.equal("1166")
-      await advanceBlockTo("4029")
-      // At block 430. Alice should get ~166 more.
-      expect(await this.chef.connect(this.alice).harvest(0)) // block 4030
-      expect(await this.tri.balanceOf(this.alice.address)).to.equal("1333")
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("0") // pool 0 does not have any rewards
-      // bob will not get any tokens since he has not given to pool 0
-      expect(await this.chef.connect(this.bob).harvest(0))
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("0")
-      // alice will not get any new tokens since she has not deposited to pool 1
-      expect(await this.chef.connect(this.alice).harvest(1))
-      expect(await this.tri.balanceOf(this.alice.address)).to.equal("1333")
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("0") 
-      // bob will not get any tokens since he has not given to pool 0
-      // at block 4033 Bob should get 8*2/3*100 = 333. 
-      expect(await this.chef.connect(this.bob).harvest(1)) // block 4033
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("532")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("532")
-    })
+    */
   })
-  */
+  
 })
