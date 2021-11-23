@@ -6,18 +6,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IRewarder.sol";
+import "../interfaces/IMasterChef.sol";
 
-interface IMasterChef {
-    struct PoolInfo {
-        uint256 allocPoint; // How many allocation points assigned to this pool. TRI to distribute per block.
-    }
-
-    function deposit(uint256 _pid, uint256 _amount) external;
-
-    function poolInfo(uint256 pid) external view returns (IMasterChef.PoolInfo memory);
-
-    function totalAllocPoint() external view returns (uint256);
-}
 
 /**
  * This is a sample contract to be used in the MasterChef contract for partners to reward
@@ -28,7 +18,7 @@ interface IMasterChef {
  * onTriReward().
  *
  */
-contract Rewarder is IRewarder, Ownable {
+contract ComplexRewarder is IRewarder, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
