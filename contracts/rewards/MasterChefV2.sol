@@ -65,7 +65,6 @@ contract MasterChefV2 is Ownable {
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint;
 
-    uint256 private constant MASTERCHEF_TRI_PER_BLOCK = 1e20;
     uint256 private constant ACC_TRI_PRECISION = 1e12;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
@@ -181,7 +180,7 @@ contract MasterChefV2 is Ownable {
 
     /// @notice Calculates and returns the `amount` of TRI per block.
     function triPerBlock() public view returns (uint256 amount) {
-        amount = uint256(MASTERCHEF_TRI_PER_BLOCK)
+        amount = uint256(MASTER_CHEF.triPerBlock())
             .mul(MASTER_CHEF.poolInfo(MASTER_PID).allocPoint) / MASTER_CHEF.totalAllocPoint();
     }
 
@@ -208,6 +207,7 @@ contract MasterChefV2 is Ownable {
     /// @param amount LP token amount to deposit.
     /// @param to The receiver of `amount` deposit benefit.
     function deposit(uint256 pid, uint256 amount, address to) public {
+        harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][to];
 
@@ -231,6 +231,7 @@ contract MasterChefV2 is Ownable {
     /// @param amount LP token amount to withdraw.
     /// @param to Receiver of the LP tokens.
     function withdraw(uint256 pid, uint256 amount, address to) public {
+        harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
 
@@ -253,6 +254,7 @@ contract MasterChefV2 is Ownable {
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param to Receiver of TRI rewards.
     function harvest(uint256 pid, address to) public {
+        harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
         int256 accumulatedTri = int256(user.amount.mul(pool.accTriPerShare) / ACC_TRI_PRECISION);
@@ -279,6 +281,7 @@ contract MasterChefV2 is Ownable {
     /// @param amount LP token amount to withdraw.
     /// @param to Receiver of the LP tokens and TRI rewards.
     function withdrawAndHarvest(uint256 pid, uint256 amount, address to) public {
+        harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
         int256 accumulatedTri = int256(user.amount.mul(pool.accTriPerShare) / ACC_TRI_PRECISION);
