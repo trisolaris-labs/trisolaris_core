@@ -12,7 +12,7 @@ jobs:
           node-version: 12
       - run: |
           echo MNEMONIC="test test test test test test test test test test test junk" > .env
-          echo INFURA_API_KEY="" > .env
-          echo ETHERSCAN_API_KEY="" > .env
+          echo INFURA_API_KEY="test" >> .env
+          echo ETHERSCAN_API_KEY="test" >> .env
       - run: yarn
       - run: yarn test
