@@ -10,5 +10,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 12
+      - run: |
+          echo MNEMONIC="test test test test test test test test test test test junk" > .env
+          echo INFURA_API_KEY="" > .env
+          echo ETHERSCAN_API_KEY="" > .env
       - run: yarn
       - run: yarn test
