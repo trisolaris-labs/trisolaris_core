@@ -12,6 +12,7 @@ describe("Complex Rewarder", function () {
     this.minter = this.signers[4]
 
     this.MasterChef = await ethers.getContractFactory("MasterChef")
+    this.MasterChefV2 = await ethers.getContractFactory("MasterChefV2")
     this.TriToken = await ethers.getContractFactory("Tri")
     this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.minter)
     this.Rewarder = await ethers.getContractFactory("ComplexRewarder")
@@ -19,25 +20,43 @@ describe("Complex Rewarder", function () {
   })
 
   beforeEach(async function () {
-    this.tri = await this.TriToken.deploy(this.minter.address)
+    this.tri = await this.TriToken.connect(this.minter).deploy(this.minter.address)
     await this.tri.deployed()
 
-    this.chef = await this.MasterChef.deploy(this.tri.address, "1000", "0")
+    this.chef = await this.MasterChef.connect(this.minter).deploy(this.tri.address, "1000", "0")
     await this.chef.deployed()
 
     await this.tri.connect(this.minter).setMinter(this.chef.address)
 
-    this.lp = await this.ERC20Mock.deploy("LPToken", "LP", "10000000000")
+    this.lp = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
     await this.lp.deployed()
-
-    this.rewardToken = await this.ERC20Mock.deploy("RToken", "RWT", "10000000000")
+    this.dummy = await this.ERC20Mock.connect(this.minter).connect(this.minter).deploy("Dummy", "DummyT", "10000000000000000000")
+    await this.dummy.deployed()
+    this.rewardToken = await this.ERC20Mock.connect(this.minter).deploy("RToken", "RWT", "10000000000")
     await this.rewardToken.deployed()
+
+
+    
+    // adding dummy token as lp
+    await this.chef.connect(this.minter).add(100, this.dummy.address, this.ZeroAddress, true)
+    // deploying chefv2
+    this.chefv2 = await this.MasterChefV2.connect(this.minter).deploy(this.chef.address, this.tri.address, 0)
+    await this.chefv2.deployed()
+    
+    // initialize the chefv2 contract by sending dummy tokens to chef
+    await this.dummy.connect(this.minter).approve(this.chefv2.address, "10000000000000000000")
+    let bal = await this.dummy.balanceOf(this.minter.address)
+    console.log(bal.toString())
+    await this.chefv2.connect(this.minter).init(this.dummy.address)
+    console.log("Reached here")
+
   })
 
   it("should set correct state variables", async function () {
-    this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp.address, "0", this.chef.address)
+    console.log("Reached here")
+    this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp.address, "0", this.chefv2.address)
     await this.rewarder.deployed()
-
+    console.log("Reached here")
     expect(await this.rewarder.lpToken()).to.equal(this.lp.address)
     expect(await this.rewarder.rewardToken()).to.equal(this.rewardToken.address)
     expect(await this.rewarder.MC()).to.equal(this.chef.address)
@@ -175,27 +194,11 @@ describe("Complex Rewarder", function () {
       
 
       await advanceBlockTo("10313")
-      let pendingRewards = await this.rewarder.pendingTokens(0, this.alice.address, 0)
-      let pendingTri = await this.chef.pendingTri(0, this.alice.address)
-      console.log("pending rewards at block 313", pendingRewards.rewardAmounts[0].toString())
-      console.log("pending tri at block 313", pendingTri.toString())
-
       // Bob deposits 20 LPs at block 314
-      await this.chef.connect(this.bob).deposit(0, "20", { from: this.bob.address })
-      pendingRewards = await this.rewarder.pendingTokens(0, this.alice.address, 0)
-      pendingTri = await this.chef.pendingTri(0, this.alice.address)
-      // TODO: pending TRI here is different because the lpSupply is calculated after the 
-      // TODO: lp is deposited and not before that
-      console.log("pending rewards at block 314", pendingRewards.rewardAmounts[0].toString())
-      console.log("pending tri at block 314", pendingTri.toString())
-      
+      await this.chef.connect(this.bob).deposit(0, "20", { from: this.bob.address })      
       // Carol deposits 30 LPs at block 318
       await advanceBlockTo("10317")
       await this.chef.connect(this.carol).deposit(0, "30", { from: this.carol.address })
-      pendingRewards = await this.rewarder.pendingTokens(0, this.alice.address, 0)
-      pendingTri = await this.chef.pendingTri(0, this.alice.address)
-      console.log("pending rewards at block 318", pendingRewards.rewardAmounts[0].toString())
-      console.log("pending tri at block 318", pendingTri.toString())
       // Alice deposits 10 more LPs at block 320. At this point:
       //   Alice should have: 4*1000 + 4*1/3*1000 + 2*1/6*1000 = 5666
       //   MasterChef should have the remaining: 10000 - 5666 = 4334
