@@ -7,6 +7,7 @@
     "url": "https://paulrberg.com"
   },
   "devDependencies": {
+    "@boringcrypto/boring-solidity": "boringcrypto/BoringSolidity#e06e943e7e8a168ed0395ef663a17fd71a6949a2",
     "@codechecks/client": "^0.1.11",
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-conventional": "^13.1.0",
