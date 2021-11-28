@@ -71,7 +71,7 @@ async function main(): Promise<void> {
 
   // Init Masterchef V2 
   console.log(`Calling init function on Masterchef V2`)
-  await chefv2.connect(deployer).init("0xa8E601539E5F9960C2739aB42bE6FF8f69a14F39");
+  await chefv2.connect(deployer).init(dummyLP.address);
      
   
   // Check that Chef V1 got the Dummy LP tokens from Chef V2 Init
