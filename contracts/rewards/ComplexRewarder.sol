@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IRewarder.sol";
-import "../interfaces/IMasterChef.sol";
+import "../interfaces/IMasterChefV2.sol";
 
 
 /**
@@ -24,9 +24,9 @@ contract ComplexRewarder is IRewarder, Ownable {
 
     IERC20 public immutable rewardToken;
     IERC20 public immutable lpToken;
-    IMasterChef public immutable MC;
+    IMasterChefV2 public immutable MCV2;
 
-    /// @notice Info of each MC user.
+    /// @notice Info of each MCV2 user.
     /// `amount` LP token amount the user has provided.
     /// `rewardDebt` The amount of TRI entitled to the user.
     struct UserInfo {
@@ -34,7 +34,7 @@ contract ComplexRewarder is IRewarder, Ownable {
         uint256 rewardDebt;
     }
 
-    /// @notice Info of each MC poolInfo.
+    /// @notice Info of each MCV2 poolInfo.
     /// `accTokenPerShare` Amount of rewardTokens each LP token is worth.
     /// `lastRewardBlock` The last block rewards were rewarded to the poolInfo.
     struct PoolInfo {
@@ -55,8 +55,8 @@ contract ComplexRewarder is IRewarder, Ownable {
     event RewardRateUpdated(uint256 oldRate, uint256 newRate);
     event AllocPointUpdated(uint256 oldAllocPoint, uint256 newAllocPoint);
 
-    modifier onlyMC() {
-        require(msg.sender == address(MC), "onlyMC: only MasterChef can call this function");
+    modifier onlyMCV2() {
+        require(msg.sender == address(MCV2), "onlyMCV2: only MasterChef can call this function");
         _;
     }
 
@@ -64,12 +64,12 @@ contract ComplexRewarder is IRewarder, Ownable {
         IERC20 _rewardToken,
         IERC20 _lpToken,
         uint256 _tokenPerBlock,
-        IMasterChef _mc
+        IMasterChefV2 _mcv2
     ) public {
         rewardToken = _rewardToken;
         lpToken = _lpToken;
         tokenPerBlock = _tokenPerBlock;
-        MC = _mc;
+        MCV2 = _mcv2;
         poolInfo = PoolInfo({lastRewardBlock: block.number, accTokenPerShare: 0});
     }
 
@@ -103,7 +103,7 @@ contract ComplexRewarder is IRewarder, Ownable {
         pool = poolInfo;
 
         if (block.number > pool.lastRewardBlock) {
-            uint256 lpSupply = lpToken.balanceOf(address(MC));
+            uint256 lpSupply = lpToken.balanceOf(address(MCV2));
 
             if (lpSupply > 0) {
                 uint256 blocks = block.number.sub(pool.lastRewardBlock);
@@ -126,7 +126,7 @@ contract ComplexRewarder is IRewarder, Ownable {
         address, 
         uint256, 
         uint256 _lpAmount
-        ) external override onlyMC {
+        ) external override onlyMCV2 {
         updatePool();
         PoolInfo memory pool = poolInfo;
         UserInfo storage user = userInfo[_user];
@@ -163,7 +163,7 @@ contract ComplexRewarder is IRewarder, Ownable {
         UserInfo storage user = userInfo[_user];
 
         uint256 accTokenPerShare = pool.accTokenPerShare;
-        uint256 lpSupply = lpToken.balanceOf(address(MC));
+        uint256 lpSupply = lpToken.balanceOf(address(MCV2));
 
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 blocks = block.number.sub(pool.lastRewardBlock);
