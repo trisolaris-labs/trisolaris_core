@@ -5,7 +5,7 @@ import "../interfaces/IRewarder.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IMasterChef.sol";
+import "../interfaces/IMasterChefV2.sol";
 
 
 contract SimpleRewarder is IRewarder, Ownable {
@@ -14,17 +14,17 @@ contract SimpleRewarder is IRewarder, Ownable {
     uint256 private constant ACC_TOKEN_PRECISION = 1e12;
 
     IERC20 public immutable rewardToken;
-    IMasterChef public immutable MASTERCHEF;
+    IMasterChefV2 public immutable MASTERCHEFV2;
     uint256 public rewardMultiplier;
 
-    constructor (uint256 _rewardMultiplier, IERC20 _rewardToken, IMasterChef _MASTERCHEF) public {
+    constructor (uint256 _rewardMultiplier, IERC20 _rewardToken, IMasterChefV2 _MASTERCHEFV2) public {
         rewardMultiplier = _rewardMultiplier;
         rewardToken = _rewardToken;
-        MASTERCHEF = _MASTERCHEF;
+        MASTERCHEFV2 = _MASTERCHEFV2;
     }
 
-    modifier onlyMC() {
-        require(msg.sender == address(MASTERCHEF), "onlyMC: only MasterChef can call this function");
+    modifier onlyMCV2() {
+        require(msg.sender == address(MASTERCHEFV2), "onlyMCV2: only MasterChefV2 can call this function");
         _;
     }
 
@@ -46,7 +46,7 @@ contract SimpleRewarder is IRewarder, Ownable {
         rewardMultiplier = _rewardMultiplier;
     }
 
-    function onTriReward (uint256, address, address to, uint256 triAmount, uint256) onlyMC override external {
+    function onTriReward (uint256, address, address to, uint256 triAmount, uint256) onlyMCV2 override external {
         uint256 pendingReward = triAmount.mul(rewardMultiplier).div(ACC_TOKEN_PRECISION);
         uint256 rewardBal = rewardToken.balanceOf(address(this));
         if (pendingReward > rewardBal) {
@@ -61,7 +61,7 @@ contract SimpleRewarder is IRewarder, Ownable {
         _rewardTokens[0] = (rewardToken);
         uint256[] memory _rewardAmounts = new uint256[](1);
         // get pendingTri from chef and calculate rewards accordingly
-        uint256 triAmount = MASTERCHEF.pendingTri(_pid, _user);
+        uint256 triAmount = MASTERCHEFV2.pendingTri(_pid, _user);
         _rewardAmounts[0] = triAmount.mul(rewardMultiplier).div(ACC_TOKEN_PRECISION);
         return (_rewardTokens, _rewardAmounts);
     }
