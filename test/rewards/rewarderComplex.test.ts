@@ -30,21 +30,13 @@ describe("Complex Rewarder", function () {
 
     this.lp = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
     await this.lp.deployed()
-    this.dummy = await this.ERC20Mock.connect(this.minter).connect(this.minter).deploy("Dummy", "DummyT", "10000000000000000000")
+    this.dummy = await this.ERC20Mock.connect(this.minter).connect(this.minter).deploy("Dummy", "DummyT", "100")
     await this.dummy.deployed()
     this.rewardToken = await this.ERC20Mock.connect(this.minter).deploy("RToken", "RWT", "1000000000000")
     await this.rewardToken.deployed()
 
-    // adding dummy token as lp
-    await this.chef.connect(this.minter).add(100, this.dummy.address, this.ZeroAddress, true)
-    // deploying chefv2
     this.chefv2 = await this.MasterChefV2.connect(this.minter).deploy(this.chef.address, this.tri.address, 0)
     await this.chefv2.deployed()
-    
-    // initialize the chefv2 contract by sending dummy tokens to chef
-    await this.dummy.connect(this.minter).approve(this.chefv2.address, "10000000000000000000")
-    await this.chefv2.connect(this.minter).init(this.dummy.address)
-
   })
 
   it("should set correct state variables", async function () {
@@ -95,13 +87,56 @@ describe("Complex Rewarder", function () {
       await this.lp.transfer(this.bob.address, "1000")
       await this.lp.transfer(this.carol.address, "1000")
 
+      // adding dummy token as lp
+      await this.chef.connect(this.minter).add(100, this.dummy.address, this.ZeroAddress, true)
+      // deploying chefv2
+      this.chefv2 = await this.MasterChefV2.connect(this.minter).deploy(this.chef.address, this.tri.address, 0)
+      await this.chefv2.deployed()
+      // initialize the chefv2 contract by sending dummy tokens to chef
+      await this.dummy.connect(this.minter).approve(this.chefv2.address, "10000000000000000000")
+      await this.chefv2.connect(this.minter).init(this.dummy.address)
+    })
+
+    it("should not give reward tokens or TRI after emergency withdraw", async function () {
       this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp.address, "0", this.chefv2.address)
       await this.rewarder.deployed()
-
       await this.rewardToken.transfer(this.rewarder.address, "1000000000000")
+
+      await this.chefv2.add("100", this.lp.address, this.rewarder.address)
+      await this.lp.connect(this.bob).approve(this.chefv2.address, "1000")
+      
+      expect(await this.chefv2.poolLength()).to.equal(1)
+      await advanceBlockTo("9998")
+      await this.rewarder.setRewardRate(1)
+      expect(await this.lp.balanceOf(this.chefv2.address)).to.equal(0)
+      await this.chefv2.connect(this.bob).deposit(0, "100", this.bob.address) // at block 200 bob deposits 100 lp tokens 
+      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("100")
+      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("0")
+      let pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
+      expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
+
+      await advanceBlockTo("10005")
+      pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
+      expect(pendingRewards.rewardAmounts[0]).to.equal(5) 
+      // no rewards given when tokenPerBlock is 0
+      await advanceBlockTo("10009")
+      await this.chefv2.connect(this.bob).emergencyWithdraw(0, this.bob.address) // block 210
+      expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
+      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("10")
+      
+      pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
+      expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
+
+      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("0")
+      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("0")
     })
 
     it("should give out TRIs and reward Tokens only after farming time", async function () {
+      this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp.address, "0", this.chefv2.address)
+      await this.rewarder.deployed()
+      await this.rewardToken.transfer(this.rewarder.address, "1000000000000")
+
       await this.chefv2.add("100", this.lp.address, this.rewarder.address)
       await this.lp.connect(this.bob).approve(this.chefv2.address, "1000")
       
@@ -134,40 +169,12 @@ describe("Complex Rewarder", function () {
       await this.chefv2.connect(this.bob).withdraw(0, 100, this.bob.address)
     })
 
-    it("should not give reward tokens or TRI after emergency withdraw", async function () {
-      await this.chefv2.add("100", this.lp.address, this.rewarder.address)
-      await this.lp.connect(this.bob).approve(this.chefv2.address, "1000")
-      
-      expect(await this.chefv2.poolLength()).to.equal(1)
-      await advanceBlockTo("10198")
-      await this.rewarder.setRewardRate(1)
-      expect(await this.lp.balanceOf(this.chefv2.address)).to.equal(0)
-      await this.chefv2.connect(this.bob).deposit(0, "100", this.bob.address) // at block 200 bob deposits 100 lp tokens 
-      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("100")
-      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("0")
-      let pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
-      expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
-
-      await advanceBlockTo("10205")
-      pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
-      expect(pendingRewards.rewardAmounts[0]).to.equal(5) 
-      // no rewards given when tokenPerBlock is 0
-      await advanceBlockTo("10209")
-      await this.chefv2.connect(this.bob).emergencyWithdraw(0, this.bob.address) // block 210
-      expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("10")
-      
-      pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
-      expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
-
-      expect((await this.rewarder.userInfo(this.bob.address)).amount).to.equal("0")
-      expect((await this.rewarder.userInfo(this.bob.address)).rewardDebt).to.equal("0")
-    })
-
     it("should distribute TRIs and rewardToken properly for each staker", async function () {
-      let dummyBalv1 = await this.dummy.balanceOf(this.chef.address)
-      console.log("Dummy bal in v1", dummyBalv1.toString())
+      this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp.address, "0", this.chefv2.address)
+      await this.rewarder.deployed()
+      await this.rewarder.setRewardRate(100)
+      await this.rewardToken.transfer(this.rewarder.address, "1000000000000")
+
       await this.chefv2.connect(this.minter).add("100", this.lp.address, this.rewarder.address)
       await this.lp.connect(this.alice).approve(this.chefv2.address, "1000", {
         from: this.alice.address,
@@ -178,8 +185,9 @@ describe("Complex Rewarder", function () {
       await this.lp.connect(this.carol).approve(this.chefv2.address, "1000", {
         from: this.carol.address,
       })
+
       // Alice deposits 10 LPs at block 5010
-      await advanceBlockTo("10508")
+      await advanceBlockTo("10509")
       await this.chefv2.connect(this.alice).deposit(0, "10", this.alice.address)
       // Bob deposits 20 LPs at block 5014
       await advanceBlockTo("10513")
@@ -190,23 +198,11 @@ describe("Complex Rewarder", function () {
       // Alice harvests LPs at block 5020. At this point:
       //   Alice should have: 4*1000 + 4*1/3*1000 + 2*1/6*1000 = 5666
       //   MasterChef should have the remaining: 10000 - 5666 = 4334
-      let triPerBlockv1 = await this.chef.triPerBlock() 
-      let triPerBlockv2 = await this.chefv2.triPerBlock()
-      console.log(triPerBlockv1.toString(), triPerBlockv2.toString())
-      let poolInfo = await this.chefv2.poolInfo(0)
-      console.log(poolInfo)
-      await advanceBlockTo("10518")
-      let triBal = await this.tri.balanceOf(this.chefv2.address)
-      console.log(triBal.toString())
-      let log = await this.chefv2.harvestFromMasterChef()
-      console.log(log.blockNumber.toString())
-      triBal = await this.tri.balanceOf(this.chefv2.address)
-      console.log(triBal.toString())
-      await this.chefv2.connect(this.alice).harvest(0, this.alice.address)
-      console.log("reached here")
       
+      await advanceBlockTo("10519")
+      await this.chefv2.connect(this.alice).harvest(0, this.alice.address)
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("5666")
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("5666")
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("566")
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
       expect(await this.tri.balanceOf(this.carol.address)).to.equal("0")
       // Bob harvests 5 LPs at block 5030. At this point:
@@ -214,9 +210,9 @@ describe("Complex Rewarder", function () {
       await advanceBlockTo("10529")
       await this.chefv2.connect(this.bob).harvest(0, this.bob.address)
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("5666")
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("5666")
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("566")
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("6666")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("6666")
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("666")
       expect(await this.tri.balanceOf(this.carol.address)).to.equal("0")
       // Alice withdraws 10 LPs at block 5040.
       // Bob withdraws 20 LPs at block 5050.
@@ -238,15 +234,15 @@ describe("Complex Rewarder", function () {
       await this.chefv2.connect(this.alice).harvest(0, this.alice.address)
       // Alice should have: 5666 + 20*1/6*1000 = 8999
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("8999")
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("8999")
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("899")
       await this.chefv2.connect(this.bob).harvest(0, this.bob.address)
       // Bob should have: 6190 + 10*2/6 * 1000 + 10*2/5*1000 = 11831
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("13999")
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("13999")
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.equal("1399")
       await this.chefv2.connect(this.carol).harvest(0, this.carol.address)
       // Carol should have: 2*3/6*1000 + 20*3/6*1000 + 10*3/5*1000 + 10*1000 = 27000
       expect(await this.tri.balanceOf(this.carol.address)).to.equal("27000")
-      expect(await this.rewardToken.balanceOf(this.carol.address)).to.equal("27000")
+      expect(await this.rewardToken.balanceOf(this.carol.address)).to.equal("2700")
       // All of them should have 1000 LPs back.
     })
   })
