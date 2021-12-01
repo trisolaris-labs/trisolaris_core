@@ -48,7 +48,6 @@ contract ComplexRewarder is IRewarder, Ownable {
     mapping(address => UserInfo) public userInfo;
 
     uint256 public tokenPerBlock;
-    // TODO: should we keep this constant or variable
     uint256 private constant ACC_TOKEN_PRECISION = 1e12;
 
     event OnReward(address indexed user, uint256 amount);
