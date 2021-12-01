@@ -4,6 +4,8 @@ export const decimals = ethers.BigNumber.from("1000000000000000000");
 export const totalSupply = ethers.BigNumber.from("1000000").mul(500).mul(decimals);
 export const triAddress = "0xFa94348467f64D5A457F75F8bc40495D33c65aBB";
 export const chefAddress = "0x1f1Ed214bef5E83D8f5d0eB5D7011EB965D0D79B";
+export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7"
+export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB"
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
