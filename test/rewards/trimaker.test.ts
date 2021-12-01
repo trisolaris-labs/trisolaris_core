@@ -15,6 +15,7 @@ describe("TriMaker", function () {
     this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.minter)
     this.UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory")
     this.UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair")
+    this.TriMakerExploitMock = await ethers.getContractFactory("TriMakerExploitMock")
     this.ZeroAddress = "0x0000000000000000000000000000000000000000"
   })
 
@@ -38,6 +39,8 @@ describe("TriMaker", function () {
     await this.bar.deployed()
     this.triMaker = await this.TriMaker.connect(this.minter).deploy(this.factory.address, this.bar.address, this.tri.address, this.weth.address)
     await this.triMaker.deployed()
+    this.exploiter = await this.TriMakerExploitMock.connect(this.minter).deploy(this.triMaker.address)
+    await this.exploiter.deployed()
 
     await createSLP(this, "triEth", this.tri, this.weth, getBigNumber(10), this.minter)
     await createSLP(this, "strudelEth", this.strudel, this.weth, getBigNumber(10), this.minter)
@@ -150,17 +153,15 @@ describe("TriMaker", function () {
       await expect(this.triMaker.convert(this.dai.address, this.mic.address)).to.be.reverted
     })
 
-    /*
     it("reverts if caller is not EOA", async function () {
-      await this.triEth.transfer(this.triMaker.address, getBigNumber(1))
+      await this.triEth.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1))
       await expect(this.exploiter.convert(this.tri.address, this.weth.address)).to.be.revertedWith("TriMaker: must use EOA")
     })
 
     it("reverts if pair does not exist", async function () {
       await expect(this.triMaker.convert(this.mic.address, this.micUSDC.address)).to.be.revertedWith("TriMaker: Invalid pair")
     })
-    */
-
+    
     it("reverts if no path is available", async function () {
       await this.micUSDC.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1))
       await expect(this.triMaker.convert(this.mic.address, this.usdc.address)).to.be.revertedWith("TriMaker: Cannot convert")
