@@ -1,12 +1,8 @@
 import { assert, expect } from "chai"
 import { ethers } from "hardhat";
 import { advanceBlockTo, advanceBlock } from "../time"
+import { getBigNumber } from "../utils"
 
-// Defaults to e18 using amount * 10^18
-export function getBigNumber(amount: any, decimals = 18) {
-    const BASE_TEN = 10
-    return ethers.BigNumber.from(amount).mul(ethers.BigNumber.from(BASE_TEN).pow(decimals))
-}
 
 describe("MasterChefV2", function () {
   before(async function () {
