@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   // Deploy dummy ERC20 LP token (auto mints full supply to deployer)
   const dummyERC20 = await ethers.getContractFactory("ERC20Mock", deployer);
   const dummyLPSupply = "100000000000000000000";
-  const dummyLP = await dummyERC20.deploy("DummyLP", "DLP", dummyLPSupply);
+  const dummyLP = await dummyERC20.connect(deployer).deploy("DummyLP", "DLP", dummyLPSupply);
   await dummyLP.deployed();
   console.log(`Dummy LP token address: ${dummyLP.address}`);
 
