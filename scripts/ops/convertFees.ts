@@ -4,14 +4,8 @@
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
 import { 
-    avaxAddress,
-    bnbAddress,
-    flxAddress,
-    triAddress,
-    maticAddress,
     triMakerAddress,
     wnearAddress,
-    empyrAddress,
     usdcAddress
 } from '../constants';
 
@@ -33,7 +27,7 @@ async function main(): Promise<void> {
     const triMaker = TriMaker.attach(triMakerAddress)
     console.log(`TriMaker deployed at: ${triMaker.address}`)
     
-    const tx = await triMaker.convert(empyrAddress, usdcAddress)
+    const tx = await triMaker.convert(usdcAddress, wnearAddress)
     const receipt = await tx.wait()
     console.log(receipt.logs)
 }

@@ -8,7 +8,10 @@ export const chefV2Address = "0x3838956710bcc9D122Dd23863a0549ca8D5675D6";
 export const triBarAddress = "0x802119e4e253D5C19aA06A5d567C5a41596D6803";
 export const triMakerAddress = "0xe793455c9728fc91A3E5a33FAfF9eB2F228aE151";
 export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7";
+export const usdcAddress = "0xB12BFcA5A55806AaF64E99521918A4bf0fC40802";
+export const usdtAddress = "0x4988a896b1227218e4A686fdE5EabdcAbd91571f";
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
+export const wbtcAddress = "0xF4eB217Ba2454613b15dBdea6e5f22276410e89e";
 export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
 export const auroraAddress = "0x8bec47865ade3b172a928df8f990bc7f2a3b9f79";
 

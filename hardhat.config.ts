@@ -26,6 +26,11 @@ if (!infuraApiKey) {
   throw new Error("Please set your INFURA_API_KEY in a .env file");
 }
 
+const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
+if (!infuraApiKey) {
+  throw new Error("Please set your AURORA_API_KEY in a .env file");
+}
+
 const etherscanKey: string | undefined = process.env.ETHERSCAN_API_KEY;
 if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
@@ -71,7 +76,7 @@ const config: HardhatUserConfig = {
       chainId: 1313161555,
     },
     aurora: {
-      url: "https://mainnet.aurora.dev/",
+      url: "https://mainnet.aurora.dev/" + auroraApiKey,
       accounts: {
         count: 10,
         initialIndex: 0,
