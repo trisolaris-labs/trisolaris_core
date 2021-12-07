@@ -3,6 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
+import { auroraAddress, chefV2Address } from './constants';
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -16,12 +17,10 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const rewardTokenAddress = "0x8E93fA976eCB6495086e68860261DeF4399E77B5"; //fAurora address (replace)
-  const lpAddress = "0x20F8AeFB5697B77E0BB835A8518BE70775cdA1b0"; //wnear-ETH LP Address
-  const chefV2Address = "0xBa3B61394873D0ED1d0d61793ef428c113069d96"; //Chef V2 Test Address (replace)
+  const lpAddress = "0xd1654a7713617d41A8C9530Fb9B948d00e162194"; //wnear-ETH LP Address
 
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  const rewarder = await complexRewarder.connect(deployer).deploy(rewardTokenAddress, lpAddress, "0", chefV2Address);
+  const rewarder = await complexRewarder.connect(deployer).deploy(auroraAddress, lpAddress, "0", chefV2Address);
   await rewarder.deployed();
   console.log(`Complex Rewarder address: ${rewarder.address}`);
 }

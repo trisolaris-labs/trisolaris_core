@@ -3,6 +3,8 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
+import { triAddress, chefAddress, zeroAddress } from './constants';
+
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -11,20 +13,21 @@ async function main(): Promise<void> {
   // await run("compile");
   // We get the contract to deploy
   const [_, deployer] = await ethers.getSigners();
+  console.log(deployer.address)
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
   const masterChef = await ethers.getContractFactory("MasterChef");
   const triToken = await ethers.getContractFactory("Tri");
 
-  const tri = triToken.attach("0xC6c3c200B8615d216CEa8E10Aa1B6DeAaCA25b24"); //Polygon TRI Contract (already deployed)
+  const tri = triToken.attach(triAddress); //Polygon TRI Contract (already deployed)
   console.log(`Tri address: ${tri.address}`);
-  const chef = masterChef.attach("0x7666076DF6Cf4c35A0E73C45bF98D69cd4B16134"); //Polygon ChefV1 Contract (already deployed)
+  const chef = masterChef.attach(chefAddress); //Polygon ChefV1 Contract (already deployed)
   console.log(`Chef address: ${chef.address}`);
 
   // Deploy dummy ERC20 LP token (auto mints full supply to deployer)
   const dummyERC20 = await ethers.getContractFactory("ERC20Mock", deployer);
-  const dummyLPSupply = "100000000000000000000";
+  const dummyLPSupply = "100";
   const dummyLP = await dummyERC20.connect(deployer).deploy("DummyLP", "DLP", dummyLPSupply);
   await dummyLP.deployed();
   console.log(`Dummy LP token address: ${dummyLP.address}`);
@@ -32,7 +35,7 @@ async function main(): Promise<void> {
   // Add dummy token as an LP pool on Masterchef V1
   const allocPoint = 0;
   const lpAddress = dummyLP.address;
-  const rewarderAddress = "0x0000000000000000000000000000000000000000";
+  const rewarderAddress = zeroAddress;
 
   const poolLength = await chef.poolLength();
   let canAddPool = true;

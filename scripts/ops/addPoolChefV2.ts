@@ -3,6 +3,8 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
+import { triAddress, chefV2Address, zeroAddress } from '../constants';
+
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -10,12 +12,12 @@ async function main(): Promise<void> {
   // to make sure everything is compiled
   // await run("compile");
   // We get the contract to deploy
-  const allocPoint = 14;
+  const allocPoint = 0;
   const lpAddresses = [
-    "0x63da4DB6Ef4e7C62168aB03982399F9588fCd198", // REPLACE THESE WITH LP WANTING TO ADD
-    "0x20F8AeFB5697B77E0BB835A8518BE70775cdA1b0",
+    "0x5eeC60F348cB1D661E4A5122CF4638c7DB7A886e",
+    "0xd1654a7713617d41A8C9530Fb9B948d00e162194",
   ];
-  const rewarderAddress = "0x0000000000000000000000000000000000000000";
+  const rewarderAddress = zeroAddress;
 
   const [_, deployer] = await ethers.getSigners();
   console.log(`Adding pools contracts with ${deployer.address}`);
@@ -23,12 +25,12 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const masterChef = await ethers.getContractFactory("MasterChefV2");
-  const triToken = await ethers.getContractFactory("fTri"); // REPLACE THIS WITH REAL TRI
+  const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
+  const triToken = await ethers.getContractFactory("Tri"); // REPLACE THIS WITH REAL TRI
 
-  const tri = triToken.attach("0x5b652E38a8be707c9838eB0A07bC7A828Bc62f40");
-  console.log(`fTri address: ${tri.address}`);
-  const chef = masterChef.attach("0xa229265a8C7655ae59C9081B5D5e85C453e28C78");
+  const tri = triToken.attach(triAddress);
+  console.log(`Tri address: ${tri.address}`);
+  const chef = masterChefV2.attach(chefV2Address);
   console.log(`Chef address: ${chef.address}`);
 
   for (let j = 0; j < lpAddresses.length; j++) {

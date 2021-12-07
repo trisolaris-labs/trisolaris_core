@@ -3,6 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
+import { auroraAddress, chefV2Address } from '../constants';
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -18,7 +19,6 @@ async function main(): Promise<void> {
 
   const rewarderAddress = "0x4a1ce509e5Cc639b1c90113Abfba3693016549d9";
 
-  const chefV2Address = "0xBa3B61394873D0ED1d0d61793ef428c113069d96";
   const chefV2Contract = await ethers.getContractFactory("MasterChefV2");
   const chefv2 = chefV2Contract.attach(chefV2Address);
 
