@@ -10,12 +10,6 @@ import "../libraries/SignedSafeMath.sol";
 import "../interfaces/IRewarder.sol";
 import "../interfaces/IMasterChef.sol";
 
-interface IMigratorChef {
-    // Take the current LP token address and return the new LP token address.
-    // Migrator should have full access to the caller's LP token.
-    function migrate(IERC20 token) external returns (IERC20);
-}
-
 /// @notice The (older) MasterChef contract gives out a constant number of TRI tokens per block.
 /// It is the only address with minting rights for TRI.
 /// The idea for this MasterChef V2 (MCV2) contract is therefore to be the owner of a dummy token
@@ -50,9 +44,6 @@ contract MasterChefV2 is Ownable {
     IERC20 public immutable TRI;
     /// @notice The index of MCV2 master pool in MCV1.
     uint256 public immutable MASTER_PID;
-    // @notice The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigratorChef public migrator;
-
     /// @notice Info of each MCV2 pool.
     PoolInfo[] public poolInfo;
     /// @notice Address of the LP token for each MCV2 pool.
@@ -61,7 +52,7 @@ contract MasterChefV2 is Ownable {
     IRewarder[] public rewarder;
 
     /// @notice Info of each user that stakes LP tokens.
-    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint;
 
@@ -79,7 +70,11 @@ contract MasterChefV2 is Ownable {
     /// @param _MASTER_CHEF The TriSwap MCV1 contract address.
     /// @param _tri The TRI token contract address.
     /// @param _MASTER_PID The pool ID of the dummy token on the base MCV1 contract.
-    constructor(IMasterChef _MASTER_CHEF, IERC20 _tri, uint256 _MASTER_PID) public {
+    constructor(
+        IMasterChef _MASTER_CHEF,
+        IERC20 _tri,
+        uint256 _MASTER_PID
+    ) public {
         MASTER_CHEF = _MASTER_CHEF;
         TRI = _tri;
         MASTER_PID = _MASTER_PID;
@@ -108,17 +103,19 @@ contract MasterChefV2 is Ownable {
     /// @param allocPoint AP of the new pool.
     /// @param _lpToken Address of the LP ERC-20 token.
     /// @param _rewarder Address of the rewarder delegate.
-    function add(uint256 allocPoint, IERC20 _lpToken, IRewarder _rewarder) public onlyOwner {
+    function add(
+        uint256 allocPoint,
+        IERC20 _lpToken,
+        IRewarder _rewarder
+    ) public onlyOwner {
         uint256 lastRewardBlock = block.number;
         totalAllocPoint = totalAllocPoint.add(allocPoint);
         lpToken.push(_lpToken);
         rewarder.push(_rewarder);
 
-        poolInfo.push(PoolInfo({
-            allocPoint: allocPoint.to64(),
-            lastRewardBlock: lastRewardBlock.to64(),
-            accTriPerShare: 0
-        }));
+        poolInfo.push(
+            PoolInfo({ allocPoint: allocPoint.to64(), lastRewardBlock: lastRewardBlock.to64(), accTriPerShare: 0 })
+        );
         emit LogPoolAddition(lpToken.length.sub(1), allocPoint, _lpToken, _rewarder);
     }
 
@@ -127,29 +124,18 @@ contract MasterChefV2 is Ownable {
     /// @param _allocPoint New AP of the pool.
     /// @param _rewarder Address of the rewarder delegate.
     /// @param overwrite True if _rewarder should be `set`. Otherwise `_rewarder` is ignored.
-    function set(uint256 _pid, uint256 _allocPoint, IRewarder _rewarder, bool overwrite) public onlyOwner {
+    function set(
+        uint256 _pid,
+        uint256 _allocPoint,
+        IRewarder _rewarder,
+        bool overwrite
+    ) public onlyOwner {
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         poolInfo[_pid].allocPoint = _allocPoint.to64();
-        if (overwrite) { rewarder[_pid] = _rewarder; }
+        if (overwrite) {
+            rewarder[_pid] = _rewarder;
+        }
         emit LogSetPool(_pid, _allocPoint, overwrite ? _rewarder : rewarder[_pid], overwrite);
-    }
-
-    /// @notice Set the `migrator` contract. Can only be called by the owner.
-    /// @param _migrator The contract address to set.
-    function setMigrator(IMigratorChef _migrator) public onlyOwner {
-        migrator = _migrator;
-    }
-
-    /// @notice Migrate LP token to another LP contract through the `migrator` contract.
-    /// @param _pid The index of the pool. See `poolInfo`.
-    function migrate(uint256 _pid) public {
-        require(address(migrator) != address(0), "MasterChefV2: no migrator set");
-        IERC20 _lpToken = lpToken[_pid];
-        uint256 bal = _lpToken.balanceOf(address(this));
-        _lpToken.approve(address(migrator), bal);
-        IERC20 newLpToken = migrator.migrate(_lpToken);
-        require(bal == newLpToken.balanceOf(address(this)), "MasterChefV2: migrated balance must match");
-        lpToken[_pid] = newLpToken;
     }
 
     /// @notice View function to see pending TRI on frontend.
@@ -180,8 +166,9 @@ contract MasterChefV2 is Ownable {
 
     /// @notice Calculates and returns the `amount` of TRI per block.
     function triPerBlock() public view returns (uint256 amount) {
-        amount = uint256(MASTER_CHEF.triPerBlock())
-            .mul(MASTER_CHEF.poolInfo(MASTER_PID).allocPoint) / MASTER_CHEF.totalAllocPoint();
+        amount =
+            uint256(MASTER_CHEF.triPerBlock()).mul(MASTER_CHEF.poolInfo(MASTER_PID).allocPoint) /
+            MASTER_CHEF.totalAllocPoint();
     }
 
     /// @notice Update reward variables of the given pool.
@@ -206,7 +193,11 @@ contract MasterChefV2 is Ownable {
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param amount LP token amount to deposit.
     /// @param to The receiver of `amount` deposit benefit.
-    function deposit(uint256 pid, uint256 amount, address to) public {
+    function deposit(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) public {
         harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][to];
@@ -230,7 +221,11 @@ contract MasterChefV2 is Ownable {
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param amount LP token amount to withdraw.
     /// @param to Receiver of the LP tokens.
-    function withdraw(uint256 pid, uint256 amount, address to) public {
+    function withdraw(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) public {
         harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
@@ -244,7 +239,7 @@ contract MasterChefV2 is Ownable {
         if (address(_rewarder) != address(0)) {
             _rewarder.onTriReward(pid, msg.sender, to, 0, user.amount);
         }
-        
+
         lpToken[pid].safeTransfer(to, amount);
 
         emit Withdraw(msg.sender, pid, amount, to);
@@ -267,20 +262,24 @@ contract MasterChefV2 is Ownable {
         if (_pendingTri != 0) {
             TRI.safeTransfer(to, _pendingTri);
         }
-        
+
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onTriReward( pid, msg.sender, to, _pendingTri, user.amount);
+            _rewarder.onTriReward(pid, msg.sender, to, _pendingTri, user.amount);
         }
 
         emit Harvest(msg.sender, pid, _pendingTri);
     }
-    
+
     /// @notice Withdraw LP tokens from MCV2 and harvest proceeds for transaction sender to `to`.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param amount LP token amount to withdraw.
     /// @param to Receiver of the LP tokens and TRI rewards.
-    function withdrawAndHarvest(uint256 pid, uint256 amount, address to) public {
+    function withdrawAndHarvest(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) public {
         harvestFromMasterChef();
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
@@ -290,7 +289,7 @@ contract MasterChefV2 is Ownable {
         // Effects
         user.rewardDebt = accumulatedTri.sub(int256(amount.mul(pool.accTriPerShare) / ACC_TRI_PRECISION));
         user.amount = user.amount.sub(amount);
-        
+
         // Interactions
         TRI.safeTransfer(to, _pendingTri);
 
