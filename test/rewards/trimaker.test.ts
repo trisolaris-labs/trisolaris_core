@@ -146,6 +146,17 @@ describe("TriMaker", function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("1200963016721363748")
     })
 
+    it("converts DAI/MIC using three step path", async function () {
+      await this.daiMIC.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1))
+      await this.triMaker.setBridge(this.dai.address, this.usdc.address)
+      await this.triMaker.setBridge(this.mic.address, this.usdc.address)
+      await this.triMaker.setBridge(this.usdc.address, this.tri.address)
+      await this.triMaker.convert(this.dai.address, this.mic.address)
+      expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(0)
+      expect(await this.daiMIC.balanceOf(this.triMaker.address)).to.equal(0)
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal("1531009044423350047")
+    })
+
     it("reverts if it loops back", async function () {
       await this.daiMIC.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1))
       await this.triMaker.setBridge(this.dai.address, this.mic.address)
