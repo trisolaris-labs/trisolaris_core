@@ -4,6 +4,7 @@
 // Runtime Environment's members available in the global scope.
 import { zeroAddress } from 'ethereumjs-util';
 import { ethers } from 'hardhat';
+import { chefAddress } from '../constants';
 
 
 async function main(): Promise<void> {
@@ -13,8 +14,8 @@ async function main(): Promise<void> {
     // await run("compile");
     // We get the contract to deploy
     const allocPoint = 0
-    const poolId = 5
-    const lpAddress = "0x84b123875F0F36B966d0B6Ca14b31121bd9676AD"
+    const poolId = 6
+    const lpAddress = "0x5eeC60F348cB1D661E4A5122CF4638c7DB7A886e"
     const rewarderAddress = "0x0000000000000000000000000000000000000000"
 
 
@@ -25,8 +26,7 @@ async function main(): Promise<void> {
     console.log(`Account balance: ${balance.toString()}`)
 
     const masterChef = await ethers.getContractFactory("MasterChef")
-
-    const chef = masterChef.attach("0x1f1Ed214bef5E83D8f5d0eB5D7011EB965D0D79B")
+    const chef = masterChef.attach(chefAddress)
     console.log(`Chef address: ${chef.address}`)
 
     const poolInfo = await chef.poolInfo(poolId)

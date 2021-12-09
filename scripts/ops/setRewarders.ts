@@ -17,14 +17,26 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const rewarderAddress = "0x4a1ce509e5Cc639b1c90113Abfba3693016549d9";
+  const poolId = 0
+  const rewarderAddress = "0x94669d7a170bfe62FAc297061663e0B48C63B9B5";
 
   const chefV2Contract = await ethers.getContractFactory("MasterChefV2");
   const chefv2 = chefV2Contract.attach(chefV2Address);
+  const rewarderContract = await ethers.getContractFactory("ComplexRewarder");
+  const rewarder = rewarderContract.attach(rewarderAddress);
 
-  const rewarderSetTx = await chefv2.connect(deployer).set(1, 14, rewarderAddress, true);
-  const rewarderSetReceipt = await rewarderSetTx.wait();
-  console.log(rewarderSetReceipt.logs);
+  const poolLpToken = await chefv2.lpToken(poolId);
+  const rewarderLpToken = await rewarder.lpToken();
+  const poolInfo = await chefv2.poolInfo(poolId);
+  
+  if (poolLpToken === rewarderLpToken) {
+    console.log("Reached here")
+    /*
+    const rewarderSetTx = await chefv2.connect(deployer).set(poolId, poolInfo.allocPoint, rewarderAddress, true);
+    const rewarderSetReceipt = await rewarderSetTx.wait();
+    console.log(rewarderSetReceipt.logs);  
+    */
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
