@@ -2,9 +2,8 @@
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { zeroAddress } from 'ethereumjs-util';
 import { ethers } from 'hardhat';
-import { chefAddress } from '../constants';
+import { triAddress, chefV2Address, zeroAddress } from '../constants';
 
 
 async function main(): Promise<void> {
@@ -13,10 +12,10 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const allocPoint = 0
-    const poolId = 6
-    const lpAddress = "0x5eeC60F348cB1D661E4A5122CF4638c7DB7A886e"
-    const rewarderAddress = "0x0000000000000000000000000000000000000000"
+    const allocPoint = 71
+    const poolId = 1
+    const lpAddress = "0xd1654a7713617d41A8C9530Fb9B948d00e162194"
+    const rewarderAddress = zeroAddress
 
 
     const [_, deployer] = await ethers.getSigners();
@@ -25,15 +24,17 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const masterChef = await ethers.getContractFactory("MasterChef")
-    const chef = masterChef.attach(chefAddress)
-    console.log(`Chef address: ${chef.address}`)
+    const masterChefV2 = await ethers.getContractFactory("MasterChefV2")
 
-    const poolInfo = await chef.poolInfo(poolId)
+    const chefv2 = masterChefV2.attach(chefV2Address)
+    console.log(`Chef v2 address: ${chefv2.address}`)
+
+    const poolInfo = await chefv2.poolInfo(poolId)
+    const poolLpToken = await chefv2.lpToken(poolId)
     console.log(poolInfo)
-    if (poolInfo.lpToken == lpAddress) {
+    if (poolLpToken == lpAddress) {
         console.log("reached here")
-        const tx = await chef.connect(deployer).set(poolId, allocPoint, false, rewarderAddress, false) 
+        const tx = await chefv2.connect(deployer).set(poolId, allocPoint, rewarderAddress, false) 
         const receipt = await tx.wait()
         console.log(receipt)
     }
