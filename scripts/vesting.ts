@@ -17,9 +17,9 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const vestingBegin = 1640995200; // 19th Nov 2021 00:00 UTC
-    const vestingCliff = 1640995200; // 19th Dec 2021 00:00 UTC
-    const vestingEnd = 1669852800; // 19th Nov 2022 00:00 UTC
+    const vestingBegin = 1640995200; // 1st Jan 2022 00:00 UTC
+    const vestingCliff = 1647734400; // 20th Mar 2022 00:00 UTC
+    const vestingEnd = 1669852800; // 1st Dec 2022 00:00 UTC
     const vestingAmount = totalSupply.mul(1).div(100);
     const recepientAddress = specialistAddress;
     
