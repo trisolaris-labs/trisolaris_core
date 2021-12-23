@@ -11,22 +11,24 @@ async function main(): Promise<void> {
   // to make sure everything is compiled
   // await run("compile");
   // We get the contract to deploy
-  const [deployer] = await ethers.getSigners();
+  const [_, deployer] = await ethers.getSigners();
   console.log(`Address: ${deployer.address}`);
 
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const rewarderAddress = "0x657a2cf442249f74806E79E5BE662FD3933A9b5c"
+  const rewarderAddress = "0x78EdEeFdF8c3ad827228d07018578E89Cf159Df1"
 
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
   const rewarder = complexRewarder.attach(rewarderAddress);
+  console.log(`Complex Rewarder address: ${rewarder.address}`);
 
-  const tx = await rewarder.transferOwnership(donDeployerAddress);
+  const tx = await rewarder.connect(deployer).transferOwnership(donDeployerAddress);
   const receipt = await tx.wait()
   console.log(receipt)
-
-  console.log(`Complex Rewarder address: ${rewarder.address}`);
+  
+  const newOwner = await rewarder.owner();
+  console.log("New owner", newOwner)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
