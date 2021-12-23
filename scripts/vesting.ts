@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
-import { triAddress, babooRecepientAddress, chainRecepientAddress, totalSupply, donRecepientAddress, dfRecepientAddress, kRecepientAddress, decimals } from './constants';
+import { triAddress, totalSupply, specialistAddress } from './constants';
 
 
 async function main(): Promise<void> {
@@ -17,9 +17,11 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const vestingBegin = 1637280000; // 19th Nov 2021 00:00 UTC
-    const vestingCliff = 1639872000; // 19th Dec 2021 00:00 UTC
-    const vestingEnd = 1668816000; // 19th Nov 2022 00:00 UTC
+    const vestingBegin = 1640995200; // 19th Nov 2021 00:00 UTC
+    const vestingCliff = 1640995200; // 19th Dec 2021 00:00 UTC
+    const vestingEnd = 1669852800; // 19th Nov 2022 00:00 UTC
+    const vestingAmount = totalSupply.mul(1).div(100);
+    const recepientAddress = specialistAddress;
     
     const triToken = await ethers.getContractFactory("Tri")
     const vesterContract = await ethers.getContractFactory("Vester")
@@ -27,11 +29,12 @@ async function main(): Promise<void> {
     const triBalance = await tri.balanceOf(deployer.address)
     console.log(`Tri balance: ${triBalance.toString()}`)
 
+    /*
     // Things to change
     const vestingOptions = [
         {
-            recepient: babooRecepientAddress,
-            vestingAmount: totalSupply.mul(4).div(100), // 4% of supply
+            recepient: specialistAddress,
+            vestingAmount: totalSupply.mul(1).div(100), // 4% of supply
             vestingContractAddress: "0x0A0Dc69d4d6042a961E7f6D9e87B53df0C079E2b",
         }
     ]
@@ -69,18 +72,18 @@ async function main(): Promise<void> {
             console.log(receipt.logs);
         }
     }
+    */
 
-    /*
-    const treasuryVester = await vester.connect(deployer).deploy(
+    const treasuryVester = await vesterContract.connect(deployer).deploy(
         tri.address,
-        recepient,
+        recepientAddress,
         vestingAmount,
         vestingBegin,
         vestingCliff,
         vestingEnd,
     );
     console.log(`Vester address: ${treasuryVester.address}`)
-    */
+
 
     /*
     const tx = await tri.transfer(treasuryVester.address, vestingAmount);
