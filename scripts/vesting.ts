@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
-import { triAddress, totalSupply, specialistAddress } from './constants';
+import { triAddress, totalSupply, specialistAddress, decimals } from './constants';
 
 
 async function main(): Promise<void> {
@@ -20,8 +20,6 @@ async function main(): Promise<void> {
     const vestingBegin = 1640995200; // 1st Jan 2022 00:00 UTC
     const vestingCliff = 1647734400; // 20th Mar 2022 00:00 UTC
     const vestingEnd = 1669852800; // 1st Dec 2022 00:00 UTC
-    const vestingAmount = totalSupply.mul(1).div(100);
-    const recepientAddress = specialistAddress;
     
     const triToken = await ethers.getContractFactory("Tri")
     const vesterContract = await ethers.getContractFactory("Vester")
@@ -29,13 +27,12 @@ async function main(): Promise<void> {
     const triBalance = await tri.balanceOf(deployer.address)
     console.log(`Tri balance: ${triBalance.toString()}`)
 
-    /*
     // Things to change
     const vestingOptions = [
         {
             recepient: specialistAddress,
-            vestingAmount: totalSupply.mul(1).div(100), // 4% of supply
-            vestingContractAddress: "0x0A0Dc69d4d6042a961E7f6D9e87B53df0C079E2b",
+            vestingAmount: totalSupply.mul(1).div(100), // 1% of supply
+            vestingContractAddress: "0xCB0A382Bf9AD8ba0b76532261C17B04D902CeA9A",
         }
     ]
     
@@ -64,6 +61,8 @@ async function main(): Promise<void> {
             ) {
             console.log("reached here")
             console.log(vestingOption.vestingAmount.div(decimals).toString())
+            console.log(vestingOption.vestingContractAddress)
+            
             const tx = await tri.connect(deployer).transfer(
                 vestingOption.vestingContractAddress, 
                 vestingOption.vestingAmount
@@ -72,8 +71,8 @@ async function main(): Promise<void> {
             console.log(receipt.logs);
         }
     }
-    */
-
+    
+    /*
     const treasuryVester = await vesterContract.connect(deployer).deploy(
         tri.address,
         recepientAddress,
@@ -83,7 +82,7 @@ async function main(): Promise<void> {
         vestingEnd,
     );
     console.log(`Vester address: ${treasuryVester.address}`)
-
+    */
 
     /*
     const tx = await tri.transfer(treasuryVester.address, vestingAmount);
