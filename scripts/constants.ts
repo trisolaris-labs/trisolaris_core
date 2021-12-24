@@ -18,3 +18,4 @@ export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
 export const chainRecepientAddress = "0x504680C453F458F2f832cf66744C211b148BA8A6";
 export const dfRecepientAddress = "0x49D8B1389df580B1602Ae385D32b9c5A7Ceb2e25";
 export const kRecepientAddress = "0x464bCBD80Ab3Ec89A93F1667DafB682d14634A5e";
+export const donDeployerAddress = "0x25b9B32d875E4b1b0ec8b74ecF4f0A2aF8e96322";
