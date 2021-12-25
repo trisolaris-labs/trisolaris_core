@@ -15,13 +15,14 @@ export const wbtcAddress = "0xF4eB217Ba2454613b15dBdea6e5f22276410e89e";
 export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
 export const auroraAddress = "0x8bec47865ade3b172a928df8f990bc7f2a3b9f79";
 
-export const usdcAddress = "0xB12BFcA5A55806AaF64E99521918A4bf0fC40802";
-export const usdtAddress = "0x4988a896b1227218e4A686fdE5EabdcAbd91571f";
 export const flxAddress = "0xea62791aa682d455614eaA2A12Ba3d9A2fD197af"
 export const empyrAddress = "0xE9F226a228Eb58d408FdB94c3ED5A18AF6968fE1"
 export const avaxAddress = "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844"
 export const bnbAddress = "0x2bF9b864cdc97b08B6D79ad4663e71B8aB65c45c"
 export const maticAddress = "0x6aB6d61428fde76768D7b45D8BFeec19c6eF91A8"
+export const atLunaAddress = "0xC4bdd27c33ec7daa6fcfd8532ddB524Bf4038096";
+export const atUstAddress = "0x5ce9F0B6AFb36135b5ddBF11705cEB65E634A9dC";
+export const aShibamAddress = "0x48687fB162A735a3FedD47a98Fcbf58Be3ed4538";
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
