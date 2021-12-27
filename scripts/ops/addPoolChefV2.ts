@@ -14,8 +14,7 @@ async function main(): Promise<void> {
   // We get the contract to deploy
   const allocPoint = 0;
   const lpAddresses = [
-    "0x5eeC60F348cB1D661E4A5122CF4638c7DB7A886e",
-    "0xd1654a7713617d41A8C9530Fb9B948d00e162194",
+    "0x61C9E05d1Cdb1b70856c7a2c53fA9c220830633c",
   ];
   const rewarderAddress = zeroAddress;
 
