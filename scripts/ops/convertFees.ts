@@ -10,7 +10,9 @@ import {
     triAddress,
     maticAddress,
     triMakerAddress,
-    wnearAddress
+    wnearAddress,
+    empyrAddress,
+    usdcAddress
 } from '../constants';
 
 async function main(): Promise<void> {
@@ -31,7 +33,7 @@ async function main(): Promise<void> {
     const triMaker = TriMaker.attach(triMakerAddress)
     console.log(`TriMaker deployed at: ${triMaker.address}`)
     
-    const tx = await triMaker.convert(maticAddress, wnearAddress)
+    const tx = await triMaker.convert(empyrAddress, usdcAddress)
     const receipt = await tx.wait()
     console.log(receipt.logs)
 }
