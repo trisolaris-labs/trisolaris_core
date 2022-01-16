@@ -11,6 +11,12 @@ export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7";
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
 export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
 export const auroraAddress = "0x8bec47865ade3b172a928df8f990bc7f2a3b9f79";
+
+export const flxAddress = "0xea62791aa682d455614eaA2A12Ba3d9A2fD197af"
+export const empyrAddress = "0xE9F226a228Eb58d408FdB94c3ED5A18AF6968fE1"
+export const avaxAddress = "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844"
+export const bnbAddress = "0x2bF9b864cdc97b08B6D79ad4663e71B8aB65c45c"
+export const maticAddress = "0x6aB6d61428fde76768D7b45D8BFeec19c6eF91A8"
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
