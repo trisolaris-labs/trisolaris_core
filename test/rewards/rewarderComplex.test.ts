@@ -245,6 +245,36 @@ describe("Complex Rewarder", function () {
       expect(await this.rewardToken.balanceOf(this.carol.address)).to.equal("2700")
       // All of them should have 1000 LPs back.
     })
+
+    it("should distribute no TRIs only rewardToken since tri emission is 0 for this pool", async function () {
+      this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
+      await this.lp2.deployed()
+
+      this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp2.address, "0", this.chefv2.address)
+      await this.rewarder.deployed()
+      await this.rewarder.setRewardRate(100)
+      await this.rewardToken.transfer(this.rewarder.address, "1000000000000")
+
+      await this.chefv2.connect(this.minter).add("10", this.lp.address, this.ZeroAddress)
+      await this.chefv2.connect(this.minter).add("0", this.lp2.address, this.rewarder.address)
+      await this.lp2.connect(this.minter).transfer(this.alice.address, "1000")
+      await this.lp2.connect(this.alice).approve(this.chefv2.address, "1000", {
+        from: this.alice.address,
+      })
+
+      // Alice deposits 10 LPs at block 5010
+      await advanceBlockTo("10599")
+      await this.chefv2.connect(this.alice).deposit(1, "10", this.alice.address)
+      // Alice gets 500 reward tokens in 5 blocks
+      await advanceBlockTo("10604")
+      expect(await this.chefv2.pendingTri("1", this.alice.address)).to.equal("0")
+      const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0")
+      expect(rewardAlice.rewardAmounts[0]).to.equal("400")
+      
+      await this.chefv2.connect(this.alice).harvest(1, this.alice.address)
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal("0")
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.equal("500")
+    })
   })
   
 })
