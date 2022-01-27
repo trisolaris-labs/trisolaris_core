@@ -262,7 +262,7 @@ describe("Complex Rewarder", function () {
         from: this.alice.address,
       })
 
-      // Alice deposits 10 LPs at block 5010
+      // Alice deposits 10 LPs at block 10599
       await advanceBlockTo("10599")
       await this.chefv2.connect(this.alice).deposit(1, "10", this.alice.address)
       // Alice gets 500 reward tokens in 5 blocks
