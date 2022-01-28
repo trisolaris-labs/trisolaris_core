@@ -1,40 +1,30 @@
 import { ethers } from "hardhat";
-import { Contract, BigNumber, ContractFactory, Signer } from 'ethers'
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
-import { LPToken__factory, SwapFlashLoan__factory, ERC20Mock__factory } from "../../typechain"
 
-import { asyncForEach, MAX_UINT256 } from "./testUtils"
+// import { LPToken__factory, SwapFlashLoan__factory, ERC20Mock__factory } from "../../typechain"
+// import { Contract, BigNumber, ContractFactory, Signer } from 'ethers'
+// import { asyncForEach, MAX_UINT256 } from "./testUtils"
 
 chai.use(solidity);
 const { expect } = chai;
 
-describe("LPToken", async () => {
-  let signers: Array<Signer>
-  let owner: Signer
-  let firstToken: LPToken
-  let lpTokenFactory: ContractFactory
-
-  const setupTest = deployments.createFixture(
-    async ({ deployments, ethers }) => {
-      await deployments.fixture() // ensure you start from a fresh deployments
-
-      signers = await ethers.getSigners()
-      owner = signers[0]
-      lpTokenFactory = await ethers.getContractFactory("LPToken")
-    },
-  )
-
-  beforeEach(async () => {
-    await setupTest()
+describe("LPToken", function () {
+  before(async function () {
+    this.signers = await ethers.getSigners()
+    this.owner = this.signers[0]
+    
+    this.MAX_UINT256 = ethers.constants.MaxUint256
+    this.LpTokenFactory = await ethers.getContractFactory("LPToken")
+    
   })
 
-  it("Reverts when minting 0", async () => {
+  it("Reverts when minting 0", async function () {
     // Deploy dummy tokens
-    firstToken = (await lpTokenFactory.deploy()) as LPToken
+    const firstToken = await this.LpTokenFactory.deploy()
     firstToken.initialize("Test Token", "TEST")
     await expect(
-      firstToken.mint(await owner.getAddress(), 0),
+      firstToken.mint(await this.owner.getAddress(), 0),
     ).to.be.revertedWith("LPToken: cannot mint 0")
   })
 
@@ -84,4 +74,5 @@ describe("LPToken", async () => {
       lpToken.transfer(lpToken.address, String(100e18)),
     ).to.be.revertedWith("LPToken: cannot send to itself")
   })
+
 })
