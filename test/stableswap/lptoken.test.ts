@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
+import { setupStableSwap, getBigNumber } from "../utils"
 
-// import { LPToken__factory, SwapFlashLoan__factory, ERC20Mock__factory } from "../../typechain"
+
 // import { Contract, BigNumber, ContractFactory, Signer } from 'ethers'
 // import { asyncForEach, MAX_UINT256 } from "./testUtils"
 
@@ -15,63 +16,34 @@ describe("LPToken", function () {
     this.owner = this.signers[0]
     
     this.MAX_UINT256 = ethers.constants.MaxUint256
-    this.LpTokenFactory = await ethers.getContractFactory("LPToken")
-    
   })
 
   it("Reverts when minting 0", async function () {
     // Deploy dummy tokens
-    const firstToken = await this.LpTokenFactory.deploy()
-    firstToken.initialize("Test Token", "TEST")
+    await setupStableSwap(this, this.owner)
     await expect(
-      firstToken.mint(await this.owner.getAddress(), 0),
+      this.lpTokenBase.mint(await this.owner.getAddress(), 0),
     ).to.be.revertedWith("LPToken: cannot mint 0")
   })
 
-  it("Reverts when transferring the token to itself", async () => {
-    const swap = (await ethers.getContractAt(
-      "SwapFlashLoan",
-      (
-        await get("SaddleUSDPool")
-      ).address,
-    )) as SwapFlashLoan
-    const lpToken = (await ethers.getContractAt(
-      "LPToken",
-      (
-        await get("SaddleUSDPoolLPToken")
-      ).address,
-    )) as LPToken
+  it("Reverts when transferring the token to itself", async function () {
+    await setupStableSwap(this, this.owner)
 
-    const ownerAddress = await owner.getAddress()
+    await this.dai.approve(this.swapFlashLoan.address, this.MAX_UINT256)
+    await this.usdc.approve(this.swapFlashLoan.address, this.MAX_UINT256)
 
-    await asyncForEach(["DAI", "USDC", "USDT"], async (tokenName) => {
-      const token = (await ethers.getContractAt(
-        "GenericERC20",
-        (
-          await get(tokenName)
-        ).address,
-      )) as GenericERC20
-      await token.mint(
-        ownerAddress,
-        BigNumber.from(10)
-          .pow(await token.decimals())
-          .mul(1000),
-      )
-      await token.approve(swap.address, MAX_UINT256)
-    })
-
-    await swap.addLiquidity(
-      [String(100e18), String(100e6), String(100e6)],
-      0,
-      MAX_UINT256,
+    const tx = await this.swapFlashLoan.addLiquidity(
+      [getBigNumber(100), getBigNumber(100)],
+      1,
+      this.MAX_UINT256,
     )
 
     // Verify current balance
-    expect(await lpToken.balanceOf(ownerAddress)).to.eq(String(300e18))
+    expect(await this.lpToken.balanceOf(this.owner.address)).to.eq(String(200e18))
 
     // Transferring LPToken to itself should revert
     await expect(
-      lpToken.transfer(lpToken.address, String(100e18)),
+      this.lpToken.transfer(this.lpToken.address, String(100e18)),
     ).to.be.revertedWith("LPToken: cannot send to itself")
   })
 
