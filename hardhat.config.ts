@@ -27,7 +27,7 @@ if (!infuraApiKey) {
 }
 
 const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
-if (!infuraApiKey) {
+if (!auroraApiKey) {
   throw new Error("Please set your AURORA_API_KEY in a .env file");
 }
 
