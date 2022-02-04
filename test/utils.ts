@@ -1,4 +1,7 @@
 import { ethers } from "hardhat";
+import { BigNumber, Signer } from "ethers"
+import { ERC20 } from "../typechain"
+
 
 // Defaults to e18 using amount * 10^18
 export function getBigNumber(amount: any, decimals = 18) {
@@ -20,7 +23,7 @@ export async function createSLP(thisObject: any, name: string, tokenA: any, toke
     await thisObject[name].mint(minter.address)
   }
 
-  export async function setupStableSwap(thisObject: any, owner: any) {
+export async function setupStableSwap(thisObject: any, owner: any) {
     
     const LpTokenFactory = await ethers.getContractFactory("LPToken", owner)
     thisObject.lpTokenBase = await LpTokenFactory.deploy()
@@ -45,36 +48,30 @@ export async function createSLP(thisObject: any, name: string, tokenA: any, toke
     )
     thisObject.swapFlashLoan = await SwapFlashLoanFactory.connect(owner).deploy()
     await thisObject.swapFlashLoan.deployed()
-    
-    // deploying mock tokens
-    const ERC20Mock = await ethers.getContractFactory("ERC20Mock", owner)
-    thisObject.dai = await ERC20Mock.connect(owner).deploy("DAI", "DAI",  6, getBigNumber("100", 6))
-    await thisObject.dai.deployed()
-    thisObject.usdc = await ERC20Mock.connect(owner).deploy("USDC", "USDC",  18, getBigNumber("100"))
-    await thisObject.usdc.deployed()
-    
-    // Constructor arguments
-    const TOKEN_ADDRESSES = [
-        thisObject.dai.address,
-        thisObject.usdc.address,
-      ]
-    const TOKEN_DECIMALS = [6, 18]
-    const LP_TOKEN_NAME = "Saddle DAI/USDC"
-    const LP_TOKEN_SYMBOL = "saddleTestUSD"
-    const INITIAL_A = 400
-    const SWAP_FEE = 4e6 // 4bps
-    const ADMIN_FEE = 1e6 //1bps
+}
 
-    await thisObject.swapFlashLoan.connect(owner).initialize(
-        TOKEN_ADDRESSES,
-        TOKEN_DECIMALS,
-        LP_TOKEN_NAME,
-        LP_TOKEN_SYMBOL,
-        INITIAL_A,
-        SWAP_FEE,
-        ADMIN_FEE,
-        thisObject.lpTokenBase.address,
-    )
-    const swapStorage = await thisObject.swapFlashLoan.swapStorage()
-    thisObject.lpToken = LpTokenFactory.attach(swapStorage.lpToken)
+export async function asyncForEach<T>(
+    array: Array<T>,
+    callback: (item: T, index: number) => void,
+  ): Promise<void> {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index)
+    }
+}
+
+export async function getUserTokenBalances(
+    address: string | Signer,
+    tokens: ERC20[],
+  ): Promise<BigNumber[]> {
+    const balanceArray = []
+  
+    if (address instanceof Signer) {
+      address = await address.getAddress()
+    }
+  
+    for (const token of tokens) {
+      balanceArray.push(await token.balanceOf(address))
+    }
+  
+    return balanceArray
   }
