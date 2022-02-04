@@ -33,7 +33,7 @@ describe("LPToken", function () {
     await this.usdc.approve(this.swapFlashLoan.address, this.MAX_UINT256)
 
     const tx = await this.swapFlashLoan.addLiquidity(
-      [getBigNumber(100), getBigNumber(100)],
+      [getBigNumber(100, 6), getBigNumber(100)],
       1,
       this.MAX_UINT256,
     )

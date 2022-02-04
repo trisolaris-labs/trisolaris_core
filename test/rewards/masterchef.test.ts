@@ -51,7 +51,7 @@ describe("MasterChef", function () {
 
   context("With ERC/LP token added to the field without rewards", function () {
     beforeEach(async function () {
-      this.lp = await this.ERC20Mock.deploy("LPToken", "LP", "10000000000")
+      this.lp = await this.ERC20Mock.deploy("LPToken", "LP", 18, "10000000000")
 
       await this.lp.transfer(this.alice.address, "1000")
 
@@ -59,7 +59,7 @@ describe("MasterChef", function () {
 
       await this.lp.transfer(this.carol.address, "1000")
 
-      this.lp2 = await this.ERC20Mock.deploy("LPToken2", "LP2", "10000000000")
+      this.lp2 = await this.ERC20Mock.deploy("LPToken2", "LP2",  18, "10000000000")
 
       await this.lp2.transfer(this.alice.address, "1000")
 
@@ -242,7 +242,7 @@ describe("MasterChef", function () {
 
   context("With Rewards contract on a ERC/LP token", function () {
     beforeEach(async function () {
-      this.lp = await this.ERC20Mock.deploy("LPToken", "LP", "10000000000")
+      this.lp = await this.ERC20Mock.deploy("LPToken", "LP",  18, "10000000000")
 
       await this.lp.transfer(this.alice.address, "1000")
 
@@ -250,7 +250,7 @@ describe("MasterChef", function () {
 
       await this.lp.transfer(this.carol.address, "1000")
 
-      this.lp2 = await this.ERC20Mock.deploy("LPToken2", "LP2", "10000000000")
+      this.lp2 = await this.ERC20Mock.deploy("LPToken2", "LP2",  18, "10000000000")
 
       await this.lp2.transfer(this.alice.address, "1000")
 
@@ -258,7 +258,7 @@ describe("MasterChef", function () {
 
       await this.lp2.transfer(this.carol.address, "1000")
 
-      this.rewardToken = await this.ERC20Mock.deploy("RToken", "RWT", "10000000000")
+      this.rewardToken = await this.ERC20Mock.deploy("RToken", "RWT",  18, "10000000000")
       // The mock rewarder sends same amount of rewardToken == triAmount
     })
   

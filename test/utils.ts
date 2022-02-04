@@ -48,9 +48,9 @@ export async function createSLP(thisObject: any, name: string, tokenA: any, toke
     
     // deploying mock tokens
     const ERC20Mock = await ethers.getContractFactory("ERC20Mock", owner)
-    thisObject.dai = await ERC20Mock.connect(owner).deploy("DAI", "DAI", getBigNumber("100"))
+    thisObject.dai = await ERC20Mock.connect(owner).deploy("DAI", "DAI",  6, getBigNumber("100", 6))
     await thisObject.dai.deployed()
-    thisObject.usdc = await ERC20Mock.connect(owner).deploy("USDC", "USDC", getBigNumber("100"))
+    thisObject.usdc = await ERC20Mock.connect(owner).deploy("USDC", "USDC",  18, getBigNumber("100"))
     await thisObject.usdc.deployed()
     
     // Constructor arguments
@@ -58,7 +58,7 @@ export async function createSLP(thisObject: any, name: string, tokenA: any, toke
         thisObject.dai.address,
         thisObject.usdc.address,
       ]
-    const TOKEN_DECIMALS = [18, 18]
+    const TOKEN_DECIMALS = [6, 18]
     const LP_TOKEN_NAME = "Saddle DAI/USDC"
     const LP_TOKEN_SYMBOL = "saddleTestUSD"
     const INITIAL_A = 400
