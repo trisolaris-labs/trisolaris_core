@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IRewarder.sol";
 import "../interfaces/IMasterChefV2.sol";
+import "hardhat/console.sol";
+
 
 
 /**
@@ -22,30 +24,24 @@ contract ComplexNRewarder is IRewarder, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20[] public rewardTokens;
+    IERC20[] public rewardToken;
     IERC20 public immutable lpToken;
     IMasterChefV2 public immutable MCV2;
+    uint256 public immutable numRewardTokens;
 
-    /// @notice Info of each MCV2 user.
-    /// `amount` LP token amount the user has provided.
-    /// `rewardDebt` The amount of TRI entitled to the user.
-    struct UserInfo {
-        uint256 amount;
-        uint256[] rewardDebt;
-    }
+    
 
     /// @notice Info of each MCV2 poolInfo.
-    /// `accTokenPerShare` Amount of rewardTokens each LP token is worth.
+    /// `accTokenPerShare` Amount of rewardToken each LP token is worth.
     /// `lastRewardBlock` The last block rewards were rewarded to the poolInfo.
-    struct PoolInfo {
-        uint256[] accTokenPerShare;
-        uint256 lastRewardBlock;
-    }
-
-    /// @notice Info of the poolInfo.
-    PoolInfo public poolInfo;
+    uint256[] public accTokenPerShare;
+    uint256 public lastRewardBlock;
+    
     /// @notice Info of each user that stakes LP tokens.
-    mapping(address => UserInfo) public userInfo;
+    /// `amount` LP token amount the user has provided.
+    /// `rewardDebt` The amount of TRI entitled to the user.
+    mapping(address => uint256) public userAmount;
+    mapping(address => uint256[]) public userRewardDebt;
 
     uint256[] public tokenPerBlock;
     uint256 private constant ACC_TOKEN_PRECISION = 1e12;
@@ -59,17 +55,19 @@ contract ComplexNRewarder is IRewarder, Ownable {
     }
 
     constructor(
-        IERC20[] memory _rewardTokens,
+        IERC20[] memory _rewardToken,
         IERC20 _lpToken,
         uint256[] memory _tokenPerBlock,
         IMasterChefV2 _mcv2
     ) public {
-        require(_rewardTokens.length == _tokenPerBlock.length, "reward tokens and tokenperblock length mismatch");
-        rewardTokens = _rewardTokens;
+        require(_rewardToken.length == _tokenPerBlock.length, "reward tokens and tokenperblock length mismatch");
+        numRewardTokens = _rewardToken.length;
+        rewardToken = _rewardToken;
         lpToken = _lpToken;
         tokenPerBlock = _tokenPerBlock;
         MCV2 = _mcv2;
-        poolInfo = PoolInfo({lastRewardBlock: block.number, accTokenPerShare: new uint256[](_rewardTokens.length)});
+        accTokenPerShare = new uint256[](_rewardToken.length);
+        lastRewardBlock = block.number;
     }
 
     
@@ -79,11 +77,11 @@ contract ComplexNRewarder is IRewarder, Ownable {
         updatePool();
         
         uint256[] memory oldRate = tokenPerBlock;
-        require(oldRate.length == _tokenPerBlock.length, "tokenperblock length mismatch");
+        require(numRewardTokens == _tokenPerBlock.length, "tokenperblock length incorrect");
         tokenPerBlock = _tokenPerBlock;
 
-        for (uint256 i = 0; i < _tokenPerBlock.length; i++) {
-            emit RewardRateUpdated(address(rewardTokens[i]), oldRate[i], _tokenPerBlock[i]);    
+        for (uint256 i = 0; i < numRewardTokens; i++) {
+            emit RewardRateUpdated(address(rewardToken[i]), oldRate[i], _tokenPerBlock[i]);    
         }
     }
 
@@ -100,24 +98,20 @@ contract ComplexNRewarder is IRewarder, Ownable {
     }
 
     /// @notice Update reward variables of the given poolInfo.
-    /// @return pool Returns the pool that was updated.
-    function updatePool() public returns (PoolInfo memory pool) {
-        pool = poolInfo;
-
-        if (block.number > pool.lastRewardBlock) {
+    function updatePool() public {
+        if (block.number > lastRewardBlock) {
             uint256 lpSupply = lpToken.balanceOf(address(MCV2));
 
             if (lpSupply > 0) {
-                uint256 blocks = block.number.sub(pool.lastRewardBlock);
-                for (uint256 i = 0; i < tokenPerBlock.length; i++) {
+                uint256 blocks = block.number.sub(lastRewardBlock);
+                for (uint256 i = 0; i < numRewardTokens; i++) {
                     uint256 tokenReward = blocks.mul(tokenPerBlock[i]);
                     // solhint-disable-next-line
-                    pool.accTokenPerShare[i] = pool.accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));    
+                    accTokenPerShare[i] = accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));    
                 }
             }
 
-            pool.lastRewardBlock = block.number;
-            poolInfo = pool;
+            lastRewardBlock = block.number;
         }
     }
 
@@ -133,29 +127,36 @@ contract ComplexNRewarder is IRewarder, Ownable {
         uint256 _lpAmount
         ) external override onlyMCV2 {
         updatePool();
-        PoolInfo memory pool = poolInfo;
-        UserInfo storage user = userInfo[_user];
+        uint256 _userAmount = userAmount[_user];
+        uint256[] memory _userRewardDebt = userRewardDebt[_user];
         uint256 pendingBal;
         uint256 rewardBal;
         // if user had deposited
-        if (user.amount > 0) {
-            for (uint256 i = 0; i < tokenPerBlock.length; i++) {
+        
+        if (_userAmount == 0) {
+            _userRewardDebt = new uint256[](numRewardTokens);
+        } else if (_userAmount > 0) {
+            for (uint256 i = 0; i < numRewardTokens; i++) {
                 // solhint-disable-next-line
-                pendingBal = (user.amount.mul(pool.accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(user.rewardDebt[i]);    
-                rewardBal = rewardTokens[i].balanceOf(address(this));
+                pendingBal = (_userAmount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);    
+                rewardBal = rewardToken[i].balanceOf(address(this));
                 if (pendingBal > rewardBal) {
-                    rewardTokens[i].safeTransfer(_user, rewardBal);
+                    rewardToken[i].safeTransfer(_user, rewardBal);
                 } else {
-                    rewardTokens[i].safeTransfer(_user, pendingBal);
+                    rewardToken[i].safeTransfer(_user, pendingBal);
                 }
-                emit OnReward(address(rewardTokens[i]), _user, pendingBal);
+                emit OnReward(address(rewardToken[i]), _user, pendingBal);
             }
-            user.amount = _lpAmount;
-            for (uint256 i = 0; i < tokenPerBlock.length; i++) {
-                // solhint-disable-next-line
-                user.rewardDebt[i] = user.amount.mul(pool.accTokenPerShare[i]) / ACC_TOKEN_PRECISION;
-            }
+        } 
+
+        _userAmount = _lpAmount;
+        for (uint256 i = 0; i < numRewardTokens; i++) {
+            // solhint-disable-next-line
+            _userRewardDebt[i] = _userAmount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION;
         }
+
+        userAmount[_user] = _userAmount;
+        userRewardDebt[_user] = _userRewardDebt;
     }
 
     /// @notice View function to see pending tokens
@@ -165,24 +166,22 @@ contract ComplexNRewarder is IRewarder, Ownable {
         address _user, 
         uint256
     ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
-        uint256[] memory _rewardAmounts = new uint256[](rewardTokens.length);
-
-        PoolInfo memory pool = poolInfo;
-        UserInfo storage user = userInfo[_user];
-
-        uint256[] memory accTokenPerShare = pool.accTokenPerShare;
+        uint256[] memory _rewardAmounts = new uint256[](numRewardTokens);
+        uint256 _userAmount = userAmount[_user];
+        uint256[] memory _userRewardDebt = userRewardDebt[_user];
         uint256 lpSupply = lpToken.balanceOf(address(MCV2));
+        uint256[] memory _accTokenPerShare = accTokenPerShare;
 
-        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 blocks = block.number.sub(pool.lastRewardBlock);
-            for (uint256 i = 0; i < tokenPerBlock.length; i++) {
-                    uint256 tokenReward = blocks.mul(tokenPerBlock[i]);
-                    // solhint-disable-next-line
-                    accTokenPerShare[i] = pool.accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));
-                    // solhint-disable-next-line
-                    _rewardAmounts[i] = (user.amount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(user.rewardDebt[i]);    
-                }
+        if (block.number > lastRewardBlock && lpSupply != 0) {
+            uint256 blocks = block.number.sub(lastRewardBlock);
+            for (uint256 i = 0; i < numRewardTokens; i++) {
+                uint256 tokenReward = blocks.mul(tokenPerBlock[i]);
+                // solhint-disable-next-line
+                _accTokenPerShare[i] = accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));
+                // solhint-disable-next-line
+                _rewardAmounts[i] = (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);    
+            }
         }
-        return (rewardTokens, _rewardAmounts);
+        return (rewardToken, _rewardAmounts);
     } 
 }
