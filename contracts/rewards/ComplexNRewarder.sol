@@ -131,11 +131,12 @@ contract ComplexNRewarder is IRewarder, Ownable {
         uint256[] memory _userRewardDebt = userRewardDebt[_user];
         uint256 pendingBal;
         uint256 rewardBal;
-        // if user had deposited
         
-        if (_userAmount == 0) {
+        if (_userAmount == 0 && _userRewardDebt.length == 0) {
+            // initializing userRewardDebt
             _userRewardDebt = new uint256[](numRewardTokens);
         } else if (_userAmount > 0) {
+            // if user had deposited
             for (uint256 i = 0; i < numRewardTokens; i++) {
                 // solhint-disable-next-line
                 pendingBal = (_userAmount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);    

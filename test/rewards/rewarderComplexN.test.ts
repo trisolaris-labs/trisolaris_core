@@ -133,7 +133,7 @@ describe("Complex N Rewarder", function () {
       await this.lp.connect(this.bob).approve(this.chefv2.address, "1000")
       
       expect(await this.chefv2.poolLength()).to.equal(1)
-      await advanceBlockTo("9998")
+      await advanceBlockTo("19998")
       await this.rewarder.setRewardRate(["1", "1"])
       expect(await this.lp.balanceOf(this.chefv2.address)).to.equal(0)
       await this.chefv2.connect(this.bob).deposit(0, "100", this.bob.address) // at block 200 bob deposits 100 lp tokens 
@@ -145,12 +145,12 @@ describe("Complex N Rewarder", function () {
       expect(pendingRewards.rewardAmounts[0]).to.equal(0) 
       expect(pendingRewards.rewardAmounts[1]).to.equal(0) 
 
-      await advanceBlockTo("10005")
+      await advanceBlockTo("20005")
       pendingRewards = await this.rewarder.pendingTokens(0, this.bob.address, 0)
       expect(pendingRewards.rewardAmounts[0]).to.equal(5)
       expect(pendingRewards.rewardAmounts[1]).to.equal(5) 
       
-      await advanceBlockTo("10009")
+      await advanceBlockTo("20009")
       await this.chefv2.connect(this.bob).emergencyWithdraw(0, this.bob.address) // block 10010
       expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000")
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("0")
@@ -181,11 +181,11 @@ describe("Complex N Rewarder", function () {
       await this.chefv2.add("100", this.lp.address, this.rewarder.address)
       await this.lp.connect(this.bob).approve(this.chefv2.address, "1000")
       
-      await advanceBlockTo("10099")
+      await advanceBlockTo("20099")
       await this.chefv2.connect(this.bob).deposit(0, "100", this.bob.address) // at block 100 bob deposits 100 lp tokens 
       await this.rewarder.setRewardRate([0, 0])
       // no rewards given when tokenPerBlock is 0
-      await advanceBlockTo("10104")
+      await advanceBlockTo("20104")
       await this.chefv2.connect(this.bob).harvest(0, this.bob.address) // block 105
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("5000")
       expect(await this.rewardToken1.balanceOf(this.bob.address)).to.equal("0")
@@ -195,13 +195,13 @@ describe("Complex N Rewarder", function () {
       expect(await this.rewarder.accTokenPerShare(1)).to.equal(0)
       
       // reward tokens start accruing when we set a token Per block
-      await advanceBlockTo("10109")
+      await advanceBlockTo("20109")
       await this.rewarder.setRewardRate([1, 2])
       expect((await this.rewarder.userAmount(this.bob.address))).to.equal("100")
       expect((await this.rewarder.userRewardDebt(this.bob.address, 0))).to.equal("0")
       expect((await this.rewarder.userRewardDebt(this.bob.address, 1))).to.equal("0")
 
-      await advanceBlockTo("10114")
+      await advanceBlockTo("20114")
       await this.chefv2.connect(this.bob).harvest(0, this.bob.address) // block 110
       expect(await this.tri.balanceOf(this.bob.address)).to.equal("15000")
       expect(await this.rewardToken1.balanceOf(this.bob.address)).to.equal("5")
@@ -238,19 +238,19 @@ describe("Complex N Rewarder", function () {
       })
 
       // Alice deposits 10 LPs at block 5010
-      await advanceBlockTo("10509")
+      await advanceBlockTo("20509")
       await this.chefv2.connect(this.alice).deposit(0, "10", this.alice.address)
       // Bob deposits 20 LPs at block 5014
-      await advanceBlockTo("10513")
+      await advanceBlockTo("20513")
       await this.chefv2.connect(this.bob).deposit(0, "20", this.bob.address)
       // Carol deposits 30 LPs at block 5018
-      await advanceBlockTo("10517")
+      await advanceBlockTo("20517")
       await this.chefv2.connect(this.carol).deposit(0, "30", this.carol.address)
       // Alice harvests LPs at block 5020. At this point:
       //   Alice should have: 4*1000 + 4*1/3*1000 + 2*1/6*1000 = 5666
       //   MasterChef should have the remaining: 10000 - 5666 = 4334
       
-      await advanceBlockTo("10519")
+      await advanceBlockTo("20519")
       await this.chefv2.connect(this.alice).harvest(0, this.alice.address)
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("5666")
       expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("566")
@@ -259,7 +259,7 @@ describe("Complex N Rewarder", function () {
       expect(await this.tri.balanceOf(this.carol.address)).to.equal("0")
       // Bob harvests 5 LPs at block 5030. At this point:
       //   Bob should have: 4*2/3*1000 + 2*2/6*1000 + 10*2/6*1000 = 6666
-      await advanceBlockTo("10529")
+      await advanceBlockTo("20529")
       await this.chefv2.connect(this.bob).harvest(0, this.bob.address)
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("5666")
       expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("566")
@@ -271,11 +271,11 @@ describe("Complex N Rewarder", function () {
       // Alice withdraws 10 LPs at block 5040.
       // Bob withdraws 20 LPs at block 5050.
       // Carol withdraws 30 LPs at block 5060.
-      await advanceBlockTo("10539")
+      await advanceBlockTo("20539")
       await this.chefv2.connect(this.alice).withdraw(0, "10",this.alice.address)
-      await advanceBlockTo("10549")
+      await advanceBlockTo("20549")
       await this.chefv2.connect(this.bob).withdraw(0, "20",this.bob.address)
-      await advanceBlockTo("10559")
+      await advanceBlockTo("20559")
       await this.chefv2.connect(this.carol).withdraw(0, "30",this.carol.address)
       // Alice should have: 5666 tri
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("5666")
@@ -303,14 +303,13 @@ describe("Complex N Rewarder", function () {
       // All of them should have 1000 LPs back.
     })
 
-    /*
     it("should distribute no TRIs only rewardToken since tri emission is 0 for this pool", async function () {
       this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
       await this.lp2.deployed()
 
       this.rewarder = await this.NRewarder.deploy(
         [this.rewardToken1.address, this.rewardToken2.address], 
-        this.lp.address, 
+        this.lp2.address, 
         ["0", "0"], 
         this.chefv2.address
       )
@@ -327,22 +326,20 @@ describe("Complex N Rewarder", function () {
       })
 
       // Alice deposits 10 LPs at block 10599
-      await advanceBlockTo("10599")
+      await advanceBlockTo("20599")
       await this.chefv2.connect(this.alice).deposit(1, "10", this.alice.address)
       // Alice gets 500 reward tokens in 5 blocks
-      await advanceBlockTo("10604")
+      await advanceBlockTo("20604")
       expect(await this.chefv2.pendingTri("1", this.alice.address)).to.equal("0")
       const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0")
-      console.log(rewardAlice)
-      // expect(rewardAlice.rewardAmounts[0]).to.equal("400")
-      // expect(rewardAlice.rewardAmounts[1]).to.equal("2000")
+      expect(rewardAlice.rewardAmounts[0]).to.equal("400")
+      expect(rewardAlice.rewardAmounts[1]).to.equal("2000")
       
       await this.chefv2.connect(this.alice).harvest(1, this.alice.address)
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("0")
       expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("500")
-      expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("2500")
+      expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("2500")
     })
-    */
   })
   
 })
