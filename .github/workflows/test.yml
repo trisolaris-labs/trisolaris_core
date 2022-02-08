@@ -14,6 +14,7 @@ jobs:
           echo MNEMONIC="test test test test test test test test test test test junk" > .env
           echo INFURA_API_KEY="test" >> .env
           echo ETHERSCAN_API_KEY="test" >> .env
+          echo AURORA_API_KEY="test" >> .env
       - run: |
           yarn
           yarn compile
