@@ -2,6 +2,11 @@ import { ethers } from "hardhat";
 import { BigNumber, Signer } from "ethers"
 import { ERC20 } from "../typechain"
 
+export enum TIME {
+  SECONDS = 1,
+  DAYS = 86400,
+  WEEKS = 604800,
+}
 
 // Defaults to e18 using amount * 10^18
 export function getBigNumber(amount: any, decimals = 18) {
@@ -75,3 +80,28 @@ export async function getUserTokenBalances(
   
     return balanceArray
   }
+
+export async function getUserTokenBalance(
+    address: string | Signer,
+    token: ERC20,
+  ): Promise<BigNumber> {
+    if (address instanceof Signer) {
+      address = await address.getAddress()
+    }
+    return token.balanceOf(address)
+}
+
+export async function getCurrentBlockTimestamp(): Promise<number> {
+  const block = await ethers.provider.getBlock("latest")
+  return block.timestamp
+}
+
+export async function forceAdvanceOneBlock(timestamp?: number): Promise<any> {
+  const params = timestamp ? [timestamp] : []
+  return ethers.provider.send("evm_mine", params)
+}
+
+export async function setTimestamp(timestamp: number): Promise<any> {
+  return forceAdvanceOneBlock(timestamp)
+}
+            

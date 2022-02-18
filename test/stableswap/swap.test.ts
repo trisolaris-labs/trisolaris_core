@@ -1,7 +1,17 @@
 import { BigNumber, Signer } from "ethers"
 import { solidity } from "ethereum-waffle"
 import { ethers } from "hardhat";
-import { setupStableSwap, getBigNumber, asyncForEach, getUserTokenBalances } from "../utils"
+import { 
+  TIME, 
+  setupStableSwap, 
+  getBigNumber, 
+  asyncForEach, 
+  getUserTokenBalances,
+  getUserTokenBalance, 
+  getCurrentBlockTimestamp,
+  setTimestamp,
+  forceAdvanceOneBlock,
+} from "../utils"
 
 import chai from "chai"
 
@@ -30,6 +40,7 @@ describe("Swap", function () {
         await this.dai.transfer(this.user2.address, getBigNumber("100"))
         await this.usdt.transfer(this.user1.address, getBigNumber("100"))
         await this.usdt.transfer(this.user2.address, getBigNumber("100"))
+
 
         // Constructor arguments
         const TOKEN_ADDRESSES = [
@@ -65,6 +76,9 @@ describe("Swap", function () {
             this.swapToken.address,
             2,
         )
+        
+        await this.dai.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"))
+        await this.usdt.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"))
         
         await asyncForEach([this.owner, this.user1, this.user2], async (signer) => {
             await this.dai.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256)
@@ -126,7 +140,7 @@ describe("Swap", function () {
         })
     })
 
-    describe("getToken", () => {
+      describe("getToken", () => {
         it("Returns correct addresses of pooled tokens", async function () {
           expect(await this.swapFlashLoan.getToken(0)).to.eq(this.dai.address)
           expect(await this.swapFlashLoan.getToken(1)).to.eq(this.usdt.address)
@@ -327,22 +341,200 @@ describe("Swap", function () {
               ),
           ).to.emit(this.swapFlashLoan.connect(this.user1), "AddLiquidity")
         })
-    })
+      })
 
-    describe("removeLiquidity", () => {
-        it("Reverts with 'Cannot exceed total supply'", async function () {
-          await expect(
-            this.swapFlashLoan.calculateRemoveLiquidity(this.MAX_UINT256),
-          ).to.be.revertedWith("Cannot exceed total supply")
-        })
-    
-        it("Reverts with 'minAmounts must match poolTokens'", async function () {
-          await expect(
-            this.swapFlashLoan.removeLiquidity(String(2e18), [0], this.MAX_UINT256),
-          ).to.be.revertedWith("minAmounts must match poolTokens")
-        })
-    
-        it("Succeeds even when contract is paused", async function () {
+      describe("removeLiquidity", () => {
+          it("Reverts with 'Cannot exceed total supply'", async function () {
+            await expect(
+              this.swapFlashLoan.calculateRemoveLiquidity(this.MAX_UINT256),
+            ).to.be.revertedWith("Cannot exceed total supply")
+          })
+      
+          it("Reverts with 'minAmounts must match poolTokens'", async function () {
+            await expect(
+              this.swapFlashLoan.removeLiquidity(String(2e18), [0], this.MAX_UINT256),
+            ).to.be.revertedWith("minAmounts must match poolTokens")
+          })
+      
+          it("Succeeds even when contract is paused", async function () {
+            // User 1 adds liquidity
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+            const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+            expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+      
+            // Owner pauses the contract
+            await this.swapFlashLoan.pause()
+      
+            // Owner and user 1 try to remove liquidity
+            this.swapToken.approve(this.swapFlashLoan.address, String(2e18))
+            this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+      
+            await this.swapFlashLoan.removeLiquidity(String(2e18), [0, 0], this.MAX_UINT256)
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidity(currentUser1Balance, [0, 0], this.MAX_UINT256)
+            expect(await this.dai.balanceOf(this.swapFlashLoan.address)).to.eq(0)
+            expect(await this.usdt.balanceOf(this.swapFlashLoan.address)).to.eq(0)
+          })
+          
+          it("Succeeds with expected return amounts of underlying tokens", async function () {
+            // User 1 adds liquidity
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+      
+            const [
+              daiBalanceBefore,
+              usdtBalanceBefore,
+              poolTokenBalanceBefore,
+            ] = await getUserTokenBalances(this.user1, [
+              this.dai,
+              this.usdt,
+              this.swapToken,
+            ])
+      
+            expect(poolTokenBalanceBefore).to.eq(
+              BigNumber.from("1997175304122185406"),
+            )
+      
+            const [expectedDaiAmount, expectedUsdtAmount] =
+              await this.swapFlashLoan.calculateRemoveLiquidity(poolTokenBalanceBefore)
+      
+            expect(expectedDaiAmount).to.eq(
+              BigNumber.from("1498939990494699510"),
+            )
+            expect(expectedUsdtAmount).to.eq(
+              BigNumber.from("504643130133215501"),
+            )
+      
+            // User 1 removes liquidity
+            await this.swapToken
+              .connect(this.user1)
+              .approve(this.swapFlashLoan.address, poolTokenBalanceBefore)
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidity(
+                poolTokenBalanceBefore,
+                [expectedDaiAmount, expectedUsdtAmount],
+                this.MAX_UINT256,
+              )
+      
+            const [daiBalanceAfter, usdtBalanceAfter] =
+              await getUserTokenBalances(this.user1, [this.dai, this.usdt])
+      
+            // Check the actual returned token amounts match the expected amounts
+            expect(daiBalanceAfter.sub(daiBalanceBefore)).to.eq(
+              expectedDaiAmount,
+            )
+            expect(usdtBalanceAfter.sub(usdtBalanceBefore)).to.eq(
+              expectedUsdtAmount,
+            )
+          })
+      
+          it("Reverts when user tries to burn more LP tokens than they own", async function () {
+            // User 1 adds liquidity
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+            const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+            expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+      
+            await expect(
+              this.swapFlashLoan
+                .connect(this.user1)
+                .removeLiquidity(
+                  currentUser1Balance.add(1),
+                  [this.MAX_UINT256, this.MAX_UINT256],
+                  this.MAX_UINT256,
+                ),
+            ).to.be.reverted
+          })
+      
+          it("Reverts when minAmounts of underlying tokens are not reached due to front running", async function () {
+            // User 1 adds liquidity
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+            const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+            expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+      
+            const [expectedDaiAmount, expectedUsdtAmount] =
+              await this.swapFlashLoan.calculateRemoveLiquidity(currentUser1Balance)
+      
+            expect(expectedDaiAmount).to.eq(
+              BigNumber.from("1498939990494699510"),
+            )
+            expect(expectedUsdtAmount).to.eq(
+              BigNumber.from("504643130133215501"),
+            )
+      
+            // User 2 adds liquidity, which leads to change in balance of underlying tokens
+            await this.swapFlashLoan
+              .connect(this.user2)
+              .addLiquidity([String(1e16), String(2e18)], 0, this.MAX_UINT256)
+      
+            // User 1 tries to remove liquidity which get reverted due to front running
+            await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+            await expect(
+              this.swapFlashLoan
+                .connect(this.user1)
+                .removeLiquidity(
+                  currentUser1Balance,
+                  [expectedDaiAmount, expectedUsdtAmount],
+                  this.MAX_UINT256,
+                ),
+            ).to.be.reverted
+          })
+      
+          it("Reverts when block is mined after deadline", async function () {
+            // User 1 adds liquidity
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+            const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+      
+            const block = await ethers.provider.getBlock("latest")
+              const currentTimestamp = block.timestamp
+              ethers.provider.send("evm_setNextBlockTimestamp", [currentTimestamp + 60 * 10])
+      
+            // User 1 tries removing liquidity with deadline of +5 minutes
+            await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+            await expect(
+              this.swapFlashLoan
+                .connect(this.user1)
+                .removeLiquidity(
+                  currentUser1Balance,
+                  [0, 0],
+                  currentTimestamp + 60 * 5,
+                ),
+            ).to.be.revertedWith("Deadline not met")
+          })
+      
+          it("Emits removeLiquidity event", async function () {
+            const block = await ethers.provider.getBlock("latest")
+            const currentTimestamp = block.timestamp
+            ethers.provider.send("evm_setNextBlockTimestamp", [currentTimestamp + 60 * 10])
+            
+            // User 1 adds liquidity
+            await this.swapFlashLoan
+              .connect(this.user1)
+              .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+            const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+      
+            // User 1 tries removes liquidity
+            await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+            await expect(
+              this.swapFlashLoan
+                .connect(this.user1)
+                .removeLiquidity(currentUser1Balance, [0, 0], this.MAX_UINT256),
+            ).to.emit(this.swapFlashLoan.connect(this.user1), "RemoveLiquidity")
+          })
+      })
+
+      describe("removeLiquidityImbalance", () => {
+        it("Reverts when contract is paused", async function () {
           // User 1 adds liquidity
           await this.swapFlashLoan
             .connect(this.user1)
@@ -353,23 +545,64 @@ describe("Swap", function () {
           // Owner pauses the contract
           await this.swapFlashLoan.pause()
     
-          // Owner and user 1 try to remove liquidity
-          this.swapToken.approve(this.swapFlashLoan.address, String(2e18))
-          this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+          // Owner and user 1 try to initiate imbalanced liquidity withdrawal
+          this.swapToken.approve(this.swapFlashLoan.address, this.MAX_UINT256)
+          this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, this.MAX_UINT256)
     
-          await this.swapFlashLoan.removeLiquidity(String(2e18), [0, 0], this.MAX_UINT256)
-          await this.swapFlashLoan
-            .connect(this.user1)
-            .removeLiquidity(currentUser1Balance, [0, 0], this.MAX_UINT256)
-          expect(await this.dai.balanceOf(this.swapFlashLoan.address)).to.eq(0)
-          expect(await this.usdt.balanceOf(this.swapFlashLoan.address)).to.eq(0)
+          await expect(
+            this.swapFlashLoan.removeLiquidityImbalance(
+              [String(1e18), String(1e16)],
+              this.MAX_UINT256,
+              this.MAX_UINT256,
+            ),
+          ).to.be.reverted
+    
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidityImbalance(
+                [String(1e18), String(1e16)],
+                this.MAX_UINT256,
+                this.MAX_UINT256,
+              ),
+          ).to.be.reverted
         })
-        
-        it("Succeeds with expected return amounts of underlying tokens", async function () {
+    
+        it("Reverts with 'Amounts should match pool tokens'", async function () {
+          await expect(
+            this.swapFlashLoan.removeLiquidityImbalance([String(1e18)], this.MAX_UINT256, this.MAX_UINT256),
+          ).to.be.revertedWith("Amounts should match pool tokens")
+        })
+    
+        it("Reverts with 'Cannot withdraw more than available'", async function () {
+          await expect(
+            this.swapFlashLoan.removeLiquidityImbalance(
+              [this.MAX_UINT256, this.MAX_UINT256],
+              1,
+              this.MAX_UINT256,
+            ),
+          ).to.be.revertedWith("Cannot withdraw more than available")
+        })
+    
+        it("Succeeds with calculated max amount of pool token to be burned (±0.1%)", async function () {
           // User 1 adds liquidity
           await this.swapFlashLoan
             .connect(this.user1)
             .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+    
+          // User 1 calculates amount of pool token to be burned
+          const maxPoolTokenAmountToBeBurned = await this.swapFlashLoan.calculateTokenAmount(
+            [String(1e18), String(1e16)],
+            false,
+          )
+    
+          // ±0.1% range of pool token to be burned
+          const maxPoolTokenAmountToBeBurnedNegativeSlippage =
+            maxPoolTokenAmountToBeBurned.mul(1001).div(1000)
+          const maxPoolTokenAmountToBeBurnedPositiveSlippage =
+            maxPoolTokenAmountToBeBurned.mul(999).div(1000)
     
           const [
             daiBalanceBefore,
@@ -381,41 +614,63 @@ describe("Swap", function () {
             this.swapToken,
           ])
     
-          expect(poolTokenBalanceBefore).to.eq(
-            BigNumber.from("1997175304122185406"),
-          )
-    
-          const [expectedDaiAmount, expectedUsdtAmount] =
-            await this.swapFlashLoan.calculateRemoveLiquidity(poolTokenBalanceBefore)
-    
-          expect(expectedDaiAmount).to.eq(
-            BigNumber.from("1498939990494699510"),
-          )
-          expect(expectedUsdtAmount).to.eq(
-            BigNumber.from("504643130133215501"),
-          )
-    
-          // User 1 removes liquidity
+          // User 1 withdraws imbalanced tokens
           await this.swapToken
             .connect(this.user1)
-            .approve(this.swapFlashLoan.address, poolTokenBalanceBefore)
+            .approve(this.swapFlashLoan.address, maxPoolTokenAmountToBeBurnedNegativeSlippage)
           await this.swapFlashLoan
             .connect(this.user1)
-            .removeLiquidity(
-              poolTokenBalanceBefore,
-              [expectedDaiAmount, expectedUsdtAmount],
+            .removeLiquidityImbalance(
+              [String(1e18), String(1e16)],
+              maxPoolTokenAmountToBeBurnedNegativeSlippage,
               this.MAX_UINT256,
             )
     
-          const [daiBalanceAfter, usdtBalanceAfter] =
-            await getUserTokenBalances(this.user1, [this.dai, this.usdt])
+          const [
+            daiBalanceAfter,
+            usdtBalanceAfter,
+            poolTokenBalanceAfter,
+          ] = await getUserTokenBalances(this.user1, [
+            this.dai,
+            this.usdt,
+            this.swapToken,
+          ])
     
-          // Check the actual returned token amounts match the expected amounts
+          // Check the actual returned token amounts match the requested amounts
           expect(daiBalanceAfter.sub(daiBalanceBefore)).to.eq(
-            expectedDaiAmount,
+            String(1e18),
           )
           expect(usdtBalanceAfter.sub(usdtBalanceBefore)).to.eq(
-            expectedUsdtAmount,
+            String(1e16),
+          )
+    
+          // Check the actual burned pool token amount
+          const actualPoolTokenBurned = poolTokenBalanceBefore.sub(
+            poolTokenBalanceAfter,
+          )
+    
+          expect(actualPoolTokenBurned).to.eq(String("1000938036258454494"))
+          expect(actualPoolTokenBurned).to.gte(
+            maxPoolTokenAmountToBeBurnedPositiveSlippage,
+          )
+          expect(actualPoolTokenBurned).to.lte(
+            maxPoolTokenAmountToBeBurnedNegativeSlippage,
+          )
+        })
+        
+        it("Returns correct amount of burned lpToken", async function () {
+          
+          await this.testSwapReturnValues.test_addLiquidity(
+            [String(1e18), String(2e18)],
+            0,
+          )
+    
+          const tokenBalance = await this.swapToken.balanceOf(
+            this.testSwapReturnValues.address,
+          )
+          await this.testSwapReturnValues.test_removeLiquidityImbalance(
+            [String(1e18), String(1e17)],
+            tokenBalance,
           )
         })
     
@@ -430,9 +685,9 @@ describe("Swap", function () {
           await expect(
             this.swapFlashLoan
               .connect(this.user1)
-              .removeLiquidity(
+              .removeLiquidityImbalance(
+                [String(1e18), String(1e16)],
                 currentUser1Balance.add(1),
-                [this.MAX_UINT256, this.MAX_UINT256],
                 this.MAX_UINT256,
               ),
           ).to.be.reverted
@@ -446,29 +701,225 @@ describe("Swap", function () {
           const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
           expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
     
-          const [expectedDaiAmount, expectedUsdtAmount] =
-            await this.swapFlashLoan.calculateRemoveLiquidity(currentUser1Balance)
+          // User 1 calculates amount of pool token to be burned
+          const maxPoolTokenAmountToBeBurned = await this.swapFlashLoan.calculateTokenAmount(
+            [String(1e18), String(1e16)],
+            false,
+          )
     
-          expect(expectedDaiAmount).to.eq(
-            BigNumber.from("1498939990494699510"),
-          )
-          expect(expectedUsdtAmount).to.eq(
-            BigNumber.from("504643130133215501"),
-          )
+          // Calculate +0.1% of pool token to be burned
+          const maxPoolTokenAmountToBeBurnedNegativeSlippage =
+            maxPoolTokenAmountToBeBurned.mul(1001).div(1000)
     
           // User 2 adds liquidity, which leads to change in balance of underlying tokens
           await this.swapFlashLoan
             .connect(this.user2)
-            .addLiquidity([String(1e16), String(2e18)], 0, this.MAX_UINT256)
+            .addLiquidity([String(1e16), String(1e20)], 0, this.MAX_UINT256)
     
           // User 1 tries to remove liquidity which get reverted due to front running
+          await this.swapToken
+            .connect(this.user1)
+            .approve(this.swapFlashLoan.address, maxPoolTokenAmountToBeBurnedNegativeSlippage)
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidityImbalance(
+                [String(1e18), String(1e16)],
+                maxPoolTokenAmountToBeBurnedNegativeSlippage,
+                this.MAX_UINT256,
+              ),
+          ).to.be.reverted
+        })
+    
+        it("Reverts when block is mined after deadline", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          
+          const block = await ethers.provider.getBlock("latest")
+          const currentTimestamp = block.timestamp
+          ethers.provider.send("evm_setNextBlockTimestamp", [currentTimestamp + 60 * 10])
+    
+          // User 1 tries removing liquidity with deadline of +5 minutes
           await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
           await expect(
             this.swapFlashLoan
               .connect(this.user1)
-              .removeLiquidity(
+              .removeLiquidityImbalance(
+                [String(1e18), String(1e16)],
                 currentUser1Balance,
-                [expectedDaiAmount, expectedUsdtAmount],
+                currentTimestamp + 60 * 5,
+              ),
+          ).to.be.revertedWith("Deadline not met")
+        })
+    
+        it("Emits RemoveLiquidityImbalance event", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+    
+          // User 1 removes liquidity
+          await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, this.MAX_UINT256)
+    
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidityImbalance(
+                [String(1e18), String(1e16)],
+                currentUser1Balance,
+                this.MAX_UINT256,
+              ),
+          ).to.emit(this.swapFlashLoan.connect(this.user1), "RemoveLiquidityImbalance")
+        })
+      })
+
+      describe("removeLiquidityOneToken", () => {
+        it("Reverts when contract is paused.", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+    
+          // Owner pauses the contract
+          await this.swapFlashLoan.pause()
+    
+          // Owner and user 1 try to remove liquidity via single token
+          this.swapToken.approve(this.swapFlashLoan.address, String(2e18))
+          this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+    
+          await expect(
+            this.swapFlashLoan.removeLiquidityOneToken(String(2e18), 0, 0, this.MAX_UINT256),
+          ).to.be.reverted
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidityOneToken(currentUser1Balance, 0, 0, this.MAX_UINT256),
+          ).to.be.reverted
+        })
+    
+        it("Reverts with 'Token index out of range'", async function () {
+          await expect(
+            this.swapFlashLoan.calculateRemoveLiquidityOneToken(1, 5),
+          ).to.be.revertedWith("Token index out of range")
+        })
+    
+        it("Reverts with 'Withdraw exceeds available'", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+    
+          await expect(
+            this.swapFlashLoan.calculateRemoveLiquidityOneToken(currentUser1Balance.mul(2), 0),
+          ).to.be.revertedWith("Withdraw exceeds available")
+        })
+    
+        it("Reverts with 'Token not found'", async function () {
+          await expect(
+            this.swapFlashLoan.connect(this.user1).removeLiquidityOneToken(0, 9, 1, this.MAX_UINT256),
+          ).to.be.revertedWith("Token not found")
+        })
+    
+        it("Succeeds with calculated token amount as minAmount", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+    
+          // User 1 calculates the amount of underlying token to receive.
+          const daiAmount =
+            await this.swapFlashLoan.calculateRemoveLiquidityOneToken(currentUser1Balance, 0)
+          expect(daiAmount).to.eq(
+            BigNumber.from("2009897239449463923"),
+          )
+    
+          // User 1 initiates one token withdrawal
+          const before = await this.dai.balanceOf(this.user1.address)
+          this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .removeLiquidityOneToken(
+              currentUser1Balance,
+              0,
+              daiAmount,
+              this.MAX_UINT256,
+            )
+          const after = await this.dai.balanceOf(this.user1.address)
+    
+          expect(after.sub(before)).to.eq(BigNumber.from("2009897239449463923"))
+        })
+        
+        it("Returns correct amount of received token", async function () {
+          await this.testSwapReturnValues.test_addLiquidity(
+            [String(1e18), String(2e18)],
+            0,
+          )
+          await this.testSwapReturnValues.test_removeLiquidityOneToken(
+            String(2e18),
+            0,
+            0,
+          )
+        })
+        
+        it("Reverts when user tries to burn more LP tokens than they own", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+    
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidityOneToken(
+                currentUser1Balance.add(1),
+                0,
+                0,
+                this.MAX_UINT256,
+              ),
+          ).to.be.reverted
+        })
+    
+        it("Reverts when minAmount of underlying token is not reached due to front running", async function () {
+          // User 1 adds liquidity
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
+          const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
+          expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
+    
+          // User 1 calculates the amount of underlying token to receive.
+          const daiAmount =
+            await this.swapFlashLoan.calculateRemoveLiquidityOneToken(currentUser1Balance, 0)
+          expect(daiAmount).to.eq(
+            BigNumber.from("2009897239449463923"),
+          )
+    
+          // User 2 adds liquidity before User 1 initiates withdrawal
+          await this.swapFlashLoan
+            .connect(this.user2)
+            .addLiquidity([String(1e16), String(1e20)], 0, this.MAX_UINT256)
+    
+          // User 1 initiates one token withdrawal
+          this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .removeLiquidityOneToken(
+                currentUser1Balance,
+                0,
+                daiAmount,
                 this.MAX_UINT256,
               ),
           ).to.be.reverted
@@ -482,1139 +933,696 @@ describe("Swap", function () {
           const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
     
           const block = await ethers.provider.getBlock("latest")
-            const currentTimestamp = block.timestamp
-            ethers.provider.send("evm_setNextBlockTimestamp", [currentTimestamp + 60 * 10])
+          const currentTimestamp = block.timestamp
+          ethers.provider.send("evm_setNextBlockTimestamp", [currentTimestamp + 60 * 10])
     
           // User 1 tries removing liquidity with deadline of +5 minutes
           await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
           await expect(
             this.swapFlashLoan
               .connect(this.user1)
-              .removeLiquidity(
+              .removeLiquidityOneToken(
                 currentUser1Balance,
-                [0, 0],
+                0,
+                0,
                 currentTimestamp + 60 * 5,
               ),
           ).to.be.revertedWith("Deadline not met")
         })
     
-        it("Emits removeLiquidity event", async function () {
+        it("Emits RemoveLiquidityOne event", async function () {
           // User 1 adds liquidity
           await this.swapFlashLoan
             .connect(this.user1)
             .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
           const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
     
-          // User 1 tries removes liquidity
           await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, currentUser1Balance)
           await expect(
             this.swapFlashLoan
               .connect(this.user1)
-              .removeLiquidity(currentUser1Balance, [0, 0], this.MAX_UINT256),
-          ).to.emit(this.swapFlashLoan.connect(this.user1), "RemoveLiquidity")
+              .removeLiquidityOneToken(currentUser1Balance, 0, 0, this.MAX_UINT256),
+          ).to.emit(this.swapFlashLoan.connect(this.user1), "RemoveLiquidityOne")
         })
       })
-})
 
-    /*
-
-  
-
-  
-
-  
-
-  describe("removeLiquidityImbalance", () => {
-    it("Reverts when contract is paused", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      // Owner pauses the contract
-      await swap.pause()
-
-      // Owner and user 1 try to initiate imbalanced liquidity withdrawal
-      swapToken.approve(swap.address, this.MAX_UINT256)
-      swapToken.connect(this.user1).approve(swap.address, this.MAX_UINT256)
-
-      await expect(
-        swap.removeLiquidityImbalance(
-          [String(1e18), String(1e16)],
-          this.MAX_UINT256,
-          this.MAX_UINT256,
-        ),
-      ).to.be.reverted
-
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityImbalance(
-            [String(1e18), String(1e16)],
-            this.MAX_UINT256,
-            this.MAX_UINT256,
-          ),
-      ).to.be.reverted
-    })
-
-    it("Reverts with 'Amounts should match pool tokens'", async function () {
-      await expect(
-        swap.removeLiquidityImbalance([String(1e18)], this.MAX_UINT256, this.MAX_UINT256),
-      ).to.be.revertedWith("Amounts should match pool tokens")
-    })
-
-    it("Reverts with 'Cannot withdraw more than available'", async function () {
-      await expect(
-        swap.removeLiquidityImbalance(
-          [this.MAX_UINT256, this.MAX_UINT256],
-          1,
-          this.MAX_UINT256,
-        ),
-      ).to.be.revertedWith("Cannot withdraw more than available")
-    })
-
-    it("Succeeds with calculated max amount of pool token to be burned (±0.1%)", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      // User 1 calculates amount of pool token to be burned
-      const maxPoolTokenAmountToBeBurned = await swap.calculateTokenAmount(
-        [String(1e18), String(1e16)],
-        false,
-      )
-
-      // ±0.1% range of pool token to be burned
-      const maxPoolTokenAmountToBeBurnedNegativeSlippage =
-        maxPoolTokenAmountToBeBurned.mul(1001).div(1000)
-      const maxPoolTokenAmountToBeBurnedPositiveSlippage =
-        maxPoolTokenAmountToBeBurned.mul(999).div(1000)
-
-      const [
-        this.daiBalanceBefore,
-        this.usdtBalanceBefore,
-        poolTokenBalanceBefore,
-      ] = await getUserTokenBalances(user1, [
-        this.dai,
-        this.usdt,
-        swapToken,
-      ])
-
-      // User 1 withdraws imbalanced tokens
-      await swapToken
-        .connect(this.user1)
-        .approve(swap.address, maxPoolTokenAmountToBeBurnedNegativeSlippage)
-      await swap
-        .connect(this.user1)
-        .removeLiquidityImbalance(
-          [String(1e18), String(1e16)],
-          maxPoolTokenAmountToBeBurnedNegativeSlippage,
-          this.MAX_UINT256,
-        )
-
-      const [
-        this.daiBalanceAfter,
-        this.usdtBalanceAfter,
-        poolTokenBalanceAfter,
-      ] = await getUserTokenBalances(user1, [
-        this.dai,
-        this.usdt,
-        swapToken,
-      ])
-
-      // Check the actual returned token amounts match the requested amounts
-      expect(this.daiBalanceAfter.sub(this.daiBalanceBefore)).to.eq(
-        String(1e18),
-      )
-      expect(this.usdtBalanceAfter.sub(this.usdtBalanceBefore)).to.eq(
-        String(1e16),
-      )
-
-      // Check the actual burned pool token amount
-      const actualPoolTokenBurned = poolTokenBalanceBefore.sub(
-        poolTokenBalanceAfter,
-      )
-
-      expect(actualPoolTokenBurned).to.eq(String("1000934178112841889"))
-      expect(actualPoolTokenBurned).to.gte(
-        maxPoolTokenAmountToBeBurnedPositiveSlippage,
-      )
-      expect(actualPoolTokenBurned).to.lte(
-        maxPoolTokenAmountToBeBurnedNegativeSlippage,
-      )
-    })
-
-    it("Returns correct amount of burned lpToken", async function () {
-      await this.dai.mint(this.testSwapReturnValues.address, String(1e20))
-      await this.usdt.mint(this.testSwapReturnValues.address, String(1e20))
-
-      await testSwapReturnValues.test_addLiquidity(
-        [String(1e18), String(2e18)],
-        0,
-      )
-
-      const tokenBalance = await this.swapToken.balanceOf(
-        testSwapReturnValues.address,
-      )
-      await testSwapReturnValues.test_removeLiquidityImbalance(
-        [String(1e18), String(1e17)],
-        tokenBalance,
-      )
-    })
-
-    it("Reverts when user tries to burn more LP tokens than they own", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityImbalance(
-            [String(1e18), String(1e16)],
-            currentUser1Balance.add(1),
-            this.MAX_UINT256,
-          ),
-      ).to.be.reverted
-    })
-
-    it("Reverts when minAmounts of underlying tokens are not reached due to front running", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      // User 1 calculates amount of pool token to be burned
-      const maxPoolTokenAmountToBeBurned = await swap.calculateTokenAmount(
-        [String(1e18), String(1e16)],
-        false,
-      )
-
-      // Calculate +0.1% of pool token to be burned
-      const maxPoolTokenAmountToBeBurnedNegativeSlippage =
-        maxPoolTokenAmountToBeBurned.mul(1001).div(1000)
-
-      // User 2 adds liquidity, which leads to change in balance of underlying tokens
-      await swap
-        .connect(this.user2)
-        .addLiquidity([String(1e16), String(1e20)], 0, this.MAX_UINT256)
-
-      // User 1 tries to remove liquidity which get reverted due to front running
-      await swapToken
-        .connect(this.user1)
-        .approve(swap.address, maxPoolTokenAmountToBeBurnedNegativeSlippage)
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityImbalance(
-            [String(1e18), String(1e16)],
-            maxPoolTokenAmountToBeBurnedNegativeSlippage,
-            this.MAX_UINT256,
-          ),
-      ).to.be.reverted
-    })
-
-    it("Reverts when block is mined after deadline", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-
-      const currentTimestamp = await getCurrentBlockTimestamp()
-      await setNextTimestamp(currentTimestamp + 60 * 10)
-
-      // User 1 tries removing liquidity with deadline of +5 minutes
-      await this.swapToken.connect(this.user1).approve(swap.address, currentUser1Balance)
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityImbalance(
-            [String(1e18), String(1e16)],
-            currentUser1Balance,
-            currentTimestamp + 60 * 5,
-          ),
-      ).to.be.revertedWith("Deadline not met")
-    })
-
-    it("Emits RemoveLiquidityImbalance event", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-
-      // User 1 removes liquidity
-      await this.swapToken.connect(this.user1).approve(swap.address, this.MAX_UINT256)
-
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityImbalance(
-            [String(1e18), String(1e16)],
-            currentUser1Balance,
-            this.MAX_UINT256,
-          ),
-      ).to.emit(swap.connect(this.user1), "RemoveLiquidityImbalance")
-    })
-  })
-
-  describe("removeLiquidityOneToken", () => {
-    it("Reverts when contract is paused.", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      // Owner pauses the contract
-      await swap.pause()
-
-      // Owner and user 1 try to remove liquidity via single token
-      swapToken.approve(swap.address, String(2e18))
-      swapToken.connect(this.user1).approve(swap.address, currentUser1Balance)
-
-      await expect(
-        swap.removeLiquidityOneToken(String(2e18), 0, 0, this.MAX_UINT256),
-      ).to.be.reverted
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityOneToken(currentUser1Balance, 0, 0, this.MAX_UINT256),
-      ).to.be.reverted
-    })
-
-    it("Reverts with 'Token index out of range'", async function () {
-      await expect(
-        swap.calculateRemoveLiquidityOneToken(1, 5),
-      ).to.be.revertedWith("Token index out of range")
-    })
-
-    it("Reverts with 'Withdraw exceeds available'", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      await expect(
-        swap.calculateRemoveLiquidityOneToken(currentUser1Balance.mul(2), 0),
-      ).to.be.revertedWith("Withdraw exceeds available")
-    })
-
-    it("Reverts with 'Token not found'", async function () {
-      await expect(
-        swap.connect(this.user1).removeLiquidityOneToken(0, 9, 1, this.MAX_UINT256),
-      ).to.be.revertedWith("Token not found")
-    })
-
-    it("Succeeds with calculated token amount as minAmount", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      // User 1 calculates the amount of underlying token to receive.
-      const calculatedthis.daiAmount =
-        await swap.calculateRemoveLiquidityOneToken(currentUser1Balance, 0)
-      expect(calculatedthis.daiAmount).to.eq(
-        BigNumber.from("2008990034631583696"),
-      )
-
-      // User 1 initiates one token withdrawal
-      const before = await this.dai.balanceOf(this.user1.address)
-      swapToken.connect(this.user1).approve(swap.address, currentUser1Balance)
-      await swap
-        .connect(this.user1)
-        .removeLiquidityOneToken(
-          currentUser1Balance,
-          0,
-          calculatedthis.daiAmount,
-          this.MAX_UINT256,
-        )
-      const after = await this.dai.balanceOf(this.user1.address)
-
-      expect(after.sub(before)).to.eq(BigNumber.from("2008990034631583696"))
-    })
-
-    it("Returns correct amount of received token", async function () {
-      await this.dai.mint(this.testSwapReturnValues.address, String(1e20))
-      await this.usdt.mint(this.testSwapReturnValues.address, String(1e20))
-      await testSwapReturnValues.test_addLiquidity(
-        [String(1e18), String(2e18)],
-        0,
-      )
-      await testSwapReturnValues.test_removeLiquidityOneToken(
-        String(2e18),
-        0,
-        0,
-      )
-    })
-
-    it("Reverts when user tries to burn more LP tokens than they own", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityOneToken(
-            currentUser1Balance.add(1),
+      describe("swap", () => {
+        it("Reverts when contract is paused", async function () {
+          // Owner pauses the contract
+          await this.swapFlashLoan.pause()
+    
+          // User 1 try to initiate swap
+          await expect(this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e16), 0, this.MAX_UINT256))
+            .to.be.reverted
+        })
+    
+        it("Reverts with 'Token index out of range'", async function () {
+          await expect(this.swapFlashLoan.calculateSwap(0, 9, String(1e17))).to.be.revertedWith(
+            "Token index out of range",
+          )
+        })
+    
+        it("Reverts with 'Cannot swap more than you own'", async function () {
+          await expect(
+            this.swapFlashLoan.connect(this.user1).swap(0, 1, this.MAX_UINT256, 0, this.MAX_UINT256),
+          ).to.be.revertedWith("Cannot swap more than you own")
+        })
+    
+        it("Succeeds with expected swap amounts", async function () {
+          // User 1 calculates how much token to receive
+          const calculatedSwapReturn = await this.swapFlashLoan.calculateSwap(0, 1, String(1e17))
+          expect(calculatedSwapReturn).to.eq(BigNumber.from("99792433735144176"))
+    
+          const [tokenFromBalanceBefore, tokenToBalanceBefore] =
+            await getUserTokenBalances(this.user1, [this.dai, this.usdt])
+    
+          // User 1 successfully initiates swap
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .swap(0, 1, String(1e17), calculatedSwapReturn, this.MAX_UINT256)
+    
+          // Check the sent and received amounts are as expected
+          const [tokenFromBalanceAfter, tokenToBalanceAfter] =
+            await getUserTokenBalances(this.user1, [this.dai, this.usdt])
+          expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
+            BigNumber.from(String(1e17)),
+          )
+          expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
+            calculatedSwapReturn,
+          )
+        })
+    
+        it("Reverts when minDy (minimum amount token to receive) is not reached due to front running", async function () {
+          // User 1 calculates how much token to receive
+          const calculatedSwapReturn = await this.swapFlashLoan.calculateSwap(0, 1, String(1e17))
+          expect(calculatedSwapReturn).to.eq(BigNumber.from("99792433735144176"))
+    
+          // User 2 swaps before User 1 does
+          await this.swapFlashLoan.connect(this.user2).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+    
+          // User 1 initiates swap
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .swap(0, 1, String(1e17), calculatedSwapReturn, this.MAX_UINT256),
+          ).to.be.reverted
+        })
+    
+        it("Succeeds when using lower minDy even when transaction is front-ran", async function () {
+          // User 1 calculates how much token to receive with 1% slippage
+          const calculatedSwapReturn = await this.swapFlashLoan.calculateSwap(0, 1, String(1e17))
+          expect(calculatedSwapReturn).to.eq(BigNumber.from("99792433735144176"))
+    
+          const [tokenFromBalanceBefore, tokenToBalanceBefore] =
+            await getUserTokenBalances(this.user1, [this.dai, this.usdt])
+    
+          const calculatedSwapReturnWithNegativeSlippage = calculatedSwapReturn
+            .mul(99)
+            .div(100)
+    
+          // User 2 swaps before User 1 does
+          await this.swapFlashLoan.connect(this.user2).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+    
+          // User 1 successfully initiates swap with 1% slippage from initial calculated amount
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .swap(
+              0,
+              1,
+              String(1e17),
+              calculatedSwapReturnWithNegativeSlippage,
+              this.MAX_UINT256,
+            )
+    
+          // Check the sent and received amounts are as expected
+          const [tokenFromBalanceAfter, tokenToBalanceAfter] =
+            await getUserTokenBalances(this.user1, [this.dai, this.usdt])
+    
+          expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
+            BigNumber.from(String(1e17)),
+          )
+    
+          const actualReceivedAmount = tokenToBalanceAfter.sub(tokenToBalanceBefore)
+    
+          expect(actualReceivedAmount).to.eq(BigNumber.from("99375469399133611"))
+          expect(actualReceivedAmount).to.gt(
+            calculatedSwapReturnWithNegativeSlippage,
+          )
+          expect(actualReceivedAmount).to.lt(calculatedSwapReturn)
+        })
+        
+        it("Returns correct amount of received token", async function () {
+          await this.testSwapReturnValues.test_addLiquidity(
+            [String(1e18), String(2e18)],
             0,
-            0,
-            this.MAX_UINT256,
-          ),
-      ).to.be.reverted
-    })
-
-    it("Reverts when minAmount of underlying token is not reached due to front running", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-      expect(currentUser1Balance).to.eq(BigNumber.from("1997175304122185406"))
-
-      // User 1 calculates the amount of underlying token to receive.
-      const calculatedthis.daiAmount =
-        await swap.calculateRemoveLiquidityOneToken(currentUser1Balance, 0)
-      expect(calculatedthis.daiAmount).to.eq(
-        BigNumber.from("2008990034631583696"),
-      )
-
-      // User 2 adds liquidity before User 1 initiates withdrawal
-      await swap
-        .connect(this.user2)
-        .addLiquidity([String(1e16), String(1e20)], 0, this.MAX_UINT256)
-
-      // User 1 initiates one token withdrawal
-      swapToken.connect(this.user1).approve(swap.address, currentUser1Balance)
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityOneToken(
-            currentUser1Balance,
-            0,
-            calculatedthis.daiAmount,
-            this.MAX_UINT256,
-          ),
-      ).to.be.reverted
-    })
-
-    it("Reverts when block is mined after deadline", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-
-      const currentTimestamp = await getCurrentBlockTimestamp()
-      await setNextTimestamp(currentTimestamp + 60 * 10)
-
-      // User 1 tries removing liquidity with deadline of +5 minutes
-      await this.swapToken.connect(this.user1).approve(swap.address, currentUser1Balance)
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityOneToken(
-            currentUser1Balance,
-            0,
-            0,
-            currentTimestamp + 60 * 5,
-          ),
-      ).to.be.revertedWith("Deadline not met")
-    })
-
-    it("Emits RemoveLiquidityOne event", async function () {
-      // User 1 adds liquidity
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(2e18), String(1e16)], 0, this.MAX_UINT256)
-      const currentUser1Balance = await this.swapToken.balanceOf(this.user1.address)
-
-      await this.swapToken.connect(this.user1).approve(swap.address, currentUser1Balance)
-      await expect(
-        swap
-          .connect(this.user1)
-          .removeLiquidityOneToken(currentUser1Balance, 0, 0, this.MAX_UINT256),
-      ).to.emit(swap.connect(this.user1), "RemoveLiquidityOne")
-    })
-  })
-
-  describe("swap", () => {
-    it("Reverts when contract is paused", async function () {
-      // Owner pauses the contract
-      await swap.pause()
-
-      // User 1 try to initiate swap
-      await expect(swap.connect(this.user1).swap(0, 1, String(1e16), 0, this.MAX_UINT256))
-        .to.be.reverted
-    })
-
-    it("Reverts with 'Token index out of range'", async function () {
-      await expect(swap.calculateSwap(0, 9, String(1e17))).to.be.revertedWith(
-        "Token index out of range",
-      )
-    })
-
-    it("Reverts with 'Cannot swap more than you own'", async function () {
-      await expect(
-        swap.connect(this.user1).swap(0, 1, this.MAX_UINT256, 0, this.MAX_UINT256),
-      ).to.be.revertedWith("Cannot swap more than you own")
-    })
-
-    it("Succeeds with expected swap amounts", async function () {
-      // User 1 calculates how much token to receive
-      const calculatedSwapReturn = await swap.calculateSwap(0, 1, String(1e17))
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99702611562565289"))
-
-      const [tokenFromBalanceBefore, tokenToBalanceBefore] =
-        await getUserTokenBalances(user1, [this.dai, this.usdt])
-
-      // User 1 successfully initiates swap
-      await swap
-        .connect(this.user1)
-        .swap(0, 1, String(1e17), calculatedSwapReturn, this.MAX_UINT256)
-
-      // Check the sent and received amounts are as expected
-      const [tokenFromBalanceAfter, tokenToBalanceAfter] =
-        await getUserTokenBalances(user1, [this.dai, this.usdt])
-      expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
-        BigNumber.from(String(1e17)),
-      )
-      expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
-        calculatedSwapReturn,
-      )
-    })
-
-    it("Reverts when minDy (minimum amount token to receive) is not reached due to front running", async function () {
-      // User 1 calculates how much token to receive
-      const calculatedSwapReturn = await swap.calculateSwap(0, 1, String(1e17))
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99702611562565289"))
-
-      // User 2 swaps before User 1 does
-      await swap.connect(this.user2).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-
-      // User 1 initiates swap
-      await expect(
-        swap
-          .connect(this.user1)
-          .swap(0, 1, String(1e17), calculatedSwapReturn, this.MAX_UINT256),
-      ).to.be.reverted
-    })
-
-    it("Succeeds when using lower minDy even when transaction is front-ran", async function () {
-      // User 1 calculates how much token to receive with 1% slippage
-      const calculatedSwapReturn = await swap.calculateSwap(0, 1, String(1e17))
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99702611562565289"))
-
-      const [tokenFromBalanceBefore, tokenToBalanceBefore] =
-        await getUserTokenBalances(user1, [this.dai, this.usdt])
-
-      const calculatedSwapReturnWithNegativeSlippage = calculatedSwapReturn
-        .mul(99)
-        .div(100)
-
-      // User 2 swaps before User 1 does
-      await swap.connect(this.user2).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-
-      // User 1 successfully initiates swap with 1% slippage from initial calculated amount
-      await swap
-        .connect(this.user1)
-        .swap(
-          0,
-          1,
-          String(1e17),
-          calculatedSwapReturnWithNegativeSlippage,
-          this.MAX_UINT256,
-        )
-
-      // Check the sent and received amounts are as expected
-      const [tokenFromBalanceAfter, tokenToBalanceAfter] =
-        await getUserTokenBalances(user1, [this.dai, this.usdt])
-
-      expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
-        BigNumber.from(String(1e17)),
-      )
-
-      const actualReceivedAmount = tokenToBalanceAfter.sub(tokenToBalanceBefore)
-
-      expect(actualReceivedAmount).to.eq(BigNumber.from("99286252365528551"))
-      expect(actualReceivedAmount).to.gt(
-        calculatedSwapReturnWithNegativeSlippage,
-      )
-      expect(actualReceivedAmount).to.lt(calculatedSwapReturn)
-    })
-
-    it("Returns correct amount of received token", async function () {
-      await this.dai.mint(this.testSwapReturnValues.address, String(1e20))
-      await this.usdt.mint(this.testSwapReturnValues.address, String(1e20))
-      await testSwapReturnValues.test_addLiquidity(
-        [String(1e18), String(2e18)],
-        0,
-      )
-      await testSwapReturnValues.test_swap(0, 1, String(1e18), 0)
-    })
-
-    it("Reverts when block is mined after deadline", async function () {
-      const currentTimestamp = await getCurrentBlockTimestamp()
-      await setNextTimestamp(currentTimestamp + 60 * 10)
-
-      // User 1 tries swapping with deadline of +5 minutes
-      await expect(
-        swap
-          .connect(this.user1)
-          .swap(0, 1, String(1e17), 0, currentTimestamp + 60 * 5),
-      ).to.be.revertedWith("Deadline not met")
-    })
-
-    it("Emits TokenSwap event", async function () {
-      // User 1 initiates swap
-      await expect(
-        swap.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256),
-      ).to.emit(swap, "TokenSwap")
-    })
-  })
-
-  describe("getVirtualPrice", () => {
-    it("Returns expected value after initial deposit", async function () {
-      expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
-    })
-
-    it("Returns expected values after swaps", async function () {
-      // With each swap, virtual price will increase due to the fees
-      await swap.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(
-        BigNumber.from("1000050005862349911"),
-      )
-
-      await swap.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(
-        BigNumber.from("1000100104768517937"),
-      )
-    })
-
-    it("Returns expected values after imbalanced withdrawal", async function () {
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
-      await swap
-        .connect(this.user2)
-        .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
-
-      await this.swapToken.connect(this.user1).approve(swap.address, String(2e18))
-      await swap
-        .connect(this.user1)
-        .removeLiquidityImbalance([String(1e18), 0], String(2e18), this.MAX_UINT256)
-
-      expect(await swap.getVirtualPrice()).to.eq(
-        BigNumber.from("1000100094088440633"),
-      )
-
-      await this.swapToken.connect(this.user2).approve(swap.address, String(2e18))
-      await swap
-        .connect(this.user2)
-        .removeLiquidityImbalance([0, String(1e18)], String(2e18), this.MAX_UINT256)
-
-      expect(await swap.getVirtualPrice()).to.eq(
-        BigNumber.from("1000200154928939884"),
-      )
-    })
-
-    it("Value is unchanged after balanced deposits", async function () {
-      // pool is 1:1 ratio
-      expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
-
-      // pool changes to 2:1 ratio, thus changing the virtual price
-      await swap
-        .connect(this.user2)
-        .addLiquidity([String(2e18), String(0)], 0, this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(
-        BigNumber.from("1000167146429977312"),
-      )
-      // User 2 makes balanced deposit, keeping the ratio 2:1
-      await swap
-        .connect(this.user2)
-        .addLiquidity([String(2e18), String(1e18)], 0, this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(
-        BigNumber.from("1000167146429977312"),
-      )
-    })
-
-    it("Value is unchanged after balanced withdrawals", async function () {
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
-      await this.swapToken.connect(this.user1).approve(swap.address, String(1e18))
-      await swap
-        .connect(this.user1)
-        .removeLiquidity(String(1e18), ["0", "0"], this.MAX_UINT256)
-      expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
-    })
-  })
-
-  describe("setSwapFee", () => {
-    it("Emits NewSwapFee event", async function () {
-      await expect(swap.setSwapFee(BigNumber.from(1e8))).to.emit(
-        swap,
-        "NewSwapFee",
-      )
-    })
-
-    it("Reverts when called by non-owners", async function () {
-      await expect(swap.connect(this.user1).setSwapFee(0)).to.be.reverted
-      await expect(swap.connect(this.user2).setSwapFee(BigNumber.from(1e8))).to.be
-        .reverted
-    })
-
-    it("Reverts when fee is higher than the limit", async function () {
-      await expect(swap.setSwapFee(BigNumber.from(1e8).add(1))).to.be.reverted
-    })
-
-    it("Succeeds when fee is within the limit", async function () {
-      await swap.setSwapFee(BigNumber.from(1e8))
-      expect((await swap.swapStorage()).swapFee).to.eq(BigNumber.from(1e8))
-    })
-  })
-
-  describe("setAdminFee", () => {
-    it("Emits NewAdminFee event", async function () {
-      await expect(swap.setAdminFee(BigNumber.from(1e10))).to.emit(
-        swap,
-        "NewAdminFee",
-      )
-    })
-
-    it("Reverts when called by non-owners", async function () {
-      await expect(swap.connect(this.user1).setSwapFee(0)).to.be.reverted
-      await expect(swap.connect(this.user2).setSwapFee(BigNumber.from(1e10))).to.be
-        .reverted
-    })
-
-    it("Reverts when adminFee is higher than the limit", async function () {
-      await expect(swap.setAdminFee(BigNumber.from(1e10).add(1))).to.be.reverted
-    })
-
-    it("Succeeds when adminFee is within the limit", async function () {
-      await swap.setAdminFee(BigNumber.from(1e10))
-      expect((await swap.swapStorage()).adminFee).to.eq(BigNumber.from(1e10))
-    })
-  })
-
-  describe("getAdminBalance", () => {
-    it("Reverts with 'Token index out of range'", async function () {
-      await expect(swap.getAdminBalance(3)).to.be.revertedWith(
-        "Token index out of range",
-      )
-    })
-
-    it("Is always 0 when adminFee is set to 0", async function () {
-      expect(await swap.getAdminBalance(0)).to.eq(0)
-      expect(await swap.getAdminBalance(1)).to.eq(0)
-
-      await swap.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-
-      expect(await swap.getAdminBalance(0)).to.eq(0)
-      expect(await swap.getAdminBalance(1)).to.eq(0)
-    })
-
-    it("Returns expected amounts after swaps when adminFee is higher than 0", async function () {
-      // Sets adminFee to 1% of the swap fees
-      await swap.setAdminFee(BigNumber.from(10 ** 8))
-      await swap.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-
-      expect(await swap.getAdminBalance(0)).to.eq(0)
-      expect(await swap.getAdminBalance(1)).to.eq(String(998024139765))
-
-      // After the first swap, the pool becomes imbalanced; there are more 0th token than 1st token in the pool.
-      // Therefore swapping from 1st -> 0th will result in more 0th token returned
-      // Also results in higher fees collected on the second swap.
-
-      await swap.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
-
-      expect(await swap.getAdminBalance(0)).to.eq(String(1001973776101))
-      expect(await swap.getAdminBalance(1)).to.eq(String(998024139765))
-    })
-  })
-
-  describe("withdrawAdminFees", () => {
-    it("Reverts when called by non-owners", async function () {
-      await expect(swap.connect(this.user1).withdrawAdminFees()).to.be.reverted
-      await expect(swap.connect(this.user2).withdrawAdminFees()).to.be.reverted
-    })
-
-    it("Succeeds when there are no fees withdrawn", async function () {
-      // Sets adminFee to 1% of the swap fees
-      await swap.setAdminFee(BigNumber.from(10 ** 8))
-
-      const [this.daiBefore, this.usdtBefore] = await getUserTokenBalances(
-        owner,
-        [this.dai, this.usdt],
-      )
-
-      await swap.withdrawAdminFees()
-
-      const [this.daiAfter, this.usdtAfter] = await getUserTokenBalances(
-        owner,
-        [this.dai, this.usdt],
-      )
-
-      expect(this.daiBefore).to.eq(this.daiAfter)
-      expect(this.usdtBefore).to.eq(this.usdtAfter)
-    })
-
-    it("Succeeds with expected amount of fees withdrawn", async function () {
-      // Sets adminFee to 1% of the swap fees
-      await swap.setAdminFee(BigNumber.from(10 ** 8))
-      await swap.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-      await swap.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
-
-      expect(await swap.getAdminBalance(0)).to.eq(String(1001973776101))
-      expect(await swap.getAdminBalance(1)).to.eq(String(998024139765))
-
-      const [this.daiBefore, this.usdtBefore] = await getUserTokenBalances(
-        owner,
-        [this.dai, this.usdt],
-      )
-
-      await swap.withdrawAdminFees()
-
-      const [this.daiAfter, this.usdtAfter] = await getUserTokenBalances(
-        owner,
-        [this.dai, this.usdt],
-      )
-
-      expect(this.daiAfter.sub(this.daiBefore)).to.eq(String(1001973776101))
-      expect(this.usdtAfter.sub(this.usdtBefore)).to.eq(
-        String(998024139765),
-      )
-    })
-
-    it("Withdrawing admin fees has no impact on users' withdrawal", async function () {
-      // Sets adminFee to 1% of the swap fees
-      await swap.setAdminFee(BigNumber.from(10 ** 8))
-      await swap
-        .connect(this.user1)
-        .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
-
-      for (let i = 0; i < 10; i++) {
-        await swap.connect(this.user2).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
-        await swap.connect(this.user2).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
-      }
-
-      await swap.withdrawAdminFees()
-
-      const [this.daiBefore, this.usdtBefore] = await getUserTokenBalances(
-        user1,
-        [this.dai, this.usdt],
-      )
-
-      const user1LPTokenBalance = await this.swapToken.balanceOf(this.user1.address)
-      await this.swapToken.connect(this.user1).approve(swap.address, user1LPTokenBalance)
-      await swap
-        .connect(this.user1)
-        .removeLiquidity(user1LPTokenBalance, [0, 0], this.MAX_UINT256)
-
-      const [this.daiAfter, this.usdtAfter] = await getUserTokenBalances(
-        user1,
-        [this.dai, this.usdt],
-      )
-
-      expect(this.daiAfter.sub(this.daiBefore)).to.eq(
-        BigNumber.from("1000009516257264879"),
-      )
-
-      expect(this.usdtAfter.sub(this.usdtBefore)).to.eq(
-        BigNumber.from("1000980987206499309"),
-      )
-    })
-  })
-
-  describe("rampA", () => {
-    beforeEach(async function () {
-      await forceAdvanceOneBlock()
-    })
-
-    it("Emits RampA event", async function () {
-      await expect(
-        swap.rampA(
-          100,
-          (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
-        ),
-      ).to.emit(swap, "RampA")
-    })
-
-    it("Succeeds to ramp upwards", async function () {
-      // Create imbalanced pool to measure virtual price change
-      // We expect virtual price to increase as A decreases
-      await swap.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
-
-      // call rampA(), changing A to 100 within a span of 14 days
-      const endTimestamp =
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1
-      await swap.rampA(100, endTimestamp)
-
-      // +0 seconds since ramp A
-      expect(await swap.getA()).to.be.eq(50)
-      expect(await swap.getAPrecise()).to.be.eq(5000)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000167146429977312")
-
-      // set timestamp to +100000 seconds
-      await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
-      expect(await swap.getA()).to.be.eq(54)
-      expect(await swap.getAPrecise()).to.be.eq(5413)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000258443200231295")
-
-      // set timestamp to the end of ramp period
-      await setTimestamp(endTimestamp)
-      expect(await swap.getA()).to.be.eq(100)
-      expect(await swap.getAPrecise()).to.be.eq(10000)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000771363829405068")
-    })
-
-    it("Succeeds to ramp downwards", async function () {
-      // Create imbalanced pool to measure virtual price change
-      // We expect virtual price to decrease as A decreases
-      await swap.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
-
-      // call rampA()
-      const endTimestamp =
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1
-      await swap.rampA(25, endTimestamp)
-
-      // +0 seconds since ramp A
-      expect(await swap.getA()).to.be.eq(50)
-      expect(await swap.getAPrecise()).to.be.eq(5000)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000167146429977312")
-
-      // set timestamp to +100000 seconds
-      await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
-      expect(await swap.getA()).to.be.eq(47)
-      expect(await swap.getAPrecise()).to.be.eq(4794)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000115870150391894")
-
-      // set timestamp to the end of ramp period
-      await setTimestamp(endTimestamp)
-      expect(await swap.getA()).to.be.eq(25)
-      expect(await swap.getAPrecise()).to.be.eq(2500)
-      expect(await swap.getVirtualPrice()).to.be.eq("998999574522335473")
-    })
-
-    it("Reverts when non-owner calls it", async function () {
-      await expect(
-        swap
-          .connect(this.user1)
-          .rampA(55, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
-      ).to.be.reverted
-    })
-
-    it("Reverts with 'Wait 1 day before starting ramp'", async function () {
-      await swap.rampA(
-        55,
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
-      )
-      await expect(
-        swap.rampA(55, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
-      ).to.be.revertedWith("Wait 1 day before starting ramp")
-    })
-
-    it("Reverts with 'Insufficient ramp time'", async function () {
-      await expect(
-        swap.rampA(55, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS - 1),
-      ).to.be.revertedWith("Insufficient ramp time")
-    })
-
-    it("Reverts with 'futureA_ must be > 0 and < MAX_A'", async function () {
-      await expect(
-        swap.rampA(0, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
-      ).to.be.revertedWith("futureA_ must be > 0 and < MAX_A")
-    })
-
-    it("Reverts with 'futureA_ is too small'", async function () {
-      await expect(
-        swap.rampA(24, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
-      ).to.be.revertedWith("futureA_ is too small")
-    })
-
-    it("Reverts with 'futureA_ is too large'", async function () {
-      await expect(
-        swap.rampA(
-          101,
-          (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
-        ),
-      ).to.be.revertedWith("futureA_ is too large")
-    })
-  })
-
-  describe("stopRampA", () => {
-    it("Emits StopRampA event", async function () {
-      // call rampA()
-      await swap.rampA(
-        100,
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100,
-      )
-
-      // Stop ramp
-      expect(swap.stopRampA()).to.emit(swap, "StopRampA")
-    })
-
-    it("Stop ramp succeeds", async function () {
-      // call rampA()
-      const endTimestamp =
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100
-      await swap.rampA(100, endTimestamp)
-
-      // set timestamp to +100000 seconds
-      await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
-      expect(await swap.getA()).to.be.eq(54)
-      expect(await swap.getAPrecise()).to.be.eq(5413)
-
-      // Stop ramp
-      await swap.stopRampA()
-      expect(await swap.getA()).to.be.eq(54)
-      expect(await swap.getAPrecise()).to.be.eq(5413)
-
-      // set timestamp to endTimestamp
-      await setTimestamp(endTimestamp)
-
-      // verify ramp has stopped
-      expect(await swap.getA()).to.be.eq(54)
-      expect(await swap.getAPrecise()).to.be.eq(5413)
-    })
-
-    it("Reverts with 'Ramp is already stopped'", async function () {
-      // call rampA()
-      const endTimestamp =
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100
-      await swap.rampA(100, endTimestamp)
-
-      // set timestamp to +10000 seconds
-      await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
-      expect(await swap.getA()).to.be.eq(54)
-      expect(await swap.getAPrecise()).to.be.eq(5413)
-
-      // Stop ramp
-      await swap.stopRampA()
-      expect(await swap.getA()).to.be.eq(54)
-      expect(await swap.getAPrecise()).to.be.eq(5413)
-
-      // check call reverts when ramp is already stopped
-      await expect(swap.stopRampA()).to.be.revertedWith(
-        "Ramp is already stopped",
-      )
-    })
-  })
-
-  describe("Check for timestamp manipulations", () => {
-    beforeEach(async function () {
-      await forceAdvanceOneBlock()
-    })
-
-    it("Check for maximum differences in A and virtual price when A is increasing", async function () {
-      // Create imbalanced pool to measure virtual price change
-      // Sets the pool in 2:1 ratio where this.dai is significantly cheaper than this.usdt
-      await swap.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
-
-      // Initial A and virtual price
-      expect(await swap.getA()).to.be.eq(50)
-      expect(await swap.getAPrecise()).to.be.eq(5000)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000167146429977312")
-
-      // Start ramp
-      await swap.rampA(
-        100,
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
-      )
-
-      // Malicious miner skips 900 seconds
-      await setTimestamp((await getCurrentBlockTimestamp()) + 900)
-
-      expect(await swap.getA()).to.be.eq(50)
-      expect(await swap.getAPrecise()).to.be.eq(5003)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000167862696363286")
-
-      // Max increase of A between two blocks
-      // 5003 / 5000
-      // = 1.0006
-
-      // Max increase of virtual price between two blocks (at 2:1 ratio of tokens, starting A = 50)
-      // 1000167862696363286 / 1000167146429977312
-      // = 1.00000071615
-    })
-
-    it("Check for maximum differences in A and virtual price when A is decreasing", async function () {
-      // Create imbalanced pool to measure virtual price change
-      // Sets the pool in 2:1 ratio where this.dai is significantly cheaper than this.usdt
-      await swap.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
-
-      // Initial A and virtual price
-      expect(await swap.getA()).to.be.eq(50)
-      expect(await swap.getAPrecise()).to.be.eq(5000)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000167146429977312")
-
-      // Start ramp
-      await swap.rampA(
-        25,
-        (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
-      )
-
-      // Malicious miner skips 900 seconds
-      await setTimestamp((await getCurrentBlockTimestamp()) + 900)
-
-      expect(await swap.getA()).to.be.eq(49)
-      expect(await swap.getAPrecise()).to.be.eq(4999)
-      expect(await swap.getVirtualPrice()).to.be.eq("1000166907487883089")
-
-      // Max decrease of A between two blocks
-      // 4999 / 5000
-      // = 0.9998
-
-      // Max decrease of virtual price between two blocks (at 2:1 ratio of tokens, starting A = 50)
-      // 1000166907487883089 / 1000167146429977312
-      // = 0.99999976109
-    })
-
-    // Below tests try to verify the issues found in Curve Vulnerability Report are resolved.
-    // https://medium.com/@peter_4205/curve-vulnerability-report-a1d7630140ec
-    // The two cases we are most concerned are:
-    //
-    // 1. A is ramping up, and the pool is at imbalanced state.
-    //
-    // Attacker can 'resolve' the imbalance prior to the change of A. Then try to recreate the imbalance after A has
-    // changed. Due to the price curve becoming more linear, recreating the imbalance will become a lot cheaper. Thus
-    // benefiting the attacker.
-    //
-    // 2. A is ramping down, and the pool is at balanced state
-    //
-    // Attacker can create the imbalance in token balances prior to the change of A. Then try to resolve them
-    // near 1:1 ratio. Since downward change of A will make the price curve less linear, resolving the token balances
-    // to 1:1 ratio will be cheaper. Thus benefiting the attacker
-    //
-    // For visual representation of how price curves differ based on A, please refer to Figure 1 in the above
-    // Curve Vulnerability Report.
+          )
+          await this.testSwapReturnValues.test_swap(0, 1, String(1e18), 0)
+        })
+        
+        
+        it("Reverts when block is mined after deadline", async function () {
+          const block = await ethers.provider.getBlock("latest")
+          const currentTimestamp = block.timestamp
+          ethers.provider.send("evm_setNextBlockTimestamp", [currentTimestamp + 60 * 10])
+    
+          // User 1 tries swapping with deadline of +5 minutes
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .swap(0, 1, String(1e17), 0, currentTimestamp + 60 * 5),
+          ).to.be.revertedWith("Deadline not met")
+        })
+    
+        it("Emits TokenSwap event", async function () {
+          // User 1 initiates swap
+          await expect(
+            this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256),
+          ).to.emit(this.swapFlashLoan, "TokenSwap")
+        })
+      })
+
+      describe("getVirtualPrice", () => {
+        it("Returns expected value after initial deposit", async function () {
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
+        })
+    
+        it("Returns expected values after swaps", async function () {
+          // With each swap, virtual price will increase due to the fees
+          await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(
+            BigNumber.from("1000005000589050862"),
+          )
+    
+          await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(
+            BigNumber.from("1000010010486919300"),
+          )
+        })
+    
+        it("Returns expected values after imbalanced withdrawal", async function () {
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
+          await this.swapFlashLoan
+            .connect(this.user2)
+            .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
+    
+          await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, String(2e18))
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .removeLiquidityImbalance([String(1e18), 0], String(2e18), this.MAX_UINT256)
+    
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(
+            BigNumber.from("1000010008506795877"),
+          )
+    
+          await this.swapToken.connect(this.user2).approve(this.swapFlashLoan.address, String(2e18))
+          await this.swapFlashLoan
+            .connect(this.user2)
+            .removeLiquidityImbalance([0, String(1e18)], String(2e18), this.MAX_UINT256)
+    
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(
+            BigNumber.from("1000020012788689080"),
+          )
+        })
+    
+        it("Value is unchanged after balanced deposits", async function () {
+          // pool is 1:1 ratio
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
+    
+          // pool changes to 2:1 ratio, thus changing the virtual price
+          await this.swapFlashLoan
+            .connect(this.user2)
+            .addLiquidity([String(2e18), String(0)], 0, this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(
+            BigNumber.from("1000016712123988753"),
+          )
+          // User 2 makes balanced deposit, keeping the ratio 2:1
+          await this.swapFlashLoan
+            .connect(this.user2)
+            .addLiquidity([String(2e18), String(1e18)], 0, this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(
+            BigNumber.from("1000016712123988754"),
+          )
+        })
+    
+        it("Value is unchanged after balanced withdrawals", async function () {
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
+          await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, String(1e18))
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .removeLiquidity(String(1e18), ["0", "0"], this.MAX_UINT256)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
+        })
+      })
+
+      describe("setSwapFee", () => {
+        it("Emits NewSwapFee event", async function () {
+          await expect(this.swapFlashLoan.setSwapFee(BigNumber.from(1e8))).to.emit(
+            this.swapFlashLoan,
+            "NewSwapFee",
+          )
+        })
+    
+        it("Reverts when called by non-owners", async function () {
+          await expect(this.swapFlashLoan.connect(this.user1).setSwapFee(0)).to.be.reverted
+          await expect(this.swapFlashLoan.connect(this.user2).setSwapFee(BigNumber.from(1e8))).to.be
+            .reverted
+        })
+    
+        it("Reverts when fee is higher than the limit", async function () {
+          await expect(this.swapFlashLoan.setSwapFee(BigNumber.from(1e8).add(1))).to.be.reverted
+        })
+    
+        it("Succeeds when fee is within the limit", async function () {
+          await this.swapFlashLoan.setSwapFee(BigNumber.from(1e8))
+          expect((await this.swapFlashLoan.swapStorage()).swapFee).to.eq(BigNumber.from(1e8))
+        })
+      })
+    
+      describe("setAdminFee", () => {
+        it("Emits NewAdminFee event", async function () {
+          await expect(this.swapFlashLoan.setAdminFee(BigNumber.from(1e10))).to.emit(
+            this.swapFlashLoan,
+            "NewAdminFee",
+          )
+        })
+    
+        it("Reverts when called by non-owners", async function () {
+          await expect(this.swapFlashLoan.connect(this.user1).setSwapFee(0)).to.be.reverted
+          await expect(this.swapFlashLoan.connect(this.user2).setSwapFee(BigNumber.from(1e10))).to.be
+            .reverted
+        })
+    
+        it("Reverts when adminFee is higher than the limit", async function () {
+          await expect(this.swapFlashLoan.setAdminFee(BigNumber.from(1e10).add(1))).to.be.reverted
+        })
+    
+        it("Succeeds when adminFee is within the limit", async function () {
+          await this.swapFlashLoan.setAdminFee(BigNumber.from(1e10))
+          expect((await this.swapFlashLoan.swapStorage()).adminFee).to.eq(BigNumber.from(1e10))
+        })
+      })
+    
+      describe("getAdminBalance", () => {
+        it("Reverts with 'Token index out of range'", async function () {
+          await expect(this.swapFlashLoan.getAdminBalance(3)).to.be.revertedWith(
+            "Token index out of range",
+          )
+        })
+    
+        it("Is always 0 when adminFee is set to 0", async function () {
+          expect(await this.swapFlashLoan.getAdminBalance(0)).to.eq(0)
+          expect(await this.swapFlashLoan.getAdminBalance(1)).to.eq(0)
+    
+          await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+    
+          expect(await this.swapFlashLoan.getAdminBalance(0)).to.eq(0)
+          expect(await this.swapFlashLoan.getAdminBalance(1)).to.eq(0)
+        })
+    
+        it("Returns expected amounts after swaps when adminFee is higher than 0", async function () {
+          // Sets adminFee to 1% of the swap fees
+          await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
+          await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+    
+          expect(await this.swapFlashLoan.getAdminBalance(0)).to.eq(0)
+          expect(await this.swapFlashLoan.getAdminBalance(1)).to.eq(String(99802413976))
+    
+          // After the first swap, the pool becomes imbalanced; there are more 0th token than 1st token in the pool.
+          // Therefore swapping from 1st -> 0th will result in more 0th token returned
+          // Also results in higher fees collected on the second swap.
+    
+          await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
+    
+          expect(await this.swapFlashLoan.getAdminBalance(0)).to.eq(String(100197564491))
+          expect(await this.swapFlashLoan.getAdminBalance(1)).to.eq(String(99802413976))
+        })
+      })
+    
+      describe("withdrawAdminFees", () => {
+        it("Reverts when called by non-owners", async function () {
+          await expect(this.swapFlashLoan.connect(this.user1).withdrawAdminFees()).to.be.reverted
+          await expect(this.swapFlashLoan.connect(this.user2).withdrawAdminFees()).to.be.reverted
+        })
+    
+        it("Succeeds when there are no fees withdrawn", async function () {
+          // Sets adminFee to 1% of the swap fees
+          await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
+    
+          const [daiBefore, usdtBefore] = await getUserTokenBalances(
+            this.owner,
+            [this.dai, this.usdt],
+          )
+    
+          await this.swapFlashLoan.withdrawAdminFees()
+    
+          const [daiAfter, usdtAfter] = await getUserTokenBalances(
+            this.owner,
+            [this.dai, this.usdt],
+          )
+    
+          expect(daiBefore).to.eq(daiAfter)
+          expect(usdtBefore).to.eq(usdtAfter)
+        })
+    
+        it("Succeeds with expected amount of fees withdrawn", async function () {
+          // Sets adminFee to 1% of the swap fees
+          await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
+          await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+          await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
+    
+          expect(await this.swapFlashLoan.getAdminBalance(0)).to.eq(String(100197564491))
+          expect(await this.swapFlashLoan.getAdminBalance(1)).to.eq(String(99802413976))
+    
+          const [daiBefore, usdtBefore] = await getUserTokenBalances(
+            this.owner,
+            [this.dai, this.usdt],
+          )
+    
+          await this.swapFlashLoan.withdrawAdminFees()
+    
+          const [daiAfter, usdtAfter] = await getUserTokenBalances(
+            this.owner,
+            [this.dai, this.usdt],
+          )
+    
+          expect(daiAfter.sub(daiBefore)).to.eq(String(100197564491))
+          expect(usdtAfter.sub(usdtBefore)).to.eq(
+            String(99802413976),
+          )
+        })
+        
+        it("Withdrawing admin fees has no impact on users' withdrawal", async function () {
+          // Sets adminFee to 1% of the swap fees
+          await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256)
+    
+          for (let i = 0; i < 10; i++) {
+            await this.swapFlashLoan.connect(this.user2).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
+            await this.swapFlashLoan.connect(this.user2).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
+          }
+    
+          await this.swapFlashLoan.withdrawAdminFees()
+    
+          const [daiBefore, usdtBefore] = await getUserTokenBalances(
+            this.user1,
+            [this.dai, this.usdt],
+          )
+            
+          const user1LPTokenBalance = await this.swapToken.balanceOf(this.user1.address)
+          await this.swapToken.connect(this.user1).approve(this.swapFlashLoan.address, user1LPTokenBalance)
+          await this.swapFlashLoan
+            .connect(this.user1)
+            .removeLiquidity(user1LPTokenBalance, [0, 0], this.MAX_UINT256)
+          
+          
+          const [daiAfter, usdtAfter] = await getUserTokenBalances(
+            this.user1,
+            [this.dai, this.usdt],
+          )
+          
+          expect(daiAfter.sub(daiBefore)).to.eq(
+            BigNumber.from("999563042682003762"),
+          )
+    
+          expect(usdtAfter.sub(usdtBefore)).to.eq(
+            BigNumber.from("1000536011898397009"),
+          )
+        })
+      })
+    
+      describe("rampA", () => {
+        beforeEach(async function () {
+          await forceAdvanceOneBlock()
+        })
+    
+        it("Emits RampA event", async function () {
+          await expect(
+            this.swapFlashLoan.rampA(
+              100,
+              (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
+            ),
+          ).to.emit(this.swapFlashLoan, "RampA")
+        })
+    
+        it("Succeeds to ramp upwards", async function () {
+          // Create imbalanced pool to measure virtual price change
+          // We expect virtual price to increase as A decreases
+          await this.swapFlashLoan.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
+    
+          // call rampA(), changing A to 100 within a span of 14 days
+          const endTimestamp =
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1
+          await this.swapFlashLoan.rampA(100, endTimestamp)
+    
+          // +0 seconds since ramp A
+          expect(await this.swapFlashLoan.getA()).to.be.eq(50)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5000)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000016712123988753")
+    
+          // set timestamp to +100000 seconds
+          await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
+          expect(await this.swapFlashLoan.getA()).to.be.eq(54)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5413)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000107995162371698")
+    
+          // set timestamp to the end of ramp period
+          await setTimestamp(endTimestamp)
+          expect(await this.swapFlashLoan.getA()).to.be.eq(100)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(10000)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000620838643581600")
+        })
+    
+        it("Succeeds to ramp downwards", async function () {
+          // Create imbalanced pool to measure virtual price change
+          // We expect virtual price to decrease as A decreases
+          await this.swapFlashLoan.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
+    
+          // call rampA()
+          const endTimestamp =
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1
+          await this.swapFlashLoan.rampA(25, endTimestamp)
+    
+          // +0 seconds since ramp A
+          expect(await this.swapFlashLoan.getA()).to.be.eq(50)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5000)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000016712123988753")
+    
+          // set timestamp to +100000 seconds
+          await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
+          expect(await this.swapFlashLoan.getA()).to.be.eq(47)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(4794)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("999965443556825764")
+    
+          // set timestamp to the end of ramp period
+          await setTimestamp(endTimestamp)
+          expect(await this.swapFlashLoan.getA()).to.be.eq(25)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(2500)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("998849315829863360")
+        })
+    
+        it("Reverts when non-owner calls it", async function () {
+          await expect(
+            this.swapFlashLoan
+              .connect(this.user1)
+              .rampA(55, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
+          ).to.be.reverted
+        })
+    
+        it("Reverts with 'Wait 1 day before starting ramp'", async function () {
+          await this.swapFlashLoan.rampA(
+            55,
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
+          )
+          await expect(
+            this.swapFlashLoan.rampA(55, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
+          ).to.be.revertedWith("Wait 1 day before starting ramp")
+        })
+    
+        it("Reverts with 'Insufficient ramp time'", async function () {
+          await expect(
+            this.swapFlashLoan.rampA(55, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS - 1),
+          ).to.be.revertedWith("Insufficient ramp time")
+        })
+    
+        it("Reverts with 'futureA_ must be > 0 and < MAX_A'", async function () {
+          await expect(
+            this.swapFlashLoan.rampA(0, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
+          ).to.be.revertedWith("futureA_ must be > 0 and < MAX_A")
+        })
+    
+        it("Reverts with 'futureA_ is too small'", async function () {
+          await expect(
+            this.swapFlashLoan.rampA(24, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
+          ).to.be.revertedWith("futureA_ is too small")
+        })
+    
+        it("Reverts with 'futureA_ is too large'", async function () {
+          await expect(
+            this.swapFlashLoan.rampA(
+              101,
+              (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
+            ),
+          ).to.be.revertedWith("futureA_ is too large")
+        })
+      })
+    
+      describe("stopRampA", () => {
+        it("Emits StopRampA event", async function () {
+          // call rampA()
+          await this.swapFlashLoan.rampA(
+            100,
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100,
+          )
+    
+          // Stop ramp
+          expect(this.swapFlashLoan.stopRampA()).to.emit(this.swapFlashLoan, "StopRampA")
+        })
+    
+        it("Stop ramp succeeds", async function () {
+          // call rampA()
+          const endTimestamp =
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100
+          await this.swapFlashLoan.rampA(100, endTimestamp)
+    
+          // set timestamp to +100000 seconds
+          await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
+          expect(await this.swapFlashLoan.getA()).to.be.eq(54)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5413)
+    
+          // Stop ramp
+          await this.swapFlashLoan.stopRampA()
+          expect(await this.swapFlashLoan.getA()).to.be.eq(54)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5413)
+    
+          // set timestamp to endTimestamp
+          await setTimestamp(endTimestamp)
+    
+          // verify ramp has stopped
+          expect(await this.swapFlashLoan.getA()).to.be.eq(54)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5413)
+        })
+    
+        it("Reverts with 'Ramp is already stopped'", async function () {
+          // call rampA()
+          const endTimestamp =
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100
+          await this.swapFlashLoan.rampA(100, endTimestamp)
+    
+          // set timestamp to +10000 seconds
+          await setTimestamp((await getCurrentBlockTimestamp()) + 100000)
+          expect(await this.swapFlashLoan.getA()).to.be.eq(54)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5413)
+    
+          // Stop ramp
+          await this.swapFlashLoan.stopRampA()
+          expect(await this.swapFlashLoan.getA()).to.be.eq(54)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5413)
+    
+          // check call reverts when ramp is already stopped
+          await expect(this.swapFlashLoan.stopRampA()).to.be.revertedWith(
+            "Ramp is already stopped",
+          )
+        })
+      })
+
+      describe("Check for timestamp manipulations", () => {
+        beforeEach(async function () {
+          await forceAdvanceOneBlock()
+        })
+    
+        it("Check for maximum differences in A and virtual price when A is increasing", async function () {
+          // Create imbalanced pool to measure virtual price change
+          // Sets the pool in 2:1 ratio where this.dai is significantly cheaper than this.usdt
+          await this.swapFlashLoan.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
+    
+          // Initial A and virtual price
+          expect(await this.swapFlashLoan.getA()).to.be.eq(50)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5000)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000016712123988753")
+    
+          // Start ramp
+          await this.swapFlashLoan.rampA(
+            100,
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
+          )
+    
+          // Malicious miner skips 900 seconds
+          await setTimestamp((await getCurrentBlockTimestamp()) + 900)
+    
+          expect(await this.swapFlashLoan.getA()).to.be.eq(50)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5003)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000017428282641698")
+    
+          // Max increase of A between two blocks
+          // 5003 / 5000
+          // = 1.0006
+    
+          // Max increase of virtual price between two blocks (at 2:1 ratio of tokens, starting A = 50)
+          // 1000167862696363286 / 1000167146429977312
+          // = 1.00000071615
+        })
+    
+        it("Check for maximum differences in A and virtual price when A is decreasing", async function () {
+          // Create imbalanced pool to measure virtual price change
+          // Sets the pool in 2:1 ratio where this.dai is significantly cheaper than this.usdt
+          await this.swapFlashLoan.addLiquidity([String(1e18), 0], 0, this.MAX_UINT256)
+    
+          // Initial A and virtual price
+          expect(await this.swapFlashLoan.getA()).to.be.eq(50)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5000)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000016712123988753")
+    
+          // Start ramp
+          await this.swapFlashLoan.rampA(
+            25,
+            (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
+          )
+    
+          // Malicious miner skips 900 seconds
+          await setTimestamp((await getCurrentBlockTimestamp()) + 900)
+    
+          expect(await this.swapFlashLoan.getA()).to.be.eq(49)
+          expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(4999)
+          expect(await this.swapFlashLoan.getVirtualPrice()).to.be.eq("1000016473217833611")
+    
+          // Max decrease of A between two blocks
+          // 4999 / 5000
+          // = 0.9998
+    
+          // Max decrease of virtual price between two blocks (at 2:1 ratio of tokens, starting A = 50)
+          // 1000166907487883089 / 1000167146429977312
+          // = 0.99999976109
+        })
+
+        // Below tests try to verify the issues found in Curve Vulnerability Report are resolved.
+        // https://medium.com/@peter_4205/curve-vulnerability-report-a1d7630140ec
+        // The two cases we are most concerned are:
+        //
+        // 1. A is ramping up, and the pool is at imbalanced state.
+        //
+        // Attacker can 'resolve' the imbalance prior to the change of A. Then try to recreate the imbalance after A has
+        // changed. Due to the price curve becoming more linear, recreating the imbalance will become a lot cheaper. Thus
+        // benefiting the attacker.
+        //
+        // 2. A is ramping down, and the pool is at balanced state
+        //
+        // Attacker can create the imbalance in token balances prior to the change of A. Then try to resolve them
+        // near 1:1 ratio. Since downward change of A will make the price curve less linear, resolving the token balances
+        // to 1:1 ratio will be cheaper. Thus benefiting the attacker
+        //
+        // For visual representation of how price curves differ based on A, please refer to Figure 1 in the above
+        // Curve Vulnerability Report.
 
     describe("Check for attacks while A is ramping upwards", () => {
       let initialAttackerBalances: BigNumber[] = []
@@ -1624,7 +1632,7 @@ describe("Swap", function () {
       beforeEach(async function () {
         // This attack is achieved by creating imbalance in the first block then
         // trading in reverse direction in the second block.
-        attacker = user1
+        attacker = this.user1
 
         initialAttackerBalances = await getUserTokenBalances(attacker, [
           this.dai,
@@ -1635,16 +1643,16 @@ describe("Swap", function () {
         expect(initialAttackerBalances[1]).to.be.eq(String(1e20))
 
         // Start ramp upwards
-        await swap.rampA(
+        await this.swapFlashLoan.rampA(
           100,
           (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
         )
-        expect(await swap.getAPrecise()).to.be.eq(5000)
+        expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5000)
 
         // Check current pool balances
         initialPoolBalances = [
-          await swap.getTokenBalance(0),
-          await swap.getTokenBalance(1),
+          await this.swapFlashLoan.getTokenBalance(0),
+          await this.swapFlashLoan.getTokenBalance(1),
         ]
         expect(initialPoolBalances[0]).to.be.eq(String(1e18))
         expect(initialPoolBalances[1]).to.be.eq(String(1e18))
@@ -1656,43 +1664,43 @@ describe("Swap", function () {
         () => {
           it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of this.dai to this.usdt, causing massive imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 9.085e17 of this.usdt
-            expect(this.usdtOutput).to.be.eq("908591742545002306")
+            expect(usdtOutput).to.be.eq("909410293664412218")
 
             // Pool is imbalanced! Now trades from this.usdt -> this.dai may be profitable in small sizes
             // this.dai balance in the pool  : 2.00e18
             // this.usdt balance in the pool : 9.14e16
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq("91408257454997694")
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq("90589706335587782")
 
             // Malicious miner skips 900 seconds
             await setTimestamp((await getCurrentBlockTimestamp()) + 900)
 
             // Verify A has changed upwards
             // 5000 -> 5003 (0.06%)
-            expect(await swap.getAPrecise()).to.be.eq(5003)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5003)
 
             // Trade this.usdt to this.dai, taking advantage of the imbalance and change of A
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("997214696574405737")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("999678397362731746")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
               this.dai,
@@ -1707,7 +1715,7 @@ describe("Swap", function () {
             )
             expect(
               initialAttackerBalances[0].sub(finalAttackerBalances[0]),
-            ).to.be.eq("2785303425594263")
+            ).to.be.eq("321602637268254")
             expect(
               initialAttackerBalances[1].sub(finalAttackerBalances[1]),
             ).to.be.eq("0")
@@ -1715,13 +1723,13 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = []
-            finalPoolBalances.push(await swap.getTokenBalance(0))
-            finalPoolBalances.push(await swap.getTokenBalance(1))
+            finalPoolBalances.push(await this.swapFlashLoan.getTokenBalance(0))
+            finalPoolBalances.push(await this.swapFlashLoan.getTokenBalance(1))
 
             expect(finalPoolBalances[0]).to.be.gt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(finalPoolBalances[0].sub(initialPoolBalances[0])).to.be.eq(
-              "2785303425594263",
+              "321602637268254",
             )
             expect(finalPoolBalances[1].sub(initialPoolBalances[1])).to.be.eq(
               "0",
@@ -1735,21 +1743,21 @@ describe("Swap", function () {
             // Purpose of this test case is to mimic rapid ramp up of A.
 
             // Swap 1e18 of this.dai to this.usdt, causing massive imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 9.085e17 of this.usdt
-            expect(this.usdtOutput).to.be.eq("908591742545002306")
+            expect(usdtOutput).to.be.eq("909410293664412218")
 
             // Pool is imbalanced! Now trades from this.usdt -> this.dai may be profitable in small sizes
             // this.dai balance in the pool  : 2.00e18
             // this.usdt balance in the pool : 9.14e16
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq("91408257454997694")
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq("90589706335587782")
 
             // Assume no transactions occur during 2 weeks
             await setTimestamp(
@@ -1758,22 +1766,22 @@ describe("Swap", function () {
 
             // Verify A has changed upwards
             // 5000 -> 10000 (100%)
-            expect(await swap.getAPrecise()).to.be.eq(10000)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(10000)
 
             // Trade this.usdt to this.dai, taking advantage of the imbalance and sudden change of A
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("955743484403042509")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("957849006859164622")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
               this.dai,
@@ -1788,7 +1796,7 @@ describe("Swap", function () {
             )
             expect(
               initialAttackerBalances[0].sub(finalAttackerBalances[0]),
-            ).to.be.eq("44256515596957491")
+            ).to.be.eq("42150993140835378")
             expect(
               initialAttackerBalances[1].sub(finalAttackerBalances[1]),
             ).to.be.eq("0")
@@ -1796,14 +1804,14 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
 
             expect(finalPoolBalances[0]).to.be.gt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(finalPoolBalances[0].sub(initialPoolBalances[0])).to.be.eq(
-              "44256515596957491",
+              "42150993140835378",
             )
             expect(finalPoolBalances[1].sub(initialPoolBalances[1])).to.be.eq(
               "0",
@@ -1820,7 +1828,7 @@ describe("Swap", function () {
         () => {
           beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
-            await swap
+            await this.swapFlashLoan
               .connect(this.user2)
               .addLiquidity(
                 [String(0), String(2e18)],
@@ -1830,8 +1838,8 @@ describe("Swap", function () {
 
             // Check current pool balances
             initialPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
             expect(initialPoolBalances[0]).to.be.eq(String(1e18))
             expect(initialPoolBalances[1]).to.be.eq(String(3e18))
@@ -1839,23 +1847,23 @@ describe("Swap", function () {
 
           it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of this.dai to this.usdt, resolving imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 1.012e18 of this.usdt
             // Because the pool was imbalanced in the beginning, this trade results in more than 1e18 this.usdt
-            expect(this.usdtOutput).to.be.eq("1011933251060681353")
+            expect(usdtOutput).to.be.eq("1012844902638213499")
 
             // Pool is now almost balanced!
             // this.dai balance in the pool  : 2.000e18
             // this.usdt balance in the pool : 1.988e18
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq(
-              "1988066748939318647",
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq(
+              "1987155097361786501",
             )
 
             // Malicious miner skips 900 seconds
@@ -1863,22 +1871,22 @@ describe("Swap", function () {
 
             // Verify A has changed upwards
             // 5000 -> 5003 (0.06%)
-            expect(await swap.getAPrecise()).to.be.eq(5003)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5003)
 
             // Trade this.usdt to this.dai, taking advantage of the imbalance and sudden change of A
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the attacker leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("998017518949630644")
+            // If daiOutput > 1e18, the attacker leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("999808300832170259")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
               this.dai,
@@ -1893,7 +1901,7 @@ describe("Swap", function () {
             )
             expect(
               initialAttackerBalances[0].sub(finalAttackerBalances[0]),
-            ).to.be.eq("1982481050369356")
+            ).to.be.eq("191699167829741")
             expect(
               initialAttackerBalances[1].sub(finalAttackerBalances[1]),
             ).to.be.eq("0")
@@ -1901,13 +1909,13 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = []
-            finalPoolBalances.push(await swap.getTokenBalance(0))
-            finalPoolBalances.push(await swap.getTokenBalance(1))
+            finalPoolBalances.push(await this.swapFlashLoan.getTokenBalance(0))
+            finalPoolBalances.push(await this.swapFlashLoan.getTokenBalance(1))
 
             expect(finalPoolBalances[0]).to.be.gt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(finalPoolBalances[0].sub(initialPoolBalances[0])).to.be.eq(
-              "1982481050369356",
+              "191699167829741",
             )
             expect(finalPoolBalances[1].sub(initialPoolBalances[1])).to.be.eq(
               "0",
@@ -1921,22 +1929,22 @@ describe("Swap", function () {
             // Purpose of this test case is to mimic rapid ramp up of A.
 
             // Swap 1e18 of this.dai to this.usdt, resolving the imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 9.085e17 of this.usdt
-            expect(this.usdtOutput).to.be.eq("1011933251060681353")
+            expect(usdtOutput).to.be.eq("1012844902638213499")
 
             // Pool is now almost balanced!
             // this.dai balance in the pool  : 2.000e18
             // this.usdt balance in the pool : 1.988e18
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq(
-              "1988066748939318647",
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq(
+              "1987155097361786501",
             )
 
             // Assume 2 weeks go by without any other transactions
@@ -1947,22 +1955,22 @@ describe("Swap", function () {
 
             // Verify A has changed upwards
             // 5000 -> 10000 (100%)
-            expect(await swap.getAPrecise()).to.be.eq(10000)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(10000)
 
             // Trade this.usdt to this.dai, taking advantage of the imbalance and sudden change of A
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("1004298818514364451")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("1006104761668970935")
             // Attack was successful!
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
@@ -1978,7 +1986,7 @@ describe("Swap", function () {
             )
             expect(
               finalAttackerBalances[0].sub(initialAttackerBalances[0]),
-            ).to.be.eq("4298818514364451")
+            ).to.be.eq("6104761668970935")
             expect(
               finalAttackerBalances[1].sub(initialAttackerBalances[1]),
             ).to.be.eq("0")
@@ -1986,14 +1994,14 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
 
             expect(finalPoolBalances[0]).to.be.lt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(initialPoolBalances[0].sub(finalPoolBalances[0])).to.be.eq(
-              "4298818514364451",
+              "6104761668970935",
             )
             expect(initialPoolBalances[1].sub(finalPoolBalances[1])).to.be.eq(
               "0",
@@ -2005,7 +2013,8 @@ describe("Swap", function () {
           })
         },
       )
-    })
+    }
+    )
 
     describe("Check for attacks while A is ramping downwards", () => {
       let initialAttackerBalances: BigNumber[] = []
@@ -2014,7 +2023,7 @@ describe("Swap", function () {
 
       beforeEach(async function () {
         // Set up the downward ramp A
-        attacker = user1
+        attacker = this.user1
 
         initialAttackerBalances = await getUserTokenBalances(attacker, [
           this.dai,
@@ -2025,16 +2034,16 @@ describe("Swap", function () {
         expect(initialAttackerBalances[1]).to.be.eq(String(1e20))
 
         // Start ramp downwards
-        await swap.rampA(
+        await this.swapFlashLoan.rampA(
           25,
           (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
         )
-        expect(await swap.getAPrecise()).to.be.eq(5000)
+        expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(5000)
 
         // Check current pool balances
         initialPoolBalances = [
-          await swap.getTokenBalance(0),
-          await swap.getTokenBalance(1),
+          await this.swapFlashLoan.getTokenBalance(0),
+          await this.swapFlashLoan.getTokenBalance(1),
         ]
         expect(initialPoolBalances[0]).to.be.eq(String(1e18))
         expect(initialPoolBalances[1]).to.be.eq(String(1e18))
@@ -2049,41 +2058,41 @@ describe("Swap", function () {
 
           it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of this.dai to this.usdt, causing massive imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 9.085e17 of this.usdt
-            expect(this.usdtOutput).to.be.eq("908591742545002306")
+            expect(usdtOutput).to.be.eq("909410293664412218")
 
             // Pool is imbalanced! Now trades from this.usdt -> this.dai may be profitable in small sizes
             // this.dai balance in the pool  : 2.00e18
             // this.usdt balance in the pool : 9.14e16
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq("91408257454997694")
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq("90589706335587782")
 
             // Malicious miner skips 900 seconds
             await setTimestamp((await getCurrentBlockTimestamp()) + 900)
 
             // Verify A has changed downwards
-            expect(await swap.getAPrecise()).to.be.eq(4999)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(4999)
 
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("997276754500361021")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("999740961446163163")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
               this.dai,
@@ -2099,7 +2108,7 @@ describe("Swap", function () {
             )
             expect(
               initialAttackerBalances[0].sub(finalAttackerBalances[0]),
-            ).to.be.eq("2723245499638979")
+            ).to.be.eq("259038553836837")
             expect(
               initialAttackerBalances[1].sub(finalAttackerBalances[1]),
             ).to.be.eq("0")
@@ -2107,14 +2116,14 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
 
             expect(finalPoolBalances[0]).to.be.gt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(finalPoolBalances[0].sub(initialPoolBalances[0])).to.be.eq(
-              "2723245499638979",
+              "259038553836837",
             )
             expect(finalPoolBalances[1].sub(initialPoolBalances[1])).to.be.eq(
               "0",
@@ -2128,21 +2137,21 @@ describe("Swap", function () {
             // Purpose of this test is to show how dangerous rapid A ramp is.
 
             // Swap 1e18 of this.dai to this.usdt, causing massive imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 9.085e17 of this.usdt
-            expect(this.usdtOutput).to.be.eq("908591742545002306")
+            expect(usdtOutput).to.be.eq("909410293664412218")
 
             // Pool is imbalanced! Now trades from this.usdt -> this.dai may be profitable in small sizes
             // this.dai balance in the pool  : 2.00e18
             // this.usdt balance in the pool : 9.14e16
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq("91408257454997694")
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq("90589706335587782")
 
             // Assume no transactions occur during 2 weeks ramp time
             await setTimestamp(
@@ -2150,21 +2159,21 @@ describe("Swap", function () {
             )
 
             // Verify A has changed downwards
-            expect(await swap.getAPrecise()).to.be.eq(2500)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(2500)
 
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("1066252480054180588")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("1069229183877335560")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
               this.dai,
@@ -2180,7 +2189,7 @@ describe("Swap", function () {
             )
             expect(
               finalAttackerBalances[0].sub(initialAttackerBalances[0]),
-            ).to.be.eq("66252480054180588")
+            ).to.be.eq("69229183877335560")
             expect(
               finalAttackerBalances[1].sub(initialAttackerBalances[1]),
             ).to.be.eq("0")
@@ -2188,14 +2197,14 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
 
             expect(finalPoolBalances[0]).to.be.lt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(initialPoolBalances[0].sub(finalPoolBalances[0])).to.be.eq(
-              "66252480054180588",
+              "69229183877335560",
             )
             expect(initialPoolBalances[1].sub(finalPoolBalances[1])).to.be.eq(
               "0",
@@ -2215,7 +2224,7 @@ describe("Swap", function () {
         () => {
           beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
-            await swap
+            await this.swapFlashLoan
               .connect(this.user2)
               .addLiquidity(
                 [String(0), String(2e18)],
@@ -2225,8 +2234,8 @@ describe("Swap", function () {
 
             // Check current pool balances
             initialPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
             expect(initialPoolBalances[0]).to.be.eq(String(1e18))
             expect(initialPoolBalances[1]).to.be.eq(String(3e18))
@@ -2234,44 +2243,44 @@ describe("Swap", function () {
 
           it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of this.dai to this.usdt, resolving imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 1.012e18 of this.usdt
             // Because the pool was imbalanced in the beginning, this trade results in more than 1e18 this.usdt
-            expect(this.usdtOutput).to.be.eq("1011933251060681353")
+            expect(usdtOutput).to.be.eq("1012844902638213499")
 
             // Pool is now almost balanced!
             // this.dai balance in the pool  : 2.000e18
             // this.usdt balance in the pool : 1.988e18
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq(
-              "1988066748939318647",
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq(
+              "1987155097361786501",
             )
 
             // Malicious miner skips 900 seconds
             await setTimestamp((await getCurrentBlockTimestamp()) + 900)
 
             // Verify A has changed downwards
-            expect(await swap.getAPrecise()).to.be.eq(4999)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(4999)
 
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("998007711333645455")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("999798469801411739")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
               this.dai,
@@ -2287,7 +2296,7 @@ describe("Swap", function () {
             )
             expect(
               initialAttackerBalances[0].sub(finalAttackerBalances[0]),
-            ).to.be.eq("1992288666354545")
+            ).to.be.eq("201530198588261")
             expect(
               initialAttackerBalances[1].sub(finalAttackerBalances[1]),
             ).to.be.eq("0")
@@ -2295,14 +2304,14 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
 
             expect(finalPoolBalances[0]).to.be.gt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(finalPoolBalances[0].sub(initialPoolBalances[0])).to.be.eq(
-              "1992288666354545",
+              "201530198588261",
             )
             expect(finalPoolBalances[1].sub(initialPoolBalances[1])).to.be.eq(
               "0",
@@ -2316,23 +2325,23 @@ describe("Swap", function () {
             // Purpose of this test case is to mimic rapid ramp down of A.
 
             // Swap 1e18 of this.dai to this.usdt, resolving imbalance in the pool
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
               .swap(0, 1, String(1e18), 0, this.MAX_UINT256)
-            const this.usdtOutput = (
+            const usdtOutput = (
               await getUserTokenBalance(attacker, this.usdt)
             ).sub(initialAttackerBalances[1])
 
             // First trade results in 1.012e18 of this.usdt
             // Because the pool was imbalanced in the beginning, this trade results in more than 1e18 this.usdt
-            expect(this.usdtOutput).to.be.eq("1011933251060681353")
+            expect(usdtOutput).to.be.eq("1012844902638213499")
 
             // Pool is now almost balanced!
             // this.dai balance in the pool  : 2.000e18
             // this.usdt balance in the pool : 1.988e18
-            expect(await swap.getTokenBalance(0)).to.be.eq(String(2e18))
-            expect(await swap.getTokenBalance(1)).to.be.eq(
-              "1988066748939318647",
+            expect(await this.swapFlashLoan.getTokenBalance(0)).to.be.eq(String(2e18))
+            expect(await this.swapFlashLoan.getTokenBalance(1)).to.be.eq(
+              "1987155097361786501",
             )
 
             // Assume no other transactions occur during the 2 weeks ramp period
@@ -2341,21 +2350,21 @@ describe("Swap", function () {
             )
 
             // Verify A has changed downwards
-            expect(await swap.getAPrecise()).to.be.eq(2500)
+            expect(await this.swapFlashLoan.getAPrecise()).to.be.eq(2500)
 
             const balanceBefore = await getUserTokenBalance(
               attacker,
               this.dai,
             )
-            await swap
+            await this.swapFlashLoan
               .connect(attacker)
-              .swap(1, 0, this.usdtOutput, 0, this.MAX_UINT256)
-            const this.daiOutput = (
+              .swap(1, 0, usdtOutput, 0, this.MAX_UINT256)
+            const daiOutput = (
               await getUserTokenBalance(attacker, this.dai)
             ).sub(balanceBefore)
 
-            // If this.daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
-            expect(this.daiOutput).to.be.eq("986318317546604072")
+            // If daiOutput > 1e18, the malicious user leaves with more this.dai than the start.
+            expect(daiOutput).to.be.eq("988081709433314578")
             // Attack was not successful
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
@@ -2372,7 +2381,7 @@ describe("Swap", function () {
             )
             expect(
               initialAttackerBalances[0].sub(finalAttackerBalances[0]),
-            ).to.be.eq("13681682453395928")
+            ).to.be.eq("11918290566685422")
             expect(
               initialAttackerBalances[1].sub(finalAttackerBalances[1]),
             ).to.be.eq("0")
@@ -2380,14 +2389,14 @@ describe("Swap", function () {
 
             // Check for pool balance changes
             const finalPoolBalances = [
-              await swap.getTokenBalance(0),
-              await swap.getTokenBalance(1),
+              await this.swapFlashLoan.getTokenBalance(0),
+              await this.swapFlashLoan.getTokenBalance(1),
             ]
 
             expect(finalPoolBalances[0]).to.be.gt(initialPoolBalances[0])
             expect(finalPoolBalances[1]).to.be.eq(initialPoolBalances[1])
             expect(finalPoolBalances[0].sub(initialPoolBalances[0])).to.be.eq(
-              "13681682453395928",
+              "11918290566685422",
             )
             expect(finalPoolBalances[1].sub(initialPoolBalances[1])).to.be.eq(
               "0",
@@ -2395,9 +2404,9 @@ describe("Swap", function () {
             // Pool (liquidity providers) gained 1.368e16 this.dai (1.368% of this.dai balance)
             // The attack did not benefit the attacker
           })
-        },
-      )
+        },)
     })
+
   })
+
 })
-*/
