@@ -44,16 +44,23 @@ async function main(): Promise<void> {
     await swapFlashLoan.deployed()
     console.log(`swapFlashLoan deployed at ${swapFlashLoan.address}`);
     
-    const daiAddress = "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063";
-    const usdcAddress = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
+    const usdtAddress = "0x4988a896b1227218e4a686fde5eabdcabd91571f";
+    const usdcAddress = "0xb12bfca5a55806aaf64e99521918a4bf0fc40802";
+
+    const erc20Factory = await ethers.getContractFactory("ERC20Mock");
+    const usdc = erc20Factory.attach(usdcAddress);
+    const usdt = erc20Factory.attach(usdtAddress);
+
+    const usdcDecimals = await usdc.decimals();
+    const usdtDecimals = await usdt.decimals();
 
     // Constructor arguments
     const TOKEN_ADDRESSES = [
-        daiAddress,
-        usdcAddress,
+        usdc.address,
+        usdt.address,
       ]
-    const TOKEN_DECIMALS = [18, 6]
-    const LP_TOKEN_NAME = "Trisolaris DAI/USDC"
+    const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals]
+    const LP_TOKEN_NAME = "Trisolaris USDT/USDC"
     const LP_TOKEN_SYMBOL = "triTestUSD"
     const INITIAL_A = 400
     const SWAP_FEE = 4e6 // 4bps
@@ -73,3 +80,12 @@ async function main(): Promise<void> {
     const lpToken = LpTokenFactory.attach(swapStorage.lpToken)
     console.log(`lpToken deployed at ${lpToken.address}`);
 }
+
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
+main()
+    .then(() => process.exit(0))
+    .catch((error: Error) => {
+        console.error(error);
+        process.exit(1);
+    });

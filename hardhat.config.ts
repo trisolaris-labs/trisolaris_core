@@ -36,6 +36,11 @@ if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
 }
 
+const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
+if (!auroraApiKey) {
+  throw new Error("Please set your AURORA_API_KEY in a .env file");
+}
+
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   gasReporter: {
