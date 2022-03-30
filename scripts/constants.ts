@@ -29,3 +29,10 @@ export const dfRecepientAddress = "0x49D8B1389df580B1602Ae385D32b9c5A7Ceb2e25";
 export const kRecepientAddress = "0x464bCBD80Ab3Ec89A93F1667DafB682d14634A5e";
 export const donDeployerAddress = "0x25b9B32d875E4b1b0ec8b74ecF4f0A2aF8e96322";
 export const specialistAddress = "0x7d479275bCa2795394e42e07a2EE2d27c96F69Ca";
+
+// Stableswap core contracts
+export const lPTokenBaseAddress = "0x08800d125088CfCd9b72432383397bAF680f7c3b";
+export const amplificationUtilsAddress = "0x4135b66b138f281e0173550C3fb9A706Acc755ED";
+export const swapUtilsAddress = "0x518B8E8338864f229f762aAFFC0A9f0c4722900B";
+export const swapFlashLoanAddress = "0x13e7a001EC72AB30D66E2f386f677e25dCFF5F59";
+export const lpTokenAddress = "0x5EB99863f7eFE88c447Bc9D52AA800421b1de6c9";

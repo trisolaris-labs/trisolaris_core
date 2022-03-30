@@ -60,11 +60,11 @@ async function main(): Promise<void> {
         usdt.address,
       ]
     const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals]
-    const LP_TOKEN_NAME = "Trisolaris USDT/USDC"
-    const LP_TOKEN_SYMBOL = "triTestUSD"
+    const LP_TOKEN_NAME = "Trisolaris USDC/USDT"
+    const LP_TOKEN_SYMBOL = "USD TLP"
     const INITIAL_A = 400
-    const SWAP_FEE = 4e6 // 4bps
-    const ADMIN_FEE = 1e6 //1bps
+    const SWAP_FEE = 10e6 // 10bps
+    const ADMIN_FEE = 5*10e8 // 50 %
 
     await swapFlashLoan.connect(deployer).initialize(
         TOKEN_ADDRESSES,
