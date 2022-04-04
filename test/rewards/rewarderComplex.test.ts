@@ -247,7 +247,7 @@ describe("Complex Rewarder", function () {
     })
 
     it("should distribute no TRIs only rewardToken since tri emission is 0 for this pool", async function () {
-      this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
+      this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", 18, "10000000000")
       await this.lp2.deployed()
 
       this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp2.address, "0", this.chefv2.address)
