@@ -79,9 +79,20 @@ async function main(): Promise<void> {
         lpTokenBase.address,
         swapFlashLoan.address,
       )
-      const metaSwapStorage = await metaSwap.swapStorage()
-      const metaSwapLPToken = LpTokenFactory.attach(metaSwapStorage.lpToken)
-      console.log(`metaswap lpToken deployed at ${metaSwapLPToken.address}`);
+    const metaSwapStorage = await metaSwap.swapStorage()
+    const metaSwapLPToken = LpTokenFactory.attach(metaSwapStorage.lpToken)
+    console.log(`metaswap lpToken deployed at ${metaSwapLPToken.address}`);
+    
+    const MetaSwapDepositFactory = await ethers.getContractFactory("MetaSwapDeposit", deployer)
+    const metaSwapDeposit = await MetaSwapDepositFactory.connect(deployer).deploy()
+    await metaSwapDeposit.deployed()
+    console.log(`metaSwapDeposit deployed at ${metaSwapDeposit.address}`);
+
+    await metaSwapDeposit.initialize(
+      swapFlashLoan.address,
+      metaSwap.address,
+      metaSwapLPToken.address,
+    )
 
 }
 
