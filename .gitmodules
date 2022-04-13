@@ -7,3 +7,6 @@
 [submodule "lib/BoringSolidity"]
 	path = lib/BoringSolidity
 	url = https://github.com/boringcrypto/BoringSolidity
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/brockelmore/forge-std
