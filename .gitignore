@@ -15,7 +15,7 @@ coverage/
 dist/
 node_modules/
 typechain/
-
+out/
 # files
 *.env
 *.log
