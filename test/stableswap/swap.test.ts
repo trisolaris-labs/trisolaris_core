@@ -1276,6 +1276,8 @@ describe("Swap", function () {
         it("Succeeds when there are no fees withdrawn", async function () {
           // Sets adminFee to 1% of the swap fees
           await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
+
+          await this.swapFashLoan.changeFeeAddress(this.user2.address)
     
           const [daiBefore, usdtBefore] = await getUserTokenBalances(
             this.owner,

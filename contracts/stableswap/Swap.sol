@@ -41,6 +41,9 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
     // getTokenIndex function also relies on this mapping to retrieve token index.
     mapping(address => uint8) private tokenIndexes;
 
+    // decides the fee address
+    address public feeAddress;
+
     /*** EVENTS ***/
 
     // events replicated from SwapUtils to make the ABI easier for dumb
@@ -88,6 +91,8 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 futureTime
     );
     event StopRampA(uint256 currentA, uint256 time);
+    event FeeAddressChanged(address newFeeAddress, address oldFeeAddress);
+
 
     /**
      * @notice Initializes this Swap contract with the given parameters.
@@ -179,6 +184,9 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
         // swapStorage.futureATime = 0;
         swapStorage.swapFee = _fee;
         swapStorage.adminFee = _adminFee;
+
+        // initialize feeAddress to be the owner
+        feeAddress = owner();
     }
 
     /*** MODIFIERS ***/
@@ -189,6 +197,14 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
      */
     modifier deadlineCheck(uint256 deadline) {
         require(block.timestamp <= deadline, "Deadline not met");
+        _;
+    }
+
+    /**
+     * @notice Modifier to check if the message sender is the feeAddress
+     */
+    modifier onlyFeeAddress() {
+        require(feeAddress == _msgSender(), "Caller is not the feeAddress");
         _;
     }
 
@@ -481,10 +497,13 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
     /*** ADMIN FUNCTIONS ***/
 
     /**
-     * @notice Withdraw all admin fees to the contract owner
+     * @notice Update the fee address.
+     * @param newFeeAddress new fee address to be applied for fee withdrawal
      */
-    function withdrawAdminFees() external onlyOwner {
-        swapStorage.withdrawAdminFees(owner());
+    function changeFeeAddress(address newFeeAddress) external onlyOwner {
+        address oldFeeAddress = feeAddress;
+        feeAddress = newFeeAddress;
+        emit FeeAddressChanged(newFeeAddress, oldFeeAddress);
     }
 
     /**
@@ -519,5 +538,14 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
      */
     function stopRampA() external onlyOwner {
         swapStorage.stopRampA();
+    }
+
+    /*** Fee Address FUNCTIONS ***/
+
+    /**
+     * @notice Withdraw all admin fees to the fee address
+     */
+    function withdrawAdminFees() external onlyFeeAddress {
+        swapStorage.withdrawAdminFees(feeAddress);
     }
 }
