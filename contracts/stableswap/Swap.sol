@@ -501,6 +501,7 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
      * @param newFeeAddress new fee address to be applied for fee withdrawal
      */
     function setFeeAddress(address newFeeAddress) external onlyOwner {
+        require(newFeeAddress != address(0), "Cannot set a zero address as feeAddress");
         address oldFeeAddress = feeAddress;
         feeAddress = newFeeAddress;
         emit NewFeeAddress(newFeeAddress, oldFeeAddress);

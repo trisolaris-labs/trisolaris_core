@@ -1256,6 +1256,11 @@ describe("Swap", function () {
           await expect(this.swapFlashLoan.connect(this.user2).setFeeAddress(this.user2.address)).to.be
             .reverted
         })
+
+        it("Reverts when setting zero address", async function () {
+          await expect(this.swapFlashLoan.setFeeAddress(this.ZERO_ADDRESS)).to.be.reverted
+          await expect(this.swapFlashLoan.setFeeAddress()).to.be.reverted
+        })
     
       })
     
