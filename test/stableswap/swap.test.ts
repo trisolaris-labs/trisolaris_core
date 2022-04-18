@@ -140,6 +140,13 @@ describe("Swap", function () {
         })
     })
 
+    describe("feeAddress", () => {
+      it("Returns correct addresses of fee address", async function () {
+        expect(await this.swapFlashLoan.feeAddress()).to.eq(this.owner.address)
+      })
+  
+    })
+
       describe("getToken", () => {
         it("Returns correct addresses of pooled tokens", async function () {
           expect(await this.swapFlashLoan.getToken(0)).to.eq(this.dai.address)
@@ -1230,6 +1237,32 @@ describe("Swap", function () {
           expect((await this.swapFlashLoan.swapStorage()).adminFee).to.eq(BigNumber.from(1e10))
         })
       })
+
+      describe("setFeeAddress", () => {
+        it("Succeeds in changing the feeAddress", async function () {
+          await this.swapFlashLoan.setFeeAddress(this.user2.address)
+          expect((await this.swapFlashLoan.feeAddress())).to.eq(this.user2.address)
+        })
+
+        it("Emits NewFeeAddress event", async function () {
+          await expect(this.swapFlashLoan.setFeeAddress(this.user2.address)).to.emit(
+            this.swapFlashLoan,
+            "NewFeeAddress",
+            )
+        })
+    
+        it("Reverts when called by non-owners", async function () {
+          await expect(this.swapFlashLoan.connect(this.user1).setFeeAddress(this.user2.address)).to.be.reverted
+          await expect(this.swapFlashLoan.connect(this.user2).setFeeAddress(this.user2.address)).to.be
+            .reverted
+        })
+
+        it("Reverts when setting zero address", async function () {
+          await expect(this.swapFlashLoan.setFeeAddress(this.ZERO_ADDRESS)).to.be.reverted
+          await expect(this.swapFlashLoan.setFeeAddress()).to.be.reverted
+        })
+    
+      })
     
       describe("getAdminBalance", () => {
         it("Reverts with 'Token index out of range'", async function () {
@@ -1268,21 +1301,27 @@ describe("Swap", function () {
       })
     
       describe("withdrawAdminFees", () => {
-        it("Reverts when called by non-owners", async function () {
+        it("Reverts when called by non-fee-address", async function () {
+          await this.swapFlashLoan.setFeeAddress(this.user2.address)
+
           await expect(this.swapFlashLoan.connect(this.user1).withdrawAdminFees()).to.be.reverted
-          await expect(this.swapFlashLoan.connect(this.user2).withdrawAdminFees()).to.be.reverted
+          await expect(this.swapFlashLoan.connect(this.owner).withdrawAdminFees()).to.be.reverted
         })
     
         it("Succeeds when there are no fees withdrawn", async function () {
+          // Sets feeAddress to user2
+          await this.swapFlashLoan.setFeeAddress(this.user2.address)
+
           // Sets adminFee to 1% of the swap fees
           await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
-    
+
+          
           const [daiBefore, usdtBefore] = await getUserTokenBalances(
             this.owner,
             [this.dai, this.usdt],
           )
     
-          await this.swapFlashLoan.withdrawAdminFees()
+          await this.swapFlashLoan.connect(this.user2).withdrawAdminFees()
     
           const [daiAfter, usdtAfter] = await getUserTokenBalances(
             this.owner,
@@ -1294,6 +1333,9 @@ describe("Swap", function () {
         })
     
         it("Succeeds with expected amount of fees withdrawn", async function () {
+          // Sets feeAddress to user2
+          await this.swapFlashLoan.setFeeAddress(this.user2.address)
+
           // Sets adminFee to 1% of the swap fees
           await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
           await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
@@ -1303,14 +1345,14 @@ describe("Swap", function () {
           expect(await this.swapFlashLoan.getAdminBalance(1)).to.eq(String(99802413976))
     
           const [daiBefore, usdtBefore] = await getUserTokenBalances(
-            this.owner,
+            this.user2,
             [this.dai, this.usdt],
           )
     
-          await this.swapFlashLoan.withdrawAdminFees()
+          await this.swapFlashLoan.connect(this.user2).withdrawAdminFees()
     
           const [daiAfter, usdtAfter] = await getUserTokenBalances(
-            this.owner,
+            this.user2,
             [this.dai, this.usdt],
           )
     
@@ -1321,6 +1363,9 @@ describe("Swap", function () {
         })
         
         it("Withdrawing admin fees has no impact on users' withdrawal", async function () {
+          // Sets feeAddress to user2
+          await this.swapFlashLoan.setFeeAddress(this.user2.address)
+
           // Sets adminFee to 1% of the swap fees
           await this.swapFlashLoan.setAdminFee(BigNumber.from(10 ** 8))
           await this.swapFlashLoan
@@ -1332,7 +1377,7 @@ describe("Swap", function () {
             await this.swapFlashLoan.connect(this.user2).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
           }
     
-          await this.swapFlashLoan.withdrawAdminFees()
+          await this.swapFlashLoan.connect(this.user2).withdrawAdminFees()
     
           const [daiBefore, usdtBefore] = await getUserTokenBalances(
             this.user1,
