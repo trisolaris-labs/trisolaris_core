@@ -91,7 +91,7 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 futureTime
     );
     event StopRampA(uint256 currentA, uint256 time);
-    event FeeAddressChanged(address newFeeAddress, address oldFeeAddress);
+    event NewFeeAddress(address newFeeAddress, address oldFeeAddress);
 
 
     /**
@@ -500,10 +500,10 @@ contract Swap is OwnerPausableUpgradeable, ReentrancyGuardUpgradeable {
      * @notice Update the fee address.
      * @param newFeeAddress new fee address to be applied for fee withdrawal
      */
-    function changeFeeAddress(address newFeeAddress) external onlyOwner {
+    function setFeeAddress(address newFeeAddress) external onlyOwner {
         address oldFeeAddress = feeAddress;
         feeAddress = newFeeAddress;
-        emit FeeAddressChanged(newFeeAddress, oldFeeAddress);
+        emit NewFeeAddress(newFeeAddress, oldFeeAddress);
     }
 
     /**
