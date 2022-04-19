@@ -10,7 +10,6 @@ import "../amm/interfaces/IUniswapV2Pair.sol";
 import "../amm/interfaces/IUniswapV2Factory.sol";
 import "../amm/interfaces/IUniswapV2Router02.sol";
 import "../interfaces/IMetaSwap.sol";
-import "hardhat/console.sol";
 
 // StableTriMaker is MasterChef's left hand and kinda a wizard. He can cook up Tri from pretty much anything!
 // This contract handles "serving up" rewards for xTri holders by trading tokens collected from fees for Tri.
@@ -90,7 +89,8 @@ contract StableTriMaker is Ownable {
         address[] calldata stableTokens
     ) external onlyEOA {
         // Remove liquidity from stableswap lp into stableTokens arg
-        // Calls convert() on each stableToken
+        // Adds liquidity to normal amm on stableTokens pair
+        // Converts lp tokens to tri
         uint256 stableTokensBalance = IERC20(metaSwapLpToken).balanceOf(address(this));
         IERC20(metaSwapLpToken).approve(metaSwapDeposit, stableTokensBalance);
         uint256[] memory minAmounts = IMetaSwap(metaSwapDeposit).calculateRemoveLiquidity(stableTokensBalance);
