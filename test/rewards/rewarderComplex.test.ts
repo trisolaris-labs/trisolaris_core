@@ -28,11 +28,11 @@ describe("Complex Rewarder", function () {
 
     await this.tri.connect(this.minter).setMinter(this.chef.address)
 
-    this.lp = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
+    this.lp = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP",  18, "10000000000")
     await this.lp.deployed()
-    this.dummy = await this.ERC20Mock.connect(this.minter).connect(this.minter).deploy("Dummy", "DummyT", "100")
+    this.dummy = await this.ERC20Mock.connect(this.minter).connect(this.minter).deploy("Dummy",  "DummyT", 18, "100")
     await this.dummy.deployed()
-    this.rewardToken = await this.ERC20Mock.connect(this.minter).deploy("RToken", "RWT", "1000000000000")
+    this.rewardToken = await this.ERC20Mock.connect(this.minter).deploy("RToken", "RWT",  18, "1000000000000")
     await this.rewardToken.deployed()
 
     this.chefv2 = await this.MasterChefV2.connect(this.minter).deploy(this.chef.address, this.tri.address, 0)
@@ -247,7 +247,7 @@ describe("Complex Rewarder", function () {
     })
 
     it("should distribute no TRIs only rewardToken since tri emission is 0 for this pool", async function () {
-      this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", "10000000000")
+      this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", 18, "10000000000")
       await this.lp2.deployed()
 
       this.rewarder = await this.Rewarder.deploy(this.rewardToken.address, this.lp2.address, "0", this.chefv2.address)

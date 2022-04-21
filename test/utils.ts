@@ -1,4 +1,12 @@
 import { ethers } from "hardhat";
+import { BigNumber, Signer } from "ethers"
+import { ERC20 } from "../typechain"
+
+export enum TIME {
+  SECONDS = 1,
+  DAYS = 86400,
+  WEEKS = 604800,
+}
 
 // Defaults to e18 using amount * 10^18
 export function getBigNumber(amount: any, decimals = 18) {
@@ -19,3 +27,81 @@ export async function createSLP(thisObject: any, name: string, tokenA: any, toke
   
     await thisObject[name].mint(minter.address)
   }
+
+export async function setupStableSwap(thisObject: any, owner: any) {
+    
+    const LpTokenFactory = await ethers.getContractFactory("LPToken", owner)
+    thisObject.lpTokenBase = await LpTokenFactory.deploy()
+    await thisObject.lpTokenBase.deployed()
+    await thisObject.lpTokenBase.initialize("Test Token", "TEST")
+
+    const AmpUtilsFactory = await ethers.getContractFactory("AmplificationUtils", owner)
+    thisObject.amplificationUtils = await AmpUtilsFactory.deploy()
+    await thisObject.amplificationUtils.deployed()
+
+    const SwapUtilsFactory = await ethers.getContractFactory("SwapUtils", owner)
+    thisObject.swapUtils = await SwapUtilsFactory.deploy()
+    await thisObject.swapUtils.deployed()
+
+    const SwapFlashLoanFactory = await ethers.getContractFactory(
+        "SwapFlashLoan", {
+            libraries: {
+                SwapUtils: thisObject.swapUtils.address,
+                AmplificationUtils: thisObject.amplificationUtils.address,
+            },
+        }
+    )
+    thisObject.swapFlashLoan = await SwapFlashLoanFactory.connect(owner).deploy()
+    await thisObject.swapFlashLoan.deployed()
+}
+
+export async function asyncForEach<T>(
+    array: Array<T>,
+    callback: (item: T, index: number) => void,
+  ): Promise<void> {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index)
+    }
+}
+
+export async function getUserTokenBalances(
+    address: string | Signer,
+    tokens: ERC20[],
+  ): Promise<BigNumber[]> {
+    const balanceArray = []
+  
+    if (address instanceof Signer) {
+      address = await address.getAddress()
+    }
+  
+    for (const token of tokens) {
+      balanceArray.push(await token.balanceOf(address))
+    }
+  
+    return balanceArray
+  }
+
+export async function getUserTokenBalance(
+    address: string | Signer,
+    token: ERC20,
+  ): Promise<BigNumber> {
+    if (address instanceof Signer) {
+      address = await address.getAddress()
+    }
+    return token.balanceOf(address)
+}
+
+export async function getCurrentBlockTimestamp(): Promise<number> {
+  const block = await ethers.provider.getBlock("latest")
+  return block.timestamp
+}
+
+export async function forceAdvanceOneBlock(timestamp?: number): Promise<any> {
+  const params = timestamp ? [timestamp] : []
+  return ethers.provider.send("evm_mine", params)
+}
+
+export async function setTimestamp(timestamp: number): Promise<any> {
+  return forceAdvanceOneBlock(timestamp)
+}
+            
