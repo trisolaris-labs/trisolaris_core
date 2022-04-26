@@ -20,6 +20,12 @@ export const empyrAddress = "0xE9F226a228Eb58d408FdB94c3ED5A18AF6968fE1"
 export const avaxAddress = "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844"
 export const bnbAddress = "0x2bF9b864cdc97b08B6D79ad4663e71B8aB65c45c"
 export const maticAddress = "0x6aB6d61428fde76768D7b45D8BFeec19c6eF91A8"
+export const roseAddress = "0xdcD6D4e2B3e1D1E1E6Fa8C21C8A323DcbecfF970"
+export const shitzuAddress = "0x68e401B61eA53889505cc1366710f733A60C2d41";
+export const bstnAddress = "0x9f1F933C660a1DC856F0E0Fe058435879c5CCEf0"
+export const polarAddress = "0xf0f3b9Eee32b1F490A4b8720cf6F005d4aE9eA86";
+export const spolarAddress = "0x9D6fc90b25976E40adaD5A3EdD08af9ed7a21729"
+export const stnearAddress = "0x07F9F7f963C5cD2BBFFd30CcfB964Be114332E30"
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
