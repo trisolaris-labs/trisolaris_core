@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IRewarder.sol";
 import "../interfaces/IMasterChefV2.sol";
-import "hardhat/console.sol";
 
 
 
