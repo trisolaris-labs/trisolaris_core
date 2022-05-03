@@ -153,5 +153,51 @@ describe("StableTriMaker", function () {
       expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(0);
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("1813221787760298262");
     });
+
+    it("should fail convert DAI/USDT - TRI: if tri is not last path", async function () {
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
+      await expect(
+        this.triMaker.convertStables(
+          this.swapFlashLoan.address,
+          this.swapToken.address,
+          [this.dai.address, this.usdt.address],
+          [
+            [this.dai.address, this.tri.address],
+            [this.usdt.address, this.dai.address],
+          ],
+        ),
+      ).to.be.revertedWith("StableTriMaker: invalid tri conversion path");
+    });
+
+    it("should fail convert DAI/USDT - TRI: if stable is not first path", async function () {
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
+      await expect(
+        this.triMaker.convertStables(
+          this.swapFlashLoan.address,
+          this.swapToken.address,
+          [this.dai.address, this.usdt.address],
+          [
+            [this.tri.address, this.tri.address],
+            [this.usdt.address, this.tri.address],
+          ],
+        ),
+      ).to.be.revertedWith("StableTriMaker: invalid tri conversion path");
+    });
+  });
+
+  describe("sendTriToBar", () => {
+    it("should sendTriToBar if has balance", async function () {
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
+      await this.tri.transfer(this.triMaker.address, getBigNumber("1"));
+      expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(getBigNumber("1"));
+      this.triMaker.sendTriToBar();
+      expect(await this.tri.balanceOf(this.triMaker.address)).to.equal("0");
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal(getBigNumber("1"));
+    });
+
+    it("should fail sendTriToBar: if not enough tri", async function () {
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
+      await expect(this.triMaker.sendTriToBar()).to.be.revertedWith("StableTriMaker: no Tri to send");
+    });
   });
 });
