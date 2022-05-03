@@ -134,6 +134,8 @@ describe("StableTriMaker", function () {
     expect(await this.swapToken.balanceOf(this.triMaker.address)).to.be.gt(0);
 
     await createSLP(this, "usdtEth", this.usdt, this.weth, getBigNumber(10), this.minter);
+
+    await this.swapFlashLoan.connect(this.owner).setFeeAddress(this.triMaker.address);
   });
 
   describe("convertStables", function () {

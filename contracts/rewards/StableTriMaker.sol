@@ -52,12 +52,13 @@ contract StableTriMaker is Ownable {
         _;
     }
 
-    function convertStables(
+    function removeLiquidityFromFees(
         address swap, // Stableswap Pool
         address swapLpToken, // Stableswap LP token that this contract holds a non-zero balanceOf
-        address[] calldata stableTokensToRemoveTo, // Stable tokens to remove from the LP at the same index
-        address[][] calldata triConversionPaths // Tri conversion paths for each stable token, first address is the stable token removed and last address is always TRI
-    ) external onlyEOA {
+        address[] calldata stableTokensToRemoveTo // Stable tokens to remove from the LP at the same index
+    ) public onlyEOA returns (uint256[] memory) {
+        // Withdraw admin fees from the Stableswap Pool
+        ISwap(swap).withdrawAdminFees();
         // Remove liquidity from stableswap lp into stableTokensToRemoveTo arg
         uint256 stableTokensBalance = IERC20(swapLpToken).balanceOf(address(this));
         IERC20(swapLpToken).approve(swap, stableTokensBalance);
@@ -66,9 +67,26 @@ contract StableTriMaker is Ownable {
 
         emit LogRemoveLiquidity(swapLpToken, stableTokensToRemoveTo, stableTokensToRemoveAmounts);
 
-        // For each stablecoin, we need to convert it to tri via the router and its corresponding stable->x->tri via triConversionPaths
+        return (stableTokensToRemoveAmounts);
+    }
+
+    function swapStableTokensToTri(
+        address[] calldata stableTokensToRemoveTo, // Stable tokens to remove from the LP at the same index
+        address[][] calldata triConversionPaths, // Tri conversion paths for each stable token, first address is the stable token removed and last address is always TRI
+        uint256[] memory stableTokensToRemoveAmounts
+    ) public onlyEOA {
         for (uint256 i = 0; i < stableTokensToRemoveTo.length; i++) {
-            IERC20(stableTokensToRemoveTo[i]).approve(address(router), stableTokensBalance);
+            IERC20(stableTokensToRemoveTo[i]).approve(
+                address(router),
+                IERC20(stableTokensToRemoveTo[i]).balanceOf(address(this))
+            );
+
+            uint256 pathLength = triConversionPaths[i].length;
+            require(
+                triConversionPaths[i][0] == stableTokensToRemoveTo[i],
+                "StableTriMaker: invalid tri conversion path"
+            );
+            require(triConversionPaths[i][pathLength - 1] == tri, "StableTriMaker: invalid tri conversion path");
 
             IUniswapV2Router02(router).swapExactTokensForTokens(
                 IERC20(stableTokensToRemoveTo[i]).balanceOf(address(this)),
@@ -84,11 +102,32 @@ contract StableTriMaker is Ownable {
                 stableTokensToRemoveAmounts[i]
             );
         }
+    }
 
+    function sendTriToBar() public onlyEOA {
         // Check the balanceOf converted TRI and send to bar for dishing up
         uint256 triAmount = IERC20(tri).balanceOf(address(this));
+        require(triAmount > 0, "StableTriMaker: no Tri to send");
         IERC20(tri).safeTransfer(bar, triAmount);
 
         emit LogTriSentToBar(triAmount);
+    }
+
+    function convertStables(
+        address swap, // Stableswap Pool
+        address swapLpToken, // Stableswap LP token that this contract holds a non-zero balanceOf
+        address[] calldata stableTokensToRemoveTo, // Stable tokens to remove from the LP at the same index
+        address[][] calldata triConversionPaths // Tri conversion paths for each stable token, first address is the stable token removed and last address is always TRI
+    ) external onlyEOA {
+        uint256[] memory stableTokensToRemoveAmounts = removeLiquidityFromFees(
+            swap,
+            swapLpToken,
+            stableTokensToRemoveTo
+        );
+
+        // For each stablecoin, we need to convert it to tri via the router and its corresponding stable->x->tri via triConversionPaths
+        swapStableTokensToTri(stableTokensToRemoveTo, triConversionPaths, stableTokensToRemoveAmounts);
+
+        sendTriToBar();
     }
 }
