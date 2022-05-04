@@ -19,7 +19,7 @@ describe("StableTriMaker", function () {
     this.UniswapV2Router = await ethers.getContractFactory("UniswapV2Router02");
     this.UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory");
     this.UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair");
-    this.TriMakerExploitMock = await ethers.getContractFactory("TriMakerExploitMock");
+    this.TriMakerExploitMock = await ethers.getContractFactory("StableTriMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
   });
 
@@ -136,6 +136,9 @@ describe("StableTriMaker", function () {
     await createSLP(this, "usdtEth", this.usdt, this.weth, getBigNumber(10), this.minter);
 
     await this.swapFlashLoan.connect(this.owner).setFeeAddress(this.triMaker.address);
+    await this.swapFlashLoan.setAdminFee(getBigNumber(10, 8));
+    await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256);
+    await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256);
   });
 
   describe("convertStables", function () {
@@ -143,7 +146,6 @@ describe("StableTriMaker", function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
       await this.triMaker.convertStables(
         this.swapFlashLoan.address,
-        this.swapToken.address,
         [this.dai.address, this.usdt.address],
         [
           [this.dai.address, this.tri.address],
@@ -151,7 +153,7 @@ describe("StableTriMaker", function () {
         ],
       );
       expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(0);
-      expect(await this.tri.balanceOf(this.bar.address)).to.equal("1813221787760298262");
+      expect(await this.tri.balanceOf(this.bar.address)).to.equal("1993999605348");
     });
 
     it("should fail convert DAI/USDT - TRI: if tri is not last path", async function () {
@@ -159,7 +161,6 @@ describe("StableTriMaker", function () {
       await expect(
         this.triMaker.convertStables(
           this.swapFlashLoan.address,
-          this.swapToken.address,
           [this.dai.address, this.usdt.address],
           [
             [this.dai.address, this.tri.address],
@@ -174,7 +175,6 @@ describe("StableTriMaker", function () {
       await expect(
         this.triMaker.convertStables(
           this.swapFlashLoan.address,
-          this.swapToken.address,
           [this.dai.address, this.usdt.address],
           [
             [this.tri.address, this.tri.address],
@@ -182,6 +182,20 @@ describe("StableTriMaker", function () {
           ],
         ),
       ).to.be.revertedWith("StableTriMaker: invalid tri conversion path");
+    });
+
+    it("should revert if caller is not EOA", async function () {
+      await this.triEth.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1));
+      await expect(
+        this.exploiter.convertStables(
+          this.swapFlashLoan.address,
+          [this.dai.address, this.usdt.address],
+          [
+            [this.dai.address, this.tri.address],
+            [this.usdt.address, this.dai.address],
+          ],
+        ),
+      ).to.be.revertedWith("StableTriMaker: must use EOA");
     });
   });
 
@@ -198,6 +212,16 @@ describe("StableTriMaker", function () {
     it("should fail sendTriToBar: if not enough tri", async function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
       await expect(this.triMaker.sendTriToBar()).to.be.revertedWith("StableTriMaker: no Tri to send");
+    });
+  });
+
+  describe("withdrawStableTokenFees", () => {
+    it("should withdraw stable tokens accrued as swaps", async function () {
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
+      await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
     });
   });
 });

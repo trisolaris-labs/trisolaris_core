@@ -27,11 +27,7 @@ contract StableTriMaker is Ownable {
         uint256[] stableTokensToRemoveAmounts
     );
 
-    event LogSwapStableTokenToTri(
-        address stableTokenToConvertToTri,
-        address[] triConversionPath,
-        uint256 stableTokenAmount
-    );
+    event LogSwapStableTokenToTri(address stableTokenToConvertToTri, address[] triConversionPath);
 
     event LogTriSentToBar(uint256 triAmount);
 
@@ -52,28 +48,16 @@ contract StableTriMaker is Ownable {
         _;
     }
 
-    function removeLiquidityFromFees(
-        address swap, // Stableswap Pool
-        address swapLpToken, // Stableswap LP token that this contract holds a non-zero balanceOf
-        address[] calldata stableTokensToRemoveTo // Stable tokens to remove from the LP at the same index
-    ) public onlyEOA returns (uint256[] memory) {
-        // Withdraw admin fees from the Stableswap Pool
+    function withdrawStableTokenFees(
+        address swap // Stableswap Pool
+    ) public onlyEOA {
+        // Withdraw admin fees from the Stableswap Pool to stable tokens
         ISwap(swap).withdrawAdminFees();
-        // Remove liquidity from stableswap lp into stableTokensToRemoveTo arg
-        uint256 stableTokensBalance = IERC20(swapLpToken).balanceOf(address(this));
-        IERC20(swapLpToken).approve(swap, stableTokensBalance);
-        uint256[] memory stableTokensToRemoveAmounts = ISwap(swap).calculateRemoveLiquidity(stableTokensBalance);
-        ISwap(swap).removeLiquidity(stableTokensBalance, stableTokensToRemoveAmounts, block.timestamp + 5 minutes);
-
-        emit LogRemoveLiquidity(swapLpToken, stableTokensToRemoveTo, stableTokensToRemoveAmounts);
-
-        return (stableTokensToRemoveAmounts);
     }
 
     function swapStableTokensToTri(
         address[] calldata stableTokensToRemoveTo, // Stable tokens to remove from the LP at the same index
-        address[][] calldata triConversionPaths, // Tri conversion paths for each stable token, first address is the stable token removed and last address is always TRI
-        uint256[] memory stableTokensToRemoveAmounts
+        address[][] calldata triConversionPaths // Tri conversion paths for each stable token, first address is the stable token removed and last address is always TRI
     ) public onlyEOA {
         for (uint256 i = 0; i < stableTokensToRemoveTo.length; i++) {
             IERC20(stableTokensToRemoveTo[i]).approve(
@@ -96,11 +80,7 @@ contract StableTriMaker is Ownable {
                 block.timestamp + 5 minutes
             );
 
-            emit LogSwapStableTokenToTri(
-                stableTokensToRemoveTo[i],
-                triConversionPaths[i],
-                stableTokensToRemoveAmounts[i]
-            );
+            emit LogSwapStableTokenToTri(stableTokensToRemoveTo[i], triConversionPaths[i]);
         }
     }
 
@@ -115,19 +95,16 @@ contract StableTriMaker is Ownable {
 
     function convertStables(
         address swap, // Stableswap Pool
-        address swapLpToken, // Stableswap LP token that this contract holds a non-zero balanceOf
         address[] calldata stableTokensToRemoveTo, // Stable tokens to remove from the LP at the same index
         address[][] calldata triConversionPaths // Tri conversion paths for each stable token, first address is the stable token removed and last address is always TRI
     ) external onlyEOA {
-        uint256[] memory stableTokensToRemoveAmounts = removeLiquidityFromFees(
-            swap,
-            swapLpToken,
-            stableTokensToRemoveTo
-        );
+        // Withdraw admin fees from the Stableswap Pool to stable tokens
+        withdrawStableTokenFees(swap);
 
-        // For each stablecoin, we need to convert it to tri via the router and its corresponding stable->x->tri via triConversionPaths
-        swapStableTokensToTri(stableTokensToRemoveTo, triConversionPaths, stableTokensToRemoveAmounts);
+        // For each stable token, we need to convert it to tri via the router and its corresponding path
+        swapStableTokensToTri(stableTokensToRemoveTo, triConversionPaths);
 
+        // Converted stable tokens to tri get sent to bar for xTRI APR
         sendTriToBar();
     }
 }
