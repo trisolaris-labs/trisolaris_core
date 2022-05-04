@@ -16,6 +16,25 @@ async function main(): Promise<void> {
     const [_, deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
 
+    const usdcAddress = "0xb12bfca5a55806aaf64e99521918a4bf0fc40802";
+    const usdtAddress = "0x4988a896b1227218e4a686fde5eabdcabd91571f";
+    const wustAddress = "0x8D07bBb478B84f7E940e97C8e9cF7B3645166b03";
+    const fraxAddress = "0xE4B9e004389d91e4134a28F19BD833cBA1d994B6";
+    const usnAddress = "0x5183e1b1091804bc2602586919e6880ac1cf2896";
+
+    const erc20Factory = await ethers.getContractFactory("ERC20Mock");
+    const usdc = erc20Factory.attach(usdcAddress);
+    const usdt = erc20Factory.attach(usdtAddress);
+    const wust = erc20Factory.attach(wustAddress);
+    const frax = erc20Factory.attach(fraxAddress);
+    const usn = erc20Factory.attach(usnAddress);
+
+    const usdcDecimals = await usdc.decimals();
+    const usdtDecimals = await usdt.decimals();
+    const wustDecimals = await wust.decimals();
+    const fraxDecimals = await frax.decimals();
+    const usnDecimals = await frax.decimals();
+
     const LpTokenFactory = await ethers.getContractFactory("LPToken", deployer)
     const lpTokenBase = await LpTokenFactory.deploy()
     await lpTokenBase.deployed()
@@ -43,22 +62,6 @@ async function main(): Promise<void> {
     const swapFlashLoan = await SwapFlashLoanFactory.connect(deployer).deploy()
     await swapFlashLoan.deployed()
     console.log(`swapFlashLoan deployed at ${swapFlashLoan.address}`);
-    
-    const usdcAddress = "0xb12bfca5a55806aaf64e99521918a4bf0fc40802";
-    const usdtAddress = "0x4988a896b1227218e4a686fde5eabdcabd91571f";
-    const wustAddress = "0x8D07bBb478B84f7E940e97C8e9cF7B3645166b03";
-    const fraxAddress = "0xE4B9e004389d91e4134a28F19BD833cBA1d994B6";
-
-    const erc20Factory = await ethers.getContractFactory("ERC20Mock");
-    const usdc = erc20Factory.attach(usdcAddress);
-    const usdt = erc20Factory.attach(usdtAddress);
-    const wust = erc20Factory.attach(wustAddress);
-    const frax = erc20Factory.attach(fraxAddress);
-
-    const usdcDecimals = await usdc.decimals();
-    const usdtDecimals = await usdt.decimals();
-    const wustDecimals = await wust.decimals();
-    const fraxDecimals = await frax.decimals();
 
     // Constructor arguments
     const TOKEN_ADDRESSES = [
@@ -66,9 +69,10 @@ async function main(): Promise<void> {
         usdt.address,
         wust.address,
         frax.address,
+        usn.address,
       ]
-    const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals, wustDecimals, fraxDecimals]
-    const LP_TOKEN_NAME = "Trisolaris USDC/USDT/wUST/FRAX"
+    const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals, wustDecimals, fraxDecimals, usnDecimals]
+    const LP_TOKEN_NAME = "Trisolaris USDC/USDT/wUST/FRAX/USN"
     const LP_TOKEN_SYMBOL = "USD TLP"
     const INITIAL_A = 400
     const SWAP_FEE = 10e6 // 10bps
