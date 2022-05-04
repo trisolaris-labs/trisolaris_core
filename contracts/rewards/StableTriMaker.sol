@@ -21,11 +21,7 @@ contract StableTriMaker is Ownable {
     address public immutable bar;
     address private immutable tri;
 
-    event LogRemoveLiquidity(
-        address swapLpToken,
-        address[] stableTokensToRemoveTo,
-        uint256[] stableTokensToRemoveAmounts
-    );
+    event LogWithdrawFees();
 
     event LogSwapStableTokenToTri(address stableTokenToConvertToTri, address[] triConversionPath);
 
@@ -53,6 +49,8 @@ contract StableTriMaker is Ownable {
     ) public onlyEOA {
         // Withdraw admin fees from the Stableswap Pool to stable tokens
         ISwap(swap).withdrawAdminFees();
+
+        emit LogWithdrawFees();
     }
 
     function swapStableTokensToTri(
