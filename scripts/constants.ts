@@ -42,3 +42,10 @@ export const amplificationUtilsAddress = "0x4135b66b138f281e0173550C3fb9A706Acc7
 export const swapUtilsAddress = "0x518B8E8338864f229f762aAFFC0A9f0c4722900B";
 export const swapFlashLoanAddress = "0x13e7a001EC72AB30D66E2f386f677e25dCFF5F59";
 export const lpTokenAddress = "0x5EB99863f7eFE88c447Bc9D52AA800421b1de6c9";
+
+// 5Pool Stableswap core contracts
+export const fivePoolLPTokenBaseAddress = "0x1D9CB2F554cE7BE1dbAC6f69A1070694A3337a40";
+export const fivePoolAmplificationUtilsAddress = "0xA141dE86B7f671B4bb1ce64631bE804d4d740c83";
+export const fivePoolSwapUtilsAddress = "0x2A8b7df1F72bE3b78097149b4eF4976fFeb079Fc";
+export const fivePoolSwapFlashLoanAddress = "0xdd407884589b23d2155923b8178bAA0c5725ad9c";
+export const fivePoolLpTokenAddress = "0x467171053355Da79409bf2F931D21ab1f24Fe0A6";
