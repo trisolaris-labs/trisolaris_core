@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -29,7 +28,6 @@ contract ComplexNRewarder is IRewarder, Ownable {
     uint256 public immutable numRewardTokens;
 
     
-
     /// @notice Info of each MCV2 poolInfo.
     /// `accTokenPerShare` Amount of rewardToken each LP token is worth.
     /// `lastRewardBlock` The last block rewards were rewarded to the poolInfo.

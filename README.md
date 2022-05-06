@@ -97,3 +97,13 @@ compiler version is to add the following fields to your VSCode user settings:
 ```
 
 Where of course `v0.8.4+commit.c7e474f2` can be replaced with any other version.
+
+## Contract verification
+
+### Verifying ComplexNRewarder
+
+`arguments.js` is needed because we cannot verify constructor with arrays in the CLI
+
+```
+npx hardhat verify --network aurora --constructor-args verify/argumentsNRewarder.js 0x9E5c2dC717cCAc1eB0e8d267E43538E03531503d
+```
