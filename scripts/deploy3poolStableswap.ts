@@ -6,6 +6,7 @@ import {
   ethers,
   // , run
 } from "hardhat";
+import { usdcAddress, usdtAddress, usnAddress } from "./constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -18,21 +19,14 @@ async function main(): Promise<void> {
   const [_, deployer] = await ethers.getSigners();
   console.log(`Deploying contracts with ${deployer.address}`);
 
-  const usdcAddress = "0xb12bfca5a55806aaf64e99521918a4bf0fc40802";
-  const usdtAddress = "0x4988a896b1227218e4a686fde5eabdcabd91571f";
-  const fraxAddress = "0xE4B9e004389d91e4134a28F19BD833cBA1d994B6";
-  const usnAddress = "0x5183e1b1091804bc2602586919e6880ac1cf2896";
-
   const erc20Factory = await ethers.getContractFactory("ERC20Mock");
   const usdc = erc20Factory.attach(usdcAddress);
   const usdt = erc20Factory.attach(usdtAddress);
-  const frax = erc20Factory.attach(fraxAddress);
   const usn = erc20Factory.attach(usnAddress);
 
   const usdcDecimals = await usdc.decimals();
   const usdtDecimals = await usdt.decimals();
-  const fraxDecimals = await frax.decimals();
-  const usnDecimals = fraxDecimals;
+  const usnDecimals = await usn.decimals();
 
   const LpTokenFactory = await ethers.getContractFactory("LPToken", deployer);
   const lpTokenBase = await LpTokenFactory.deploy();
