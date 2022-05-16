@@ -61,7 +61,7 @@ async function main(): Promise<void> {
   const LP_TOKEN_SYMBOL = "USD TLP";
   const INITIAL_A = 400;
   const SWAP_FEE = 10e6; // 10bps
-  const ADMIN_FEE = 0; // 5 * 10e9; // 50 %
+  const ADMIN_FEE = 0; // 5 * 10e8; // 50 %
 
   await swapFlashLoan
     .connect(deployer)
