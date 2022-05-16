@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   console.log(`swapFlashLoan connected and attached at "${swapFlashLoan.address}"`);
 
   // Set Admin Fee to 50%
-  const ADMIN_FEE = 5 * 10e8; // 50 %
+  const ADMIN_FEE = 5 * 10e9; // 50 %
   await swapFlashLoan.setAdminFee(ADMIN_FEE);
   console.log(`swapFlashLoan.setAdminFee("${ADMIN_FEE}")`);
 
