@@ -1113,7 +1113,6 @@ describe("Meta-Swap", async function () {
     })
   })
 
-  /*
   describe("swapUnderlying", function () {
     it("Reverts when contract is paused", async function () {
       // Owner pauses the contract
@@ -1145,7 +1144,7 @@ describe("Meta-Swap", async function () {
           1,
           String(1e17),
         )
-        expect(calculatedSwapReturn).to.eq(BigNumber.from("99682616104034773"))
+        expect(calculatedSwapReturn).to.eq(BigNumber.from("99697464001604409"))
 
         const [tokenFromBalanceBefore, tokenToBalanceBefore] =
           await getUserTokenBalances(this.user1, [this.ust, this.dai])
@@ -1165,103 +1164,6 @@ describe("Meta-Swap", async function () {
           calculatedSwapReturn,
         )
       })
-
-      it("From 6 decimal token (base) to 18 decimal token (meta)", async function () {
-        // User 1 calculates how much token to receive
-        const calculatedSwapReturn = await this.metaSwap.calculateSwapUnderlying(
-          2,
-          0,
-          String(1e5),
-        )
-        // this estimation works way better, doesn't it?
-        expect(calculatedSwapReturn).to.eq(BigNumber.from("99682656211218516"))
-
-        // Calculating swapping from a base token to a meta level token
-        // could be wrong by about half of the base pool swap fee, i.e. 0.02% in this example
-        const minReturnWithNegativeSlippage = calculatedSwapReturn
-          .mul(9998)
-          .div(10000)
-
-        const [tokenFromBalanceBefore, tokenToBalanceBefore] =
-          await getUserTokenBalances(this.user1, [this.usdc, this.ust])
-
-        // User 1 successfully initiates swap
-        await this.metaSwap
-          .connect(this.user1)
-          .swapUnderlying(
-            2,
-            0,
-            String(1e5),
-            minReturnWithNegativeSlippage,
-            this.MAX_UINT256,
-          )
-
-        // Check the sent and received amounts are as expected
-        const [tokenFromBalanceAfter, tokenToBalanceAfter] =
-          await getUserTokenBalances(this.user1, [this.usdc, this.ust])
-        expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
-          BigNumber.from(String(1e5)),
-        )
-        expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
-          "99683651227847339",
-        )
-      })
-
-      it("From 18 decimal token (meta) to 6 decimal token (base)", async function () {
-        // User 1 calculates how much token to receive
-        const calculatedSwapReturn = await this.metaSwap.calculateSwapUnderlying(
-          0,
-          2,
-          String(1e17),
-        )
-        expect(calculatedSwapReturn).to.eq(BigNumber.from("99682"))
-
-        const [tokenFromBalanceBefore, tokenToBalanceBefore] =
-          await getUserTokenBalances(this.user1, [this.ust, this.usdc])
-
-        // User 1 successfully initiates swap
-        await this.metaSwap
-          .connect(this.user1)
-          .swapUnderlying(0, 2, String(1e17), calculatedSwapReturn, this.MAX_UINT256)
-
-        // Check the sent and received amounts are as expected
-        const [tokenFromBalanceAfter, tokenToBalanceAfter] =
-          await getUserTokenBalances(this.user1, [this.ust, this.usdc])
-        expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
-          BigNumber.from(String(1e17)),
-        )
-        expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
-          calculatedSwapReturn,
-        )
-      })
-
-      it("From 18 decimal token (base) to 6 decimal token (base)", async function () {
-        // User 1 calculates how much token to receive
-        const calculatedSwapReturn = await this.metaSwap.calculateSwapUnderlying(
-          1,
-          3,
-          String(1e17),
-        )
-        expect(calculatedSwapReturn).to.eq(BigNumber.from("99959"))
-
-        const [tokenFromBalanceBefore, tokenToBalanceBefore] =
-          await getUserTokenBalances(this.user1, [this.dai, this.usdt])
-
-        // User 1 successfully initiates swap
-        await this.metaSwap
-          .connect(this.user1)
-          .swapUnderlying(1, 3, String(1e17), calculatedSwapReturn, this.MAX_UINT256)
-
-        // Check the sent and received amounts are as expected
-        const [tokenFromBalanceAfter, tokenToBalanceAfter] =
-          await getUserTokenBalances(this.user1, [this.dai, this.usdt])
-        expect(tokenFromBalanceBefore.sub(tokenFromBalanceAfter)).to.eq(
-          BigNumber.from(String(1e17)),
-        )
-        expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
-          calculatedSwapReturn,
-        )
-      })
     })
 
     it("Reverts when minDy (minimum amount token to receive) is not reached due to front running", async function () {
@@ -1271,7 +1173,7 @@ describe("Meta-Swap", async function () {
         1,
         String(1e17),
       )
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99682616104034773"))
+      expect(calculatedSwapReturn).to.eq(BigNumber.from("99697464001604409"))
 
       // User 2 swaps before User 1 does
       await this.metaSwap
@@ -1299,7 +1201,7 @@ describe("Meta-Swap", async function () {
         1,
         String(1e17),
       )
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99682616104034773"))
+      expect(calculatedSwapReturn).to.eq(BigNumber.from("99697464001604409"))
 
       const [tokenFromBalanceBefore, tokenToBalanceBefore] =
         await getUserTokenBalances(this.user1, [this.ust, this.dai])
@@ -1332,7 +1234,7 @@ describe("Meta-Swap", async function () {
 
       const actualReceivedAmount = tokenToBalanceAfter.sub(tokenToBalanceBefore)
 
-      expect(actualReceivedAmount).to.eq(BigNumber.from("99266340636749675"))
+      expect(actualReceivedAmount).to.eq(BigNumber.from("99281126976426638"))
       expect(actualReceivedAmount).to.gt(
         calculatedSwapReturnWithNegativeSlippage,
       )
@@ -1347,7 +1249,7 @@ describe("Meta-Swap", async function () {
         0,
         this.MAX_UINT256,
       )
-      expect(swapReturnAmount).to.eq("99682616104034773")
+      expect(swapReturnAmount).to.eq("99697464001604409")
     })
 
     it("Reverts when block is mined after deadline", async function () {
@@ -1631,7 +1533,7 @@ describe("Meta-Swap", async function () {
         [this.ust, this.swapLPToken],
       )
 
-      expect(firstTokenAfter.sub(firstTokenBefore)).to.eq(String(1001774294135))
+      expect(firstTokenAfter.sub(firstTokenBefore)).to.eq(String(1001925384316))
       expect(secondTokenAfter.sub(secondTokenBefore)).to.eq(
         String(998024139765),
       )
@@ -1678,9 +1580,7 @@ describe("Meta-Swap", async function () {
       )
     })
   })
-  */
 
-  /*
   describe("rampA", function () {
     beforeEach(async () => {
       await forceAdvanceOneBlock()
@@ -1692,7 +1592,7 @@ describe("Meta-Swap", async function () {
           100,
           (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
         ),
-      ).to.emit(metaSwap, "RampA")
+      ).to.emit(this.metaSwap, "RampA")
     })
 
     it("Succeeds to ramp upwards", async function () {
@@ -1818,7 +1718,7 @@ describe("Meta-Swap", async function () {
       )
 
       // Stop ramp
-      expect(this.metaSwap.stopRampA()).to.emit(metaSwap, "StopRampA")
+      expect(this.metaSwap.stopRampA()).to.emit(this.metaSwap, "StopRampA")
     })
 
     it("Stop ramp succeeds", async function () {
@@ -1956,23 +1856,23 @@ describe("Meta-Swap", async function () {
     // For visual representation of how price curves differ based on A, please refer to Figure 1 in the above
     // Curve Vulnerability Report.
 
-    describe("Check for attacks while A is ramping upwards", function () {
+    describe("Check for attacks while A is ramping upwards", () => {
       let initialAttackerBalances: BigNumber[] = []
       let initialPoolBalances: BigNumber[] = []
       let attacker: Signer
 
-      beforeEach(async () => {
+      beforeEach(async function () {
         // This attack is achieved by creating imbalance in the first block then
         // trading in reverse direction in the second block.
-        attacker = user1
+        attacker = this.user1
 
         initialAttackerBalances = await getUserTokenBalances(attacker, [
-          ust,
-          swapLPToken,
+          this.ust,
+          this.swapLPToken,
         ])
 
-        expect(initialAttackerBalances[0]).to.be.eq("100000000000000000000000")
-        expect(initialAttackerBalances[1]).to.be.eq(String(3e20))
+        expect(initialAttackerBalances[0]).to.be.eq("300000000000000000000")
+        expect(initialAttackerBalances[1]).to.be.eq(String(2e20))
 
         // Start ramp upwards
         await this.metaSwap.rampA(
@@ -2022,20 +1922,20 @@ describe("Meta-Swap", async function () {
             expect(await this.metaSwap.getAPrecise()).to.be.eq(5003)
 
             // Trade lpToken to ust, taking advantage of the imbalance and change of A
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
             expect(firstTokenOutput).to.be.eq("997214696574405737")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             expect(finalAttackerBalances[0]).to.be.lt(
@@ -2102,20 +2002,20 @@ describe("Meta-Swap", async function () {
             expect(await this.metaSwap.getAPrecise()).to.be.eq(10000)
 
             // Trade lpToken to ust, taking advantage of the imbalance and sudden change of A
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
             expect(firstTokenOutput).to.be.eq("955743484403042509")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             expect(finalAttackerBalances[0]).to.be.lt(
@@ -2156,7 +2056,7 @@ describe("Meta-Swap", async function () {
         "When token price is unequal: " +
           "attacker 'resolves' the imbalance prior to A change, then recreates the imbalance.",
         () => {
-          beforeEach(async () => {
+          beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
             await this.metaSwap
               .connect(this.user2)
@@ -2204,20 +2104,20 @@ describe("Meta-Swap", async function () {
             expect(await this.metaSwap.getAPrecise()).to.be.eq(5003)
 
             // Trade lpToken to ust, taking advantage of the imbalance and sudden change of A
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the attacker leaves with more ust than the start.
             expect(firstTokenOutput).to.be.eq("998017518949630644")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             expect(finalAttackerBalances[0]).to.be.lt(
@@ -2285,12 +2185,12 @@ describe("Meta-Swap", async function () {
             expect(await this.metaSwap.getAPrecise()).to.be.eq(10000)
 
             // Trade lpToken to ust, taking advantage of the imbalance and sudden change of A
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
@@ -2298,8 +2198,8 @@ describe("Meta-Swap", async function () {
             // Attack was successful!
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             expect(initialAttackerBalances[0]).to.be.lt(
@@ -2344,17 +2244,17 @@ describe("Meta-Swap", async function () {
       let initialPoolBalances: BigNumber[] = []
       let attacker: Signer
 
-      beforeEach(async () => {
+      beforeEach(async function () {
         // Set up the downward ramp A
-        attacker = user1
+        attacker = this.user1
 
         initialAttackerBalances = await getUserTokenBalances(attacker, [
-          ust,
-          swapLPToken,
+          this.ust,
+          this.swapLPToken,
         ])
 
-        expect(initialAttackerBalances[0]).to.be.eq("100000000000000000000000")
-        expect(initialAttackerBalances[1]).to.be.eq(String(3e20))
+        expect(initialAttackerBalances[0]).to.be.eq("300000000000000000000")
+        expect(initialAttackerBalances[1]).to.be.eq(String(2e20))
 
         // Start ramp downwards
         await this.metaSwap.rampA(
@@ -2405,20 +2305,20 @@ describe("Meta-Swap", async function () {
             // Verify A has changed downwards
             expect(await this.metaSwap.getAPrecise()).to.be.eq(4999)
 
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
             expect(firstTokenOutput).to.be.eq("997276754500361021")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             // Check for attacker's balance changes
@@ -2485,20 +2385,20 @@ describe("Meta-Swap", async function () {
             // Verify A has changed downwards
             expect(await this.metaSwap.getAPrecise()).to.be.eq(2500)
 
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
             expect(firstTokenOutput).to.be.eq("1066252480054180588")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             // Check for attacker's balance changes
@@ -2543,7 +2443,7 @@ describe("Meta-Swap", async function () {
         "When token price is unequal: " +
           "attacker 'resolves' the imbalance prior to A change, then recreates the imbalance.",
         () => {
-          beforeEach(async () => {
+          beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
             await this.metaSwap
               .connect(this.user2)
@@ -2589,20 +2489,20 @@ describe("Meta-Swap", async function () {
             // Verify A has changed downwards
             expect(await this.metaSwap.getAPrecise()).to.be.eq(4999)
 
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
             expect(firstTokenOutput).to.be.eq("998007711333645455")
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             // Check for attacker's balance changes
@@ -2670,12 +2570,12 @@ describe("Meta-Swap", async function () {
             // Verify A has changed downwards
             expect(await this.metaSwap.getAPrecise()).to.be.eq(2500)
 
-            const balanceBefore = await getUserTokenBalance(attacker, ust)
+            const balanceBefore = await getUserTokenBalance(attacker, this.ust)
             await this.metaSwap
               .connect(attacker)
               .swap(1, 0, secondTokenOutput, 0, this.MAX_UINT256)
             const firstTokenOutput = (
-              await getUserTokenBalance(attacker, ust)
+              await getUserTokenBalance(attacker, this.ust)
             ).sub(balanceBefore)
 
             // If firstTokenOutput > 1e18, the malicious user leaves with more ust than the start.
@@ -2683,8 +2583,8 @@ describe("Meta-Swap", async function () {
             // Attack was not successful
 
             const finalAttackerBalances = await getUserTokenBalances(attacker, [
-              ust,
-              swapLPToken,
+              this.ust,
+              this.swapLPToken,
             ])
 
             // Check for attacker's balance changes
@@ -2723,5 +2623,4 @@ describe("Meta-Swap", async function () {
       )
     })
   })
-  */
 })
