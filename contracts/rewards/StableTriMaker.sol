@@ -13,9 +13,9 @@ contract StableTriMaker is Ownable {
 
     ISwap public stableSwap;
     address public lpMaker;
-    address private immutable usn = address(0x0);
-    address private immutable usdc = address(0x0);
-    address private immutable usdt = address(0x0);
+    address private immutable usn;
+    address private immutable usdc;
+    address private immutable usdt;
 
     event LogSetLPMaker(address oldLPMaker, address newLPMaker);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
@@ -26,9 +26,18 @@ contract StableTriMaker is Ownable {
 
     event LogUsnSentToLPMaker(uint256 usnAmount);
 
-    constructor(ISwap _stableSwap, address _lpMaker) public {
+    constructor(
+        ISwap _stableSwap,
+        address _lpMaker,
+        address _usn,
+        address _usdt,
+        address _usdc 
+    ) public {
         stableSwap = ISwap(_stableSwap);
         lpMaker = _lpMaker;
+        usn = _usn;
+        usdt = _usdt;
+        usdc = _usdc;
     }
 
     function setStableSwap(ISwap _stableSwap) public onlyOwner {
@@ -57,6 +66,7 @@ contract StableTriMaker is Ownable {
         emit LogWithdrawFees();
     }
 
+    // This onyl works for USDC and USDT. If we have more tokens, need to make this more dynamic
     function swapStableTokensToUsn() public onlyEOA {
         address[2] memory stableTokensToSwapToUsn = [usdc, usdt];
         for (uint256 i = 0; i < stableTokensToSwapToUsn.length; i++) {
