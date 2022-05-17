@@ -12,14 +12,16 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const [_, deployer] = await ethers.getSigners();
+    const [deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const vestingBegin = 1640995200; // 1st Jan 2022 00:00 UTC
-    const vestingCliff = 1647734400; // 20th Mar 2022 00:00 UTC
-    const vestingEnd = 1669852800; // 1st Dec 2022 00:00 UTC
+    const vestingBegin = 1652140800; // 10th May 2022 00:00 UTC
+    const vestingCliff = 1659744000; // 20th Mar 2022 00:00 UTC
+    const vestingEnd = 1691280000; // 1st Dec 2022 00:00 UTC
+    const recepientAddress = "0x41E64ea21c0bD691A8a70d57653c044Cb2d4E677"
+    const vestingAmount = decimals.mul("100000")
     
     const triToken = await ethers.getContractFactory("Tri")
     const vesterContract = await ethers.getContractFactory("Vester")
@@ -27,52 +29,8 @@ async function main(): Promise<void> {
     const triBalance = await tri.balanceOf(deployer.address)
     console.log(`Tri balance: ${triBalance.toString()}`)
 
-    // Things to change
-    const vestingOptions = [
-        {
-            recepient: specialistAddress,
-            vestingAmount: totalSupply.mul(1).div(100), // 1% of supply
-            vestingContractAddress: "0xCB0A382Bf9AD8ba0b76532261C17B04D902CeA9A",
-        }
-    ]
     
-
-    for (let i = 0; i < vestingOptions.length; i++) {
-        let vestingOption = vestingOptions[i];
-        console.log("Working on ", vestingOption.recepient)
-
-        const vester = vesterContract.attach(vestingOption.vestingContractAddress)
-        const onChainTriAddress = await vester.tri()
-        const onChainRecepient = await vester.recipient()
-        const onChainVestingAmount = await vester.vestingAmount()
-        const onChainVestingBegin = await vester.vestingBegin()
-        const onChainVestingCliff = await vester.vestingCliff()
-        const onChainVestingEnd = await vester.vestingEnd()
-        const triBalance = await tri.balanceOf(vestingOption.vestingContractAddress)
-
-        if (
-            onChainTriAddress === triAddress &&
-            onChainRecepient === vestingOption.recepient &&
-            onChainVestingAmount.eq(vestingOption.vestingAmount) &&
-            onChainVestingBegin.toNumber() === vestingBegin &&
-            onChainVestingCliff.toNumber() === vestingCliff &&
-            onChainVestingEnd.toNumber() === vestingEnd &&
-            triBalance.eq("0")
-            ) {
-            console.log("reached here")
-            console.log(vestingOption.vestingAmount.div(decimals).toString())
-            console.log(vestingOption.vestingContractAddress)
-            
-            const tx = await tri.connect(deployer).transfer(
-                vestingOption.vestingContractAddress, 
-                vestingOption.vestingAmount
-            );
-            const receipt = await tx.wait();
-            console.log(receipt.logs);
-        }
-    }
     
-    /*
     const treasuryVester = await vesterContract.connect(deployer).deploy(
         tri.address,
         recepientAddress,
@@ -82,7 +40,6 @@ async function main(): Promise<void> {
         vestingEnd,
     );
     console.log(`Vester address: ${treasuryVester.address}`)
-    */
 
     /*
     const tx = await tri.transfer(treasuryVester.address, vestingAmount);
