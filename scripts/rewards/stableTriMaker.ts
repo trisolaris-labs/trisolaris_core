@@ -4,8 +4,10 @@
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
 import { 
-    triAddress, 
-    factoryAddress,
+    usdtAddress,
+    usdcAddress,
+    usnAddress,
+    threePoolSwapFlashLoanAddress,
     wethAddress
 } from '.././constants';
 
@@ -22,25 +24,15 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const TriMaker = await ethers.getContractFactory("TriMaker")
-    const TriBar = await ethers.getContractFactory("TriBar")
-    const UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory")
+    const StableTriMaker = await ethers.getContractFactory("StableTriMaker")
+    const tempLpMaker = "0xc80d315989ff64499FA31B6389406eA5F71cAB69"
 
-    const bar = await TriBar.connect(deployer).deploy(triAddress)
-    await bar.deployed()
-    console.log(`Bar deployed at: ${bar.address}`)
 
-    const triMaker = await TriMaker.connect(deployer).deploy(factoryAddress, bar.address, triAddress, wethAddress)
-    await triMaker.deployed()
-    console.log(`Maker deployed at: ${triMaker.address}`)
+    const stableTriMaker = await StableTriMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
+    await stableTriMaker.deployed()
+    console.log(`Maker deployed at: ${stableTriMaker.address}`)
 
-    const factory = UniswapV2Factory.attach(factoryAddress);
-    console.log(`Factory address: ${factory.address}`)
-    
-    const tx = await factory.connect(deployer).setFeeTo(triMaker.address);
-    const receipt = await tx.wait()
-    console.log(`Fee set to tri maker address`)
-    console.log(receipt.logs)
+  
 }
 
 // We recommend this pattern to be able to use async/await everywhere

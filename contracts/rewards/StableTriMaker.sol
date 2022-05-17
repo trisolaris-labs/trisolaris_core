@@ -27,7 +27,7 @@ contract StableTriMaker is Ownable {
     event LogUsnSentToLPMaker(uint256 usnAmount);
 
     constructor(
-        ISwap _stableSwap,
+        address _stableSwap,
         address _lpMaker,
         address _usn,
         address _usdt,
