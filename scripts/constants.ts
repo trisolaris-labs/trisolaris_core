@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers } from "hardhat";
 
 export const decimals = ethers.BigNumber.from("1000000000000000000");
 export const totalSupply = ethers.BigNumber.from("1000000").mul(500).mul(decimals);
@@ -15,18 +15,19 @@ export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
 export const auroraAddress = "0x8bec47865ade3b172a928df8f990bc7f2a3b9f79";
 export const usdcAddress = "0xB12BFcA5A55806AaF64E99521918A4bf0fC40802";
 export const usdtAddress = "0x4988a896b1227218e4A686fdE5EabdcAbd91571f";
-export const flxAddress = "0xea62791aa682d455614eaA2A12Ba3d9A2fD197af"
-export const empyrAddress = "0xE9F226a228Eb58d408FdB94c3ED5A18AF6968fE1"
-export const avaxAddress = "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844"
-export const bnbAddress = "0x2bF9b864cdc97b08B6D79ad4663e71B8aB65c45c"
-export const maticAddress = "0x6aB6d61428fde76768D7b45D8BFeec19c6eF91A8"
-export const roseAddress = "0xdcD6D4e2B3e1D1E1E6Fa8C21C8A323DcbecfF970"
+export const flxAddress = "0xea62791aa682d455614eaA2A12Ba3d9A2fD197af";
+export const empyrAddress = "0xE9F226a228Eb58d408FdB94c3ED5A18AF6968fE1";
+export const avaxAddress = "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844";
+export const bnbAddress = "0x2bF9b864cdc97b08B6D79ad4663e71B8aB65c45c";
+export const maticAddress = "0x6aB6d61428fde76768D7b45D8BFeec19c6eF91A8";
+export const roseAddress = "0xdcD6D4e2B3e1D1E1E6Fa8C21C8A323DcbecfF970";
 export const shitzuAddress = "0x68e401B61eA53889505cc1366710f733A60C2d41";
-export const bstnAddress = "0x9f1F933C660a1DC856F0E0Fe058435879c5CCEf0"
+export const bstnAddress = "0x9f1F933C660a1DC856F0E0Fe058435879c5CCEf0";
 export const polarAddress = "0xf0f3b9Eee32b1F490A4b8720cf6F005d4aE9eA86";
-export const spolarAddress = "0x9D6fc90b25976E40adaD5A3EdD08af9ed7a21729"
-export const stnearAddress = "0x07F9F7f963C5cD2BBFFd30CcfB964Be114332E30"
+export const spolarAddress = "0x9D6fc90b25976E40adaD5A3EdD08af9ed7a21729";
+export const stnearAddress = "0x07F9F7f963C5cD2BBFFd30CcfB964Be114332E30";
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
+export const usnAddress = "0x5183e1b1091804bc2602586919e6880ac1cf2896";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
 export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
@@ -42,3 +43,17 @@ export const amplificationUtilsAddress = "0x4135b66b138f281e0173550C3fb9A706Acc7
 export const swapUtilsAddress = "0x518B8E8338864f229f762aAFFC0A9f0c4722900B";
 export const swapFlashLoanAddress = "0x13e7a001EC72AB30D66E2f386f677e25dCFF5F59";
 export const lpTokenAddress = "0x5EB99863f7eFE88c447Bc9D52AA800421b1de6c9";
+
+// 5Pool Stableswap core contracts
+export const fivePoolLPTokenBaseAddress = "0x1D9CB2F554cE7BE1dbAC6f69A1070694A3337a40";
+export const fivePoolAmplificationUtilsAddress = "0xA141dE86B7f671B4bb1ce64631bE804d4d740c83";
+export const fivePoolSwapUtilsAddress = "0x2A8b7df1F72bE3b78097149b4eF4976fFeb079Fc";
+export const fivePoolSwapFlashLoanAddress = "0xdd407884589b23d2155923b8178bAA0c5725ad9c";
+export const fivePoolLpTokenAddress = "0x467171053355Da79409bf2F931D21ab1f24Fe0A6";
+
+// 3Pool Stableswap core contracts
+export const threePoolLPTokenBaseAddress = "00xB77190A4fD2528d2Bb778B409FB5224f7ffaCB24";
+export const threePoolAmplificationUtilsAddress = "0x114ECaa70256aFAd393f733aA4B4bF61c8959fc2";
+export const threePoolSwapUtilsAddress = "0x0564d68404608599e8c567A0bD74F90a942A69A0";
+export const threePoolSwapFlashLoanAddress = "0x458459E48dbAC0C8Ca83F8D0b7b29FEfE60c3970";
+export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";

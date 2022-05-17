@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from 'hardhat';
-import { swapFlashLoanAddress, amplificationUtilsAddress, swapUtilsAddress } from '../constants';
+import { fivePoolSwapUtilsAddress, fivePoolAmplificationUtilsAddress, fivePoolSwapFlashLoanAddress } from '../constants';
 
 
 async function main(): Promise<void> {
@@ -14,20 +14,20 @@ async function main(): Promise<void> {
     // We get the contract to deploy
     
     // Constants
-    const [deployer] = await ethers.getSigners();
+    const [_, deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with ${deployer.address}`);
 
     const SwapFlashLoanFactory = await ethers.getContractFactory(
         "SwapFlashLoan", {
             libraries: {
-                SwapUtils: swapUtilsAddress,
-                AmplificationUtils: amplificationUtilsAddress,
+                SwapUtils: fivePoolSwapUtilsAddress,
+                AmplificationUtils: fivePoolAmplificationUtilsAddress,
             },
         }
     )
-    const swapFlashLoan = SwapFlashLoanFactory.attach(swapFlashLoanAddress);
+    const swapFlashLoan = SwapFlashLoanFactory.attach(fivePoolSwapFlashLoanAddress);
     console.log(`swapFlashLoan deployed at ${swapFlashLoan.address}`);
-    
+
     const tx = await swapFlashLoan.connect(deployer).setAdminFee(0)
     const receipt = await tx.wait()
     console.log(receipt)
