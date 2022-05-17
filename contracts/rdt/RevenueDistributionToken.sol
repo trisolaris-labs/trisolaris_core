@@ -21,12 +21,13 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
-    address public override asset;  // Underlying ERC-20 asset used by ERC-4626 functionality.
+    address public override asset = 0xFa94348467f64D5A457F75F8bc40495D33c65aBB;           // Underlying revenue share asset
+    address public revenueAsset;
 
     address public override owner;         // Current owner of the contract, able to update the vesting schedule.
     address public override pendingOwner;  // Pending owner of the contract, able to accept ownership.
 
-    uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
+    uint256 public override freeAssets;           // Amount of revenue assets unlocked regardless of time passed.
     uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule.
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
@@ -47,12 +48,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         locked = 1;
     }
 
-    constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
-        ERC20(name_, symbol_, ERC20(asset_).decimals())
+    constructor(string memory name_, string memory symbol_, address owner_, address revenueAsset_, uint256 precision_)
+        ERC20(name_, symbol_, ERC20(revenueAsset_).decimals())
     {
         require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
 
-        asset     = asset_;  // Don't need to check zero address as ERC20(asset_).decimals() will fail in ERC20 constructor.
+        revenueAsset     = revenueAsset_;  // Don't need to check zero address as ERC20(asset_).decimals() will fail in ERC20 constructor.
         precision = precision_;
     }
 
@@ -82,10 +83,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(totalSupply != 0,    "RDT:UVS:ZERO_SUPPLY");
 
         // Update "y-intercept" to reflect current available asset.
-        freeAssets_ = freeAssets = totalAssets();
+        freeAssets_ = freeAssets = totalClaimableRevenueAssets();
 
         // Calculate slope.
-        issuanceRate_ = issuanceRate = ((ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision) / vestingPeriod_;
+        issuanceRate_ = issuanceRate = ((ERC20(revenueAsset).balanceOf(address(this)) - freeAssets_) * precision) / vestingPeriod_;
 
         // Update timestamp and period finish.
         vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
@@ -98,12 +99,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 assets_, address receiver_) external virtual override nonReentrant returns (uint256 shares_) {
-        _mint(shares_ = previewDeposit(assets_), assets_, receiver_, msg.sender);
+    function deposit(uint256 asset_, address receiver_) external virtual override nonReentrant returns (uint256 shares_) {
+        _mint(shares_ = asset_, asset_, receiver_, msg.sender);
     }
 
     function depositWithPermit(
-        uint256 assets_,
+        uint256 asset_,
         address receiver_,
         uint256 deadline_,
         uint8   v_,
@@ -112,12 +113,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     )
         external virtual override nonReentrant returns (uint256 shares_)
     {
-        ERC20(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
-        _mint(shares_ = previewDeposit(assets_), assets_, receiver_, msg.sender);
+        ERC20(asset).permit(msg.sender, address(this), asset_, deadline_, v_, r_, s_);
+        _mint(shares_ = asset_, asset_, receiver_, msg.sender);
     }
 
     function mint(uint256 shares_, address receiver_) external virtual override nonReentrant returns (uint256 assets_) {
-        _mint(shares_, assets_ = previewMint(shares_), receiver_, msg.sender);
+        _mint(shares_, assets_ = shares_, receiver_, msg.sender);
     }
 
     function mintWithPermit(
@@ -137,39 +138,43 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         _mint(shares_, assets_, receiver_, msg.sender);
     }
 
-    function redeem(uint256 shares_, address receiver_, address owner_) external virtual override nonReentrant returns (uint256 assets_) {
-        _burn(shares_, assets_ = previewRedeem(shares_), receiver_, owner_, msg.sender);
+    function withdraw(uint256 asset_, address receiver_, address owner_) external virtual override nonReentrant returns (uint256 shares_) {
+        _burn(shares_ = asset_, asset_, receiver_, owner_, msg.sender);
+    }
+    
+    function redeem(uint256 shares_, address receiver_, address owner_) external override returns (uint256 assets_) {
+        _burn(shares_, assets_ = shares_, receiver_, owner_, msg.sender);
     }
 
-    function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override nonReentrant returns (uint256 shares_) {
-        _burn(shares_ = previewWithdraw(assets_), assets_, receiver_, owner_, msg.sender);
+    function claim(address receiver_) external virtual nonReentrant returns (uint256 claimableRevenueAssets_) {
+        require(ERC20Helper.transfer(revenueAsset, receiver_, claimableRevenueAssets(receiver_)), "RDT:C:TRANSFER");
     }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    function _mint(uint256 shares_, uint256 assets_, address receiver_, address caller_) internal {
-        require(receiver_ != address(0), "RDT:M:ZERO_RECEIVER");
-        require(shares_   != uint256(0), "RDT:M:ZERO_SHARES");
-        require(assets_   != uint256(0), "RDT:M:ZERO_ASSETS");
+    function _mint(uint256 shares_, uint256 triAmount_, address receiver_, address caller_) internal {
+        require(receiver_    != address(0), "RDT:M:ZERO_RECEIVER");
+        require(shares_      != uint256(0), "RDT:M:ZERO_SHARES");
+        require(triAmount_   != uint256(0), "RDT:M:ZERO_ASSETS");
 
         _mint(receiver_, shares_);
 
-        uint256 freeAssetsCache = freeAssets = totalAssets() + assets_;
+        uint256 freeAssetsCache = freeAssets = totalClaimableRevenueAssets() + triAmount_;
 
         uint256 issuanceRate_ = _updateIssuanceParams();
 
-        emit Deposit(caller_, receiver_, assets_, shares_);
+        // emit Deposit(caller_, receiver_, triAmount_, shares_);
         emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
-        require(ERC20Helper.transferFrom(asset, caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
+        require(ERC20Helper.transferFrom(asset, caller_, address(this), triAmount_), "RDT:M:TRANSFER_FROM");
     }
 
-    function _burn(uint256 shares_, uint256 assets_, address receiver_, address owner_, address caller_) internal {
-        require(receiver_ != address(0), "RDT:B:ZERO_RECEIVER");
-        require(shares_   != uint256(0), "RDT:B:ZERO_SHARES");
-        require(assets_   != uint256(0), "RDT:B:ZERO_ASSETS");
+    function _burn(uint256 shares_, uint256 triAmount_, address receiver_, address owner_, address caller_) internal {
+        require(receiver_   != address(0), "RDT:B:ZERO_RECEIVER");
+        require(shares_     != uint256(0), "RDT:B:ZERO_SHARES");
+        require(triAmount_  != uint256(0), "RDT:B:ZERO_ASSETS");
 
         if (caller_ != owner_) {
             _decreaseAllowance(owner_, caller_, shares_);
@@ -177,14 +182,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         _burn(owner_, shares_);
 
-        uint256 freeAssetsCache = freeAssets = totalAssets() - assets_;
+        uint256 freeAssetsCache = freeAssets = totalClaimableRevenueAssets() - triAmount_;
 
         uint256 issuanceRate_ = _updateIssuanceParams();
 
-        emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
+        // emit Withdraw(caller_, receiver_, owner_, triAmount_, shares_);
         emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
-        require(ERC20Helper.transfer(asset, receiver_, assets_), "RDT:B:TRANSFER");
+        require(ERC20Helper.transfer(asset, receiver_, triAmount_), "RDT:B:TRANSFER");
     }
 
     function _updateIssuanceParams() internal returns (uint256 issuanceRate_) {
@@ -195,20 +200,20 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** View Functions ***/
     /**********************/
 
-    function balanceOfAssets(address account_) public view virtual override returns (uint256 balanceOfAssets_) {
-        return convertToAssets(balanceOf[account_]);
+    function claimableRevenueAssets(address account_) public view virtual returns (uint256 balanceOfAssets_) {
+        return convertSharesToClaimableRevenueAssets(balanceOf[account_]);
     }
 
-    function convertToAssets(uint256 shares_) public view virtual override returns (uint256 assets_) {
+    function convertSharesToClaimableRevenueAssets(uint256 shares_) public view virtual returns (uint256 claimableRevenueAssets_) {
         uint256 supply = totalSupply;  // Cache to stack.
 
-        assets_ = supply == 0 ? shares_ : (shares_ * totalAssets()) / supply;
+        claimableRevenueAssets_ = supply == 0 ? shares_ : (shares_ * totalClaimableRevenueAssets()) / supply;
     }
 
     function convertToShares(uint256 assets_) public view virtual override returns (uint256 shares_) {
         uint256 supply = totalSupply;  // Cache to stack.
 
-        shares_ = supply == 0 ? assets_ : (assets_ * supply) / totalAssets();
+        shares_ = supply == 0 ? assets_ : (assets_ * supply) / totalClaimableRevenueAssets();
     }
 
     function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {
@@ -220,44 +225,37 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         receiver_;  // Silence warning
         maxShares_ = type(uint256).max;
     }
-
-    function maxRedeem(address owner_) external view virtual override returns (uint256 maxShares_) {
-        maxShares_ = balanceOf[owner_];
+    
+    function maxRedeem(address owner_) external pure virtual override returns (uint256 maxShares_) {
+        owner_;  // Silence warning
+        maxShares_ = type(uint256).max;
     }
 
     function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
-        maxAssets_ = balanceOfAssets(owner_);
+        maxAssets_ = claimableRevenueAssets(owner_);
     }
 
-    function previewDeposit(uint256 assets_) public view virtual override returns (uint256 shares_) {
-        // As per https://eips.ethereum.org/EIPS/eip-4626#security-considerations,
-        // it should round DOWN if it’s calculating the amount of shares to issue to a user, given an amount of assets provided.
-        shares_ = convertToShares(assets_);
+    function previewMint(uint256 shares_) public pure virtual override returns (uint256 assets_) {
+        return shares_;
     }
 
-    function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
-        uint256 supply = totalSupply;  // Cache to stack.
-
-        // As per https://eips.ethereum.org/EIPS/eip-4626#security-considerations,
-        // it should round UP if it’s calculating the amount of assets a user must provide, to be issued a given amount of shares.
-        assets_ = supply == 0 ? shares_ : _divRoundUp(shares_ * totalAssets(), supply);
+    function previewDeposit(uint256 assets_) external pure override returns (uint256 shares_) {
+        return assets_;
     }
 
-    function previewRedeem(uint256 shares_) public view virtual override returns (uint256 assets_) {
-        // As per https://eips.ethereum.org/EIPS/eip-4626#security-considerations,
-        // it should round DOWN if it’s calculating the amount of assets to send to a user, given amount of shares returned.
-        assets_ = convertToAssets(shares_);
+    function previewWithdraw(uint256 assets_) public pure virtual override returns (uint256 shares_) {
+        return assets_;
+    }
+    
+    function previewRedeem(uint256 shares_) public pure virtual override returns (uint256 assets_) {
+        return shares_;
     }
 
-    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
-        uint256 supply = totalSupply;  // Cache to stack.
-
-        // As per https://eips.ethereum.org/EIPS/eip-4626#security-considerations,
-        // it should round UP if it’s calculating the amount of shares a user must return, to be sent a given amount of assets.
-        shares_ = supply == 0 ? assets_ : _divRoundUp(assets_ * supply, totalAssets());
+    function totalAssets() external view override returns (uint256 totalAssets_) {
+        return ERC20(asset).balanceOf(address(this));
     }
 
-    function totalAssets() public view virtual override returns (uint256 totalManagedAssets_) {
+    function totalClaimableRevenueAssets() public view virtual returns (uint256 totalClaimableManagedAssets_) {
         uint256 issuanceRate_ = issuanceRate;
 
         if (issuanceRate_ == 0) return freeAssets;
@@ -273,6 +271,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
     }
 
+    function balanceOfAssets(address account_) external view override returns (uint256 assets_) {
+        return claimableRevenueAssets(account_);
+    }
+
+    function convertToAssets(uint256 shares_) external pure override returns (uint256 assets_) {
+        return shares_;
+    }
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -280,5 +286,4 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function _divRoundUp(uint256 numerator_, uint256 divisor_) internal pure returns (uint256 result_) {
        return (numerator_ / divisor_) + (numerator_ % divisor_ > 0 ? 1 : 0);
     }
-
 }
