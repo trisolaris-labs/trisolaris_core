@@ -4,8 +4,6 @@ pragma solidity 0.8.7;
 import { ERC20 }       from "./ERC20.sol";
 import { ERC20Helper } from "./ERC20Helper.sol";
 
-import { IERC4626 } from "./interfaces/IERC4626.sol";
-
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
 /*
@@ -165,7 +163,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         uint256 issuanceRate_ = _updateIssuanceParams();
 
-        // emit Deposit(caller_, receiver_, triAmount_, shares_);
+        emit Deposit(caller_, receiver_, triAmount_, shares_);
         emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transferFrom(asset, caller_, address(this), triAmount_), "RDT:M:TRANSFER_FROM");
@@ -186,7 +184,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         uint256 issuanceRate_ = _updateIssuanceParams();
 
-        // emit Withdraw(caller_, receiver_, owner_, triAmount_, shares_);
+        emit Withdraw(caller_, receiver_, owner_, triAmount_, shares_);
         emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transfer(asset, receiver_, triAmount_), "RDT:B:TRANSFER");
