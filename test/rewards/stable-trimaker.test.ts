@@ -38,6 +38,8 @@ describe("StableTriMaker", function () {
     await this.strudel.deployed();
     this.usdt = await this.ERC20Mock.connect(this.minter).deploy("USDT", "USDT", 18, getBigNumber("300"));
     await this.usdt.deployed();
+    this.usn = await this.ERC20Mock.connect(this.minter).deploy("USN", "USN", 18, getBigNumber("300"));
+    await this.usn.deployed();
     this.factory = await this.UniswapV2Factory.connect(this.minter).deploy(this.minter.address);
     await this.factory.deployed();
     this.router = await this.UniswapV2Router.connect(this.minter).deploy(this.factory.address, this.weth.address);
@@ -48,7 +50,7 @@ describe("StableTriMaker", function () {
     this.triMaker = await this.TriMaker.connect(this.minter).deploy(
       this.router.address,
       this.bar.address,
-      this.tri.address,
+      this.usn.address,
     );
     await this.triMaker.deployed();
     this.exploiter = await this.TriMakerExploitMock.connect(this.minter).deploy(this.triMaker.address);
@@ -73,13 +75,13 @@ describe("StableTriMaker", function () {
     // transferring to users
     await this.dai.connect(this.minter).transfer(this.user1.address, getBigNumber("100"));
     await this.usdt.connect(this.minter).transfer(this.user1.address, getBigNumber("100"));
-    await this.usdt.connect(this.minter).transfer(this.user2.address, getBigNumber("100"));
     await this.dai.connect(this.minter).transfer(this.user2.address, getBigNumber("100"));
+    await this.usdt.connect(this.minter).transfer(this.user2.address, getBigNumber("100"));
 
     // Constructor arguments
-    const TOKEN_ADDRESSES = [this.dai.address, this.usdt.address];
-    const TOKEN_DECIMALS = [18, 18];
-    this.LP_TOKEN_NAME = "Saddle DAI/USDC";
+    const TOKEN_ADDRESSES = [this.dai.address, this.usdt.address, this.usn.address];
+    const TOKEN_DECIMALS = [18, 18, 18];
+    this.LP_TOKEN_NAME = "Saddle DAI/USDC/USN";
     this.LP_TOKEN_SYMBOL = "saddleTestUSD";
     this.INITIAL_A = 50;
     this.SWAP_FEE = 1e6; // 1bps
@@ -107,26 +109,31 @@ describe("StableTriMaker", function () {
     this.testSwapReturnValues = await testSwapReturnValuesFactory.deploy(
       this.swapFlashLoan.address,
       this.swapToken.address,
-      2,
+      3,
     );
 
     await this.dai.connect(this.minter).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
     await this.usdt.connect(this.minter).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
+    await this.usn.connect(this.minter).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
     await this.dai.connect(this.minter).transfer(this.owner.address, getBigNumber("10"));
     await this.usdt.connect(this.minter).transfer(this.owner.address, getBigNumber("10"));
+    await this.usn.connect(this.minter).transfer(this.owner.address, getBigNumber("10"));
     await this.dai.connect(this.minter).transfer(this.factory.address, getBigNumber("10"));
     await this.usdt.connect(this.minter).transfer(this.factory.address, getBigNumber("10"));
+    await this.usn.connect(this.minter).transfer(this.factory.address, getBigNumber("10"));
     await this.tri.connect(this.minter).transfer(this.factory.address, getBigNumber("10"));
 
     await asyncForEach([this.owner, this.user1, this.user2], async signer => {
       await this.dai.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
       await this.usdt.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
+      await this.usn.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
       await this.swapToken.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
     });
-    await this.swapFlashLoan.addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256);
+    await this.swapFlashLoan.addLiquidity([String(1e18), String(1e18), String(1e18)], 0, this.MAX_UINT256);
 
     expect(await this.dai.balanceOf(this.swapFlashLoan.address)).to.eq(String(1e18));
     expect(await this.usdt.balanceOf(this.swapFlashLoan.address)).to.eq(String(1e18));
+    expect(await this.usn.balanceOf(this.swapFlashLoan.address)).to.eq(String(1e18));
 
     await this.swapToken
       .connect(this.owner)
@@ -142,21 +149,21 @@ describe("StableTriMaker", function () {
   });
 
   describe("convertStables", function () {
-    it("should convert DAI/USDT - TRI", async function () {
-      expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
+    it("should convert DAI/USDT - USN via stableswap amm", async function () {
+      expect(await this.usn.balanceOf(this.bar.address)).to.equal("0");
       await this.triMaker.convertStables(
         this.swapFlashLoan.address,
         [this.dai.address, this.usdt.address],
         [
-          [this.dai.address, this.tri.address],
-          [this.usdt.address, this.tri.address],
+          [this.dai.address, this.usn.address],
+          [this.usdt.address, this.usn.address],
         ],
       );
-      expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(0);
-      expect(await this.tri.balanceOf(this.bar.address)).to.equal("1993999605348");
+      expect(await this.usn.balanceOf(this.triMaker.address)).to.equal(0);
+      expect(await this.usn.balanceOf(this.bar.address)).to.equal("1993999605348");
     });
 
-    it("should fail convert DAI/USDT - TRI: if tri is not last path", async function () {
+    it("should convert more DAI/USDT - USN via stableswap amm if sent more DAI (from TriMaker)", async function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
       await expect(
         this.triMaker.convertStables(
@@ -170,7 +177,7 @@ describe("StableTriMaker", function () {
       ).to.be.revertedWith("StableTriMaker: invalid tri conversion path");
     });
 
-    it("should fail convert DAI/USDT - TRI: if stable is not first path", async function () {
+    it("should fail convert DAI/USDT - USN: no more to stables to convert", async function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
       await expect(
         this.triMaker.convertStables(
@@ -199,8 +206,8 @@ describe("StableTriMaker", function () {
     });
   });
 
-  describe("sendTriToBar", () => {
-    it("should sendTriToBar if has balance", async function () {
+  describe("sendUsnToLPMaker", () => {
+    it("should sendUsnToLPMaker if has balance", async function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
       await this.tri.transfer(this.triMaker.address, getBigNumber("1"));
       expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(getBigNumber("1"));
@@ -209,14 +216,50 @@ describe("StableTriMaker", function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal(getBigNumber("1"));
     });
 
-    it("should fail sendTriToBar: if not enough tri", async function () {
+    it("should fail sendUsnToLPMaker: if not enough usn", async function () {
       expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
-      await expect(this.triMaker.sendTriToBar()).to.be.revertedWith("StableTriMaker: no Tri to send");
+      await expect(this.triMaker.sendTriToBar()).to.be.revertedWith("StableTriMaker: no Usn to send");
     });
   });
 
   describe("withdrawStableTokenFees", () => {
-    it("should withdraw stable tokens accrued as swaps", async function () {
+    it("should withdraw stable tokens accrued as stable swaps", async function () {
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
+      await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
+    });
+  });
+
+  describe("setStableSwap", () => {
+    it("should setStableSwap if owner", async function () {
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
+      await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
+    });
+
+    it("should fail setStableSwap if not owner", async function () {
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
+      await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
+    });
+  });
+
+  describe("setLPMaker", () => {
+    it("should setLPMaker if owner", async function () {
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
+      await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
+      expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
+      expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
+    });
+
+    it("should fail setLPMaker if not owner", async function () {
       expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
       expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
       await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
