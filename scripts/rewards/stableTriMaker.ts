@@ -27,10 +27,13 @@ async function main(): Promise<void> {
     const StableTriMaker = await ethers.getContractFactory("StableTriMaker")
     const tempLpMaker = "0xc80d315989ff64499FA31B6389406eA5F71cAB69"
 
+    console.log(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
+
 
     const stableTriMaker = await StableTriMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
     await stableTriMaker.deployed()
     console.log(`Maker deployed at: ${stableTriMaker.address}`)
+
 
   
 }
