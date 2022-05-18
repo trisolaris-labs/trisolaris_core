@@ -216,7 +216,7 @@ describe("TriMakerV2", function () {
     });
   });
 
-  describe("setStableTriMaker", () => {
+  describe("reclaimTokens", () => {
     it("should allow owner and only owner to withdraw remaining funds", async function () {
       // balance of usdc 0 initially
       expect(await this.usdc.balanceOf(this.triMaker.address)).to.equal("0");
