@@ -66,6 +66,4 @@ describe("RevenueDistributionToken - Deposit", function () {
 
     expect(await this.rdt.balanceOf(this.alice.address)).to.equal("1000");
   });
-
-  
 });

@@ -174,10 +174,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(receiver_   != address(0), "RDT:B:ZERO_RECEIVER");
         require(shares_     != uint256(0), "RDT:B:ZERO_SHARES");
         require(triAmount_  != uint256(0), "RDT:B:ZERO_ASSETS");
+        require(balanceOf[owner_] >= shares_, "RDT:B:INSUFFICIENT_BALANCE");
 
         if (caller_ != owner_) {
             _decreaseAllowance(owner_, caller_, shares_);
-        }
+        }        
 
         _burn(owner_, shares_);
 
