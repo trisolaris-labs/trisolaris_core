@@ -1299,6 +1299,7 @@ __metadata:
     fs-extra: ^10.0.0
     hardhat: ^2.6.2
     hardhat-gas-reporter: ^1.0.4
+    hardhat-watcher: ^2.3.0
     husky: ^7.0.2
     lint-staged: ^11.1.2
     mocha: ^9.1.1
@@ -3952,6 +3953,25 @@ __metadata:
     fsevents:
       optional: true
   checksum: b7774e6e3aeca084d39e8542041555a11452414c744122436101243f89580fad97154ae11525e46bfa816313ae32533e2a88e8587e4d50b14ea716a9e6538978
+  languageName: node
+  linkType: hard
+
+"chokidar@npm:^3.5.3":
+  version: 3.5.3
+  resolution: "chokidar@npm:3.5.3"
+  dependencies:
+    anymatch: ~3.1.2
+    braces: ~3.0.2
+    fsevents: ~2.3.2
+    glob-parent: ~5.1.2
+    is-binary-path: ~2.1.0
+    is-glob: ~4.0.1
+    normalize-path: ~3.0.0
+    readdirp: ~3.6.0
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  checksum: b49fcde40176ba007ff361b198a2d35df60d9bb2a5aab228279eb810feae9294a6b4649ab15981304447afe1e6ffbf4788ad5db77235dc770ab777c6e771980c
   languageName: node
   linkType: hard
 
@@ -7558,6 +7578,17 @@ fsevents@~2.1.1:
   peerDependencies:
     hardhat: ^2.0.2
   checksum: c8c1d79bfbb6956cabbe5563e0f40c3bb7f2227a3c278f9afe73bc8f44125440e1b1f7ab60f5280b93ed8ae8f748dad73d7bbca892074f5f1edf026394c8ee09
+  languageName: node
+  linkType: hard
+
+"hardhat-watcher@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "hardhat-watcher@npm:2.3.0"
+  dependencies:
+    chokidar: ^3.5.3
+  peerDependencies:
+    hardhat: ^2.0.0
+  checksum: 9c99c8f3f476990b4b8f452d5257d2060bc0bbe21e24cd4472c0f2eb63fd71c28ca054353ccdf27947198303be768b12185ffd902d470d7a8e750945a4249eb1
   languageName: node
   linkType: hard
 
