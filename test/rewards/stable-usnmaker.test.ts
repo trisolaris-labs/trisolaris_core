@@ -131,6 +131,10 @@ describe("StableUsnMaker", function () {
       expect(await this.usn.balanceOf(this.user3.address)).to.equal(19979939773100);
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
     });
+
+    it("should fail to send usn when not enough balance", async function () {
+      await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
+    })
   });
 
   //   it("should revert if caller is not EOA", async function () {
