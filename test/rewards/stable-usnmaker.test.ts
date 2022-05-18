@@ -44,8 +44,6 @@ describe("StableUsnMaker", function () {
     this.SWAP_FEE = 1e7; // 10bps
     this.ADMIN_FEE = 0;
 
-
-
     await this.swapFlashLoan
       .connect(this.owner)
       .initialize(
@@ -77,14 +75,12 @@ describe("StableUsnMaker", function () {
    this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address)
     await this.exploiter.deployed()
 
-
     await this.usdc.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
     await this.usdt.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
     await this.usn.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
     await this.usdc.connect(this.owner).transfer(this.owner.address, getBigNumber("10"));
     await this.usdt.connect(this.owner).transfer(this.owner.address, getBigNumber("10"));
     await this.usn.connect(this.owner).transfer(this.owner.address, getBigNumber("10"));
-
 
     await asyncForEach([this.owner, this.user1, this.user2], async signer => {
       await this.usdc.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
@@ -98,13 +94,11 @@ describe("StableUsnMaker", function () {
     expect(await this.usdt.balanceOf(this.swapFlashLoan.address)).to.eq(String(1e18));
     expect(await this.usn.balanceOf(this.swapFlashLoan.address)).to.eq(String(1e18));
 
-
     await this.swapFlashLoan.connect(this.owner).setFeeAddress(this.usnMaker.address);
     await this.swapFlashLoan.setAdminFee(getBigNumber(10, 8));
     await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256);
     await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256);
   });
-
 
   describe("StableUsnMaker Unit Tests", function () {
     it("should withdraw fees to stableUsnMaker from stableswap", async function () {
@@ -119,7 +113,6 @@ describe("StableUsnMaker", function () {
       expect(await this.usdt.balanceOf(this.usnMaker.address)).to.equal(9980241397654);
     });
 
-
     it("should convert USN ", async function () {
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal("0");
       expect(await this.usdc.balanceOf(this.usnMaker.address)).to.equal(10019739358388);
@@ -129,7 +122,6 @@ describe("StableUsnMaker", function () {
       expect(await this.usdc.balanceOf(this.usnMaker.address)).to.equal(0);
       expect(await this.usdt.balanceOf(this.usnMaker.address)).to.equal(0);
     });
-
 
     it("should send assets to LpMaker ", async function () {
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(19979939773100);
@@ -155,13 +147,11 @@ describe("StableUsnMaker", function () {
       ).to.be.revertedWith("StableUsnMaker: must use EOA");
     });
 
-
     it("only owner should be able to change addresses", async function () {
       await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
       await this.usnMaker.connect(this.owner).setLPMaker(this.usdt.address)
       expect(await this.usnMaker.lpMaker()).to.equal(this.usdt.address);
     });
-
 
   });
 });
