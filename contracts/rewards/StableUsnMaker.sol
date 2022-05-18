@@ -98,6 +98,15 @@ contract StableUsnMaker is Ownable {
         emit LogUsnSentToLPMaker(usnAmount);
     }
 
+    // Emergency Withdraw function
+    function reclaimTokens(address token, uint256 amount, address payable to) public onlyOwner {
+        if (token == address(0)) {
+            to.transfer(amount);
+        } else {
+            IERC20(token).safeTransfer(to, amount);
+        }
+    }
+
     function convertStables() external onlyEOA {
         // Withdraw admin fees from the stableswap pool to stable tokens
         withdrawStableTokenFees();
