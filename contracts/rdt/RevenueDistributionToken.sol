@@ -235,7 +235,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         _burn(owner_, shares_);
 
-        uint256 freeAssetsCache = freeAssets = totalClaimableRevenueAssets() - triAmount_;
+        uint256 freeAssetsCache = freeAssets = totalClaimableRevenueAssets();
 
         uint256 issuanceRate_ = _updateIssuanceParams();
 
