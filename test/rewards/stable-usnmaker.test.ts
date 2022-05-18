@@ -105,8 +105,12 @@ describe("StableUsnMaker", function () {
 
 
   describe("StableUsnMaker Unit Tests", function () {
-    it("should withdraw fees to stableUsnMaker", async function () {
+    it("should withdraw fees to stableUsnMaker from stableswap", async function () {
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal("0");
+      await this.usnMaker.withdrawStableTokenFees();
+      expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
+      expect(await this.usdc.balanceOf(this.usnMaker.address)).to.equal(10019739358388);
+      expect(await this.usdt.balanceOf(this.usnMaker.address)).to.equal(9980241397654);
       await this.usnMaker.withdrawStableTokenFees();
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
       expect(await this.usdc.balanceOf(this.usnMaker.address)).to.equal(10019739358388);
@@ -135,22 +139,23 @@ describe("StableUsnMaker", function () {
     it("should fail to send usn when not enough balance", async function () {
       await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
     })
+
+    // it("should revert if caller is not EOA", async function () {
+    //   await this.triEth.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1));
+    //   await expect(
+    //     this.exploiter.convertStables(
+    //       this.swapFlashLoan.address,
+    //       [this.dai.address, this.usdt.address],
+    //       [
+    //         [this.dai.address, this.tri.address],
+    //         [this.usdt.address, this.dai.address],
+    //       ],
+    //     ),
+    //   ).to.be.revertedWith("StableTriMaker: must use EOA");
+    // });
+
   });
 
-  //   it("should revert if caller is not EOA", async function () {
-  //     await this.triEth.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1));
-  //     await expect(
-  //       this.exploiter.convertStables(
-  //         this.swapFlashLoan.address,
-  //         [this.dai.address, this.usdt.address],
-  //         [
-  //           [this.dai.address, this.tri.address],
-  //           [this.usdt.address, this.dai.address],
-  //         ],
-  //       ),
-  //     ).to.be.revertedWith("StableTriMaker: must use EOA");
-  //   });
-  // });
 
   // describe("sendUsnToLPMaker", () => {
   //   it("should sendUsnToLPMaker if has balance", async function () {
