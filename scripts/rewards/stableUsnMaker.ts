@@ -31,13 +31,10 @@ async function main(): Promise<void> {
 
     console.log(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
 
-
     const stableUsnMaker = await StableUsnMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
     await stableUsnMaker.deployed()
     console.log(`Maker deployed at: ${stableUsnMaker.address}`)
-
-
-  
+ 
 }
 
 // We recommend this pattern to be able to use async/await everywhere
