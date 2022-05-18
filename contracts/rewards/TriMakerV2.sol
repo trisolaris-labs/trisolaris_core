@@ -18,7 +18,7 @@ contract TriMakerV2 is Ownable {
     using SafeERC20 for IERC20;
 
     IUniswapV2Factory public immutable factory;
-    address public stabletrimaker;
+    address public stableusnmaker;
     address private immutable usdc;
     address private immutable weth;
 
@@ -37,16 +37,16 @@ contract TriMakerV2 is Ownable {
         uint256 amountUSDC
     );
 
-    event LogSetStableTriMaker(address oldStableTriMaker, address newStableTriMaker);
+    event LogSetStableUsnMaker(address oldStableUsnMaker, address newStableUsnMaker);
 
     constructor(
         address _factory,
-        address _stabletrimaker,
+        address _stableusnmaker,
         address _usdc,
         address _weth
     ) public {
         factory = IUniswapV2Factory(_factory);
-        stabletrimaker = _stabletrimaker;
+        stableusnmaker = _stableusnmaker;
         usdc = _usdc;
         weth = _weth;
     }
@@ -80,13 +80,13 @@ contract TriMakerV2 is Ownable {
         _;
     }
 
-    // Function to set a different stabletrimaker address to send fees to
-    function setStableTriMaker(address _stabletrimaker) public onlyOwner {
-        address oldStableTriMaker;
-        oldStableTriMaker = stabletrimaker;
-        stabletrimaker = _stabletrimaker;
+    // Function to set a different stableusnmaker address to send fees to
+    function setStableUsnMaker(address _stableusnmaker) public onlyOwner {
+        address oldStableUsnMaker;
+        oldStableUsnMaker = stableusnmaker;
+        stableusnmaker = _stableusnmaker;
 
-        emit LogSetStableTriMaker(oldStableTriMaker, stabletrimaker);
+        emit LogSetStableUsnMaker(oldStableUsnMaker, stableusnmaker);
     }
 
     // F1 - F10: OK
@@ -141,7 +141,7 @@ contract TriMakerV2 is Ownable {
         if (token0 == token1) {
             uint256 amount = amount0.add(amount1);
             if (token0 == usdc) {
-                IERC20(usdc).safeTransfer(stabletrimaker, amount);
+                IERC20(usdc).safeTransfer(stableusnmaker, amount);
                 usdcOut = amount;
             } else if (token0 == weth) {
                 usdcOut = _toUSDC(weth, amount);
@@ -152,11 +152,11 @@ contract TriMakerV2 is Ownable {
             }
         } else if (token0 == usdc) {
             // eg. TRI - ETH
-            IERC20(usdc).safeTransfer(stabletrimaker, amount0);
+            IERC20(usdc).safeTransfer(stableusnmaker, amount0);
             usdcOut = _toUSDC(token1, amount1).add(amount0);
         } else if (token1 == usdc) {
             // eg. USDT - TRI
-            IERC20(usdc).safeTransfer(stabletrimaker, amount1);
+            IERC20(usdc).safeTransfer(stableusnmaker, amount1);
             usdcOut = _toUSDC(token0, amount0).add(amount1);
         } else if (token0 == weth) {
             // eg. ETH - USDC
@@ -220,7 +220,7 @@ contract TriMakerV2 is Ownable {
     // C1 - C24: OK
     function _toUSDC(address token, uint256 amountIn) internal returns (uint256 amountOut) {
         // X1 - X5: OK
-        amountOut = _swap(token, usdc, amountIn, stabletrimaker);
+        amountOut = _swap(token, usdc, amountIn, stableusnmaker);
     }
 
     // @notice Allows owner to reclaim/withdraw any tokens (including reward tokens) held by this contract

@@ -201,16 +201,16 @@ describe("TriMakerV2", function () {
     });
   });
 
-  describe("setStableTriMaker", () => {
-    it("should only setStableTriMaker if owner", async function () {
-      await expect(this.triMaker.connect(this.minter).setStableTriMaker(this.alice.address))
-        .to.emit(this.triMaker, "LogSetStableTriMaker")
+  describe("setStableUsnMaker", () => {
+    it("should only setStableUsnMaker if owner", async function () {
+      await expect(this.triMaker.connect(this.minter).setStableUsnMaker(this.alice.address))
+        .to.emit(this.triMaker, "LogSetStableUsnMaker")
         .withArgs(this.bar.address, this.alice.address);
-      expect(await this.triMaker.stabletrimaker()).to.equal(this.alice.address);
+      expect(await this.triMaker.stableusnmaker()).to.equal(this.alice.address);
     });
 
-    it("should not be able to setStableTriMaker if not owner", async function () {
-      await expect(this.triMaker.connect(this.alice).setStableTriMaker(this.bob.address)).to.be.revertedWith(
+    it("should not be able to setStableUsnMaker if not owner", async function () {
+      await expect(this.triMaker.connect(this.alice).setStableUsnMaker(this.bob.address)).to.be.revertedWith(
         "Ownable: caller is not the owner",
       );
     });

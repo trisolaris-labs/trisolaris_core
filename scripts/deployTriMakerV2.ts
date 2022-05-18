@@ -6,7 +6,8 @@ import { ethers } from 'hardhat';
 import { 
     usdcAddress, 
     factoryAddress,
-    wethAddress
+    wethAddress,
+    stableUsnMaker
 } from './constants';
 
 async function main(): Promise<void> {
@@ -23,21 +24,10 @@ async function main(): Promise<void> {
     console.log(`Account balance: ${balance.toString()}`)
 
     const TriMaker = await ethers.getContractFactory("TriMakerV2")
-    // const UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory")
-
-    const stableTriMaker = "0x1232726DA91B25D22239C5707FE85E8F078F3532" // TODO: replace with real stabletrimaker
-  
-    const triMaker = await TriMaker.connect(deployer).deploy(factoryAddress, stableTriMaker, usdcAddress, wethAddress)
+      
+    const triMaker = await TriMaker.connect(deployer).deploy(factoryAddress, stableUsnMaker, usdcAddress, wethAddress)
     await triMaker.deployed()
     console.log(`Maker deployed at: ${triMaker.address}`)
-
-    // const factory = UniswapV2Factory.attach(factoryAddress);
-    // console.log(`Factory address: ${factory.address}`)
-    
-    // const tx = await factory.connect(deployer).setFeeTo(triMaker.address);
-    // const receipt = await tx.wait()
-    // console.log(`Fee set to tri maker address`)
-    // console.log(receipt.logs)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
