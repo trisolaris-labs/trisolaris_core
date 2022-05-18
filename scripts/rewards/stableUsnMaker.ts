@@ -24,15 +24,17 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const StableTriMaker = await ethers.getContractFactory("StableTriMaker")
+    const StableUsnMaker = await ethers.getContractFactory("StableUsnMaker")
+
+    //TODO change this to the LP maker contract
     const tempLpMaker = "0xc80d315989ff64499FA31B6389406eA5F71cAB69"
 
     console.log(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
 
 
-    const stableTriMaker = await StableTriMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
-    await stableTriMaker.deployed()
-    console.log(`Maker deployed at: ${stableTriMaker.address}`)
+    const stableUsnMaker = await StableUsnMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,tempLpMaker,usnAddress,usdcAddress,usdtAddress)
+    await stableUsnMaker.deployed()
+    console.log(`Maker deployed at: ${stableUsnMaker.address}`)
 
 
   
