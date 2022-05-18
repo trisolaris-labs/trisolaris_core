@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
 
-contract StableTriMaker is Ownable {
+contract StableUsnMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -55,7 +55,7 @@ contract StableTriMaker is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
-        require(msg.sender == tx.origin, "StableTriMaker: must use EOA");
+        require(msg.sender == tx.origin, "StableUsnMaker: must use EOA");
         _;
     }
 
@@ -90,9 +90,9 @@ contract StableTriMaker is Ownable {
     }
 
     function sendUsnToLPMaker() public onlyEOA {
-        // Check the balanceOf converted TRI and send to bar for dishing up
+        // Check the balanceOf converted USN and send to RDT for dishing up
         uint256 usnAmount = IERC20(usn).balanceOf(address(this));
-        require(usnAmount > 0, "StableTriMaker: no Usn to send");
+        require(usnAmount > 0, "StableUsnMaker: no Usn to send");
         IERC20(usn).safeTransfer(lpMaker, usnAmount);
 
         emit LogUsnSentToLPMaker(usnAmount);
