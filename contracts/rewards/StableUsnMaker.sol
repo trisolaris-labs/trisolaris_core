@@ -47,9 +47,11 @@ contract StableUsnMaker is Ownable {
     }
 
     function setLPMaker(address _lpMaker) public onlyOwner {
+        address oldlpMaker;
+        oldlpMaker = lpMaker;
         lpMaker = _lpMaker;
 
-        emit LogSetLPMaker(address(lpMaker), _lpMaker);
+        emit LogSetLPMaker(oldlpMaker, _lpMaker);
     }
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin

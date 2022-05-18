@@ -149,8 +149,10 @@ describe("StableUsnMaker", function () {
 
     it("only owner should be able to change addresses", async function () {
       await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
-      await this.usnMaker.connect(this.owner).setLPMaker(this.usdt.address)
-      expect(await this.usnMaker.lpMaker()).to.equal(this.usdt.address);
+      await expect(this.usnMaker.connect(this.owner).setLPMaker(this.user1.address))
+        .to.emit(this.usnMaker, "LogSetLPMaker")
+        .withArgs(this.user3.address, this.user1.address);
+      expect(await this.usnMaker.lpMaker()).to.equal(this.user1.address);
     });
 
   });
