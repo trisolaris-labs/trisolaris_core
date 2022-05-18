@@ -160,7 +160,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         _mint(receiver_, shares_);
 
-        uint256 freeAssetsCache = freeAssets = totalClaimableRevenueAssets() + triAmount_;
+        uint256 freeAssetsCache = freeAssets = totalClaimableRevenueAssets();
 
         uint256 issuanceRate_ = _updateIssuanceParams();
 
@@ -207,13 +207,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function convertSharesToClaimableRevenueAssets(uint256 shares_) public view virtual returns (uint256 claimableRevenueAssets_) {
         uint256 supply = totalSupply;  // Cache to stack.
 
-        claimableRevenueAssets_ = supply == 0 ? shares_ : (shares_ * totalClaimableRevenueAssets()) / supply;
+
+        claimableRevenueAssets_ = (supply == 0 || shares_ == 0) ? 0 : (shares_ * totalClaimableRevenueAssets()) / supply;
     }
 
     function convertToShares(uint256 assets_) public view virtual override returns (uint256 shares_) {
-        uint256 supply = totalSupply;  // Cache to stack.
-
-        shares_ = supply == 0 ? assets_ : (assets_ * supply) / totalClaimableRevenueAssets();
+        return assets_;
     }
 
     function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {
@@ -254,10 +253,15 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function totalAssets() external view override returns (uint256 totalAssets_) {
         return ERC20(asset).balanceOf(address(this));
     }
+    
+    function totalRevenueAssets() external view returns (uint256 totalAssets_) {
+        return ERC20(revenueAsset).balanceOf(address(this));
+    }
 
     function totalClaimableRevenueAssets() public view virtual returns (uint256 totalClaimableManagedAssets_) {
         uint256 issuanceRate_ = issuanceRate;
 
+        if (totalRevenueAssets() == 0) return 0;
         if (issuanceRate_ == 0) return freeAssets;
 
         uint256 vestingPeriodFinish_ = vestingPeriodFinish;
