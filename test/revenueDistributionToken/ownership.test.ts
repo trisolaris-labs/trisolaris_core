@@ -20,14 +20,13 @@ describe("RevenueDistributionToken - Ownership", function () {
     this.tri = await this.ERC20Mock.deploy("Trisolaris", "TRI", 18, "10000000000");
     this.revenueAsset = await this.ERC20Mock.deploy("Revenue Asset", "USN", 18, "10000000000");
     this.rdt = await this.RDT.deploy(
-      "TRI Profit",
+      "TRI Profit", // @TODO Finalize Token Name
       "pTRI",
       this.minter.address,
       this.revenueAsset.address,
       18,
       this.tri.address,
-      18,
-    ); // @TODO Finalize Token Name
+    );
 
     await Promise.all([this.tri.deployed, this.revenueAsset.deployed, this.rdt.deployed]);
   });
