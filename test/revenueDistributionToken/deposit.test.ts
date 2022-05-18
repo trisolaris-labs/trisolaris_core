@@ -20,14 +20,13 @@ describe("RevenueDistributionToken - Deposit", function () {
     this.tri = await this.ERC20Mock.deploy("Trisolaris", "TRI", 18, "10000000000");
     this.revenueAsset = await this.ERC20Mock.deploy("Revenue Asset", "USN", 18, "10000000000");
     this.rdt = await this.RDT.deploy(
-      "TRI Profit",
+      "TRI Profit", // @TODO Finalize Token Name
       "pTRI",
       this.minter.address,
       this.revenueAsset.address,
       18,
       this.tri.address,
-      18,
-    ); // @TODO Finalize Token Name
+    );
 
     await Promise.all([this.tri.deployed, this.revenueAsset.deployed, this.rdt.deployed]);
   });
@@ -49,4 +48,24 @@ describe("RevenueDistributionToken - Deposit", function () {
   it("Cannot deposit zero assets", async function () {
     await expect(this.rdt.connect(this.alice).deposit("0", this.alice.address)).to.be.revertedWith("RDT:M:ZERO_SHARES");
   });
+
+  it("Cannot deposit if not approved", async function () {
+    await this.tri.transfer(this.alice.address, "1000");
+
+    await expect(this.rdt.connect(this.alice).deposit("1000", this.alice.address)).to.be.revertedWith(
+      "RDT:M:TRANSFER_FROM",
+    );
+  });
+
+  it("Depositor receives same # of shares", async function () {
+    await this.tri.transfer(this.alice.address, "1000");
+
+    await this.tri.connect(this.alice).approve(this.rdt.address, "1000");
+
+    await this.rdt.connect(this.alice).deposit("1000", this.alice.address);
+
+    expect(await this.rdt.balanceOf(this.alice.address)).to.equal("1000");
+  });
+
+  
 });
