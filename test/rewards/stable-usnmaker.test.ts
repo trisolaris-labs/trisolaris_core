@@ -74,6 +74,8 @@ describe("StableUsnMaker", function () {
 
     this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(this.swapFlashLoan.address,this.user3.address,this.usn.address,this.usdc.address, this.usdt.address)
     await this.usnMaker.deployed()
+   this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address)
+    await this.exploiter.deployed()
 
 
     await this.usdc.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
@@ -140,81 +142,26 @@ describe("StableUsnMaker", function () {
       await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
     })
 
-    // it("should revert if caller is not EOA", async function () {
-    //   await this.triEth.connect(this.minter).transfer(this.triMaker.address, getBigNumber(1));
-    //   await expect(
-    //     this.exploiter.convertStables(
-    //       this.swapFlashLoan.address,
-    //       [this.dai.address, this.usdt.address],
-    //       [
-    //         [this.dai.address, this.tri.address],
-    //         [this.usdt.address, this.dai.address],
-    //       ],
-    //     ),
-    //   ).to.be.revertedWith("StableTriMaker: must use EOA");
-    // });
+    it("should revert if caller is not EOA", async function () {
+      await expect(
+        this.exploiter.convertStables(
+          this.swapFlashLoan.address,
+          [this.usdc.address, this.usdt.address],
+          [
+            [this.usdc.address, this.usdt.address],
+            [this.usdt.address, this.usdc.address],
+          ],
+        ),
+      ).to.be.revertedWith("StableUsnMaker: must use EOA");
+    });
+
+
+    it("only owner should be able to change addresses", async function () {
+      await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
+      await this.usnMaker.connect(this.owner).setLPMaker(this.usdt.address)
+      expect(await this.usnMaker.lpMaker()).to.equal(this.usdt.address);
+    });
+
 
   });
-
-
-  // describe("sendUsnToLPMaker", () => {
-  //   it("should sendUsnToLPMaker if has balance", async function () {
-  //     expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
-  //     await this.tri.transfer(this.triMaker.address, getBigNumber("1"));
-  //     expect(await this.tri.balanceOf(this.triMaker.address)).to.equal(getBigNumber("1"));
-  //     this.triMaker.sendTriToBar();
-  //     expect(await this.tri.balanceOf(this.triMaker.address)).to.equal("0");
-  //     expect(await this.tri.balanceOf(this.bar.address)).to.equal(getBigNumber("1"));
-  //   });
-
-  //   it("should fail sendUsnToLPMaker: if not enough usn", async function () {
-  //     expect(await this.tri.balanceOf(this.bar.address)).to.equal("0");
-  //     await expect(this.triMaker.sendTriToBar()).to.be.revertedWith("StableTriMaker: no Usn to send");
-  //   });
-  // });
-
-  // describe("withdrawStableTokenFees", () => {
-  //   it("should withdraw stable tokens accrued as stable swaps", async function () {
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
-  //     await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
-  //   });
-  // });
-
-  // describe("setStableSwap", () => {
-  //   it("should setStableSwap if owner", async function () {
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
-  //     await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
-  //   });
-
-  //   it("should fail setStableSwap if not owner", async function () {
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
-  //     await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
-  //   });
-  // });
-
-  // describe("setLPMaker", () => {
-  //   it("should setLPMaker if owner", async function () {
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
-  //     await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
-  //   });
-
-  //   it("should fail setLPMaker if not owner", async function () {
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("0");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("0");
-  //     await this.triMaker.withdrawStableTokenFees(this.swapFlashLoan.address);
-  //     expect(await this.dai.balanceOf(this.triMaker.address)).to.equal("1001975663797");
-  //     expect(await this.usdt.balanceOf(this.triMaker.address)).to.equal("998024139765");
-  //   });
 });
