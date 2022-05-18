@@ -1,5 +1,6 @@
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
+import 'hardhat-watcher'
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 
@@ -9,8 +10,8 @@ import "./tasks/clean";
 import { resolve } from "path";
 
 import { config as dotenvConfig } from "dotenv";
-import { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
+import { HardhatUserConfig } from 'hardhat/types/config';
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
@@ -150,6 +151,21 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: etherscanKey,
+  },
+  watcher: {
+    compilation: {
+      tasks: ["compile"],
+      files: ["./contracts"],
+      ignoredFiles: ["**/.vscode"],
+      verbose: true,
+    },
+
+    test: {
+      tasks: [{ command: "test", params: { testFiles: ["{path}"] } }],
+      files: ["./test/**/*"],
+      ignoredFiles: ["**/.vscode"],
+      verbose: true,
+    },
   },
 };
 
