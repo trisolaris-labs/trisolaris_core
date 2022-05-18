@@ -95,7 +95,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         returns (uint256 issuanceRate_, uint256 freeAssets_)
     {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
-        require(totalSupply != 0, "RDT:UVS:ZERO_SUPPLY");
 
         // Update "y-intercept" to reflect current available asset.
         freeAssets_ = freeAssets = totalClaimableRevenueAssets();
