@@ -19,11 +19,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
-    address public override asset = 0xFa94348467f64D5A457F75F8bc40495D33c65aBB;           // Underlying revenue share asset
+    address public override asset;                // Underlying revenue share asset
     address public revenueAsset;
 
-    address public override owner;         // Current owner of the contract, able to update the vesting schedule.
-    address public override pendingOwner;  // Pending owner of the contract, able to accept ownership.
+    address public override owner;                // Current owner of the contract, able to update the vesting schedule.
+    address public override pendingOwner;         // Pending owner of the contract, able to accept ownership.
 
     uint256 public override freeAssets;           // Amount of revenue assets unlocked regardless of time passed.
     uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule.
@@ -46,13 +46,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         locked = 1;
     }
 
-    constructor(string memory name_, string memory symbol_, address owner_, address revenueAsset_, uint256 precision_)
+    constructor(string memory name_, string memory symbol_, address owner_, address revenueAsset_, uint256 precision_, address asset_)
         ERC20(name_, symbol_, ERC20(revenueAsset_).decimals())
     {
         require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
 
         revenueAsset     = revenueAsset_;  // Don't need to check zero address as ERC20(asset_).decimals() will fail in ERC20 constructor.
-        precision = precision_;
+        precision        = precision_;
+        asset            = asset_;  
     }
 
     /********************************/
