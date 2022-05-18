@@ -61,4 +61,4 @@ export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113
 
 //
 //TODO change this to the LP maker contract
-export const 3poolLpMaker = "0xc80d315989ff64499FA31B6389406eA5F71cAB69";
+export const threePoolLpMaker = "0xc80d315989ff64499FA31B6389406eA5F71cAB69";

@@ -7,7 +7,7 @@ import {
     usdtAddress,
     usdcAddress,
     usnAddress,
-    3poolLpMaker,
+    threePoolLpMaker,
     threePoolSwapFlashLoanAddress,
     wethAddress
 } from '.././constants';
@@ -27,9 +27,9 @@ async function main(): Promise<void> {
 
     const StableUsnMaker = await ethers.getContractFactory("StableUsnMaker")
 
-    console.log(threePoolSwapFlashLoanAddress,3poolLpMaker,usnAddress,usdcAddress,usdtAddress)
+    console.log(threePoolSwapFlashLoanAddress,threePoolLpMaker,usnAddress,usdcAddress,usdtAddress)
 
-    const stableUsnMaker = await StableUsnMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,3poolLpMaker,usnAddress,usdcAddress,usdtAddress)
+    const stableUsnMaker = await StableUsnMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,threePoolLpMaker,usnAddress,usdcAddress,usdtAddress)
     await stableUsnMaker.deployed()
     console.log(`Maker deployed at: ${stableUsnMaker.address}`)
  
