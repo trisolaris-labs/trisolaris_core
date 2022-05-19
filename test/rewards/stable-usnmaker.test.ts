@@ -70,9 +70,9 @@ describe("StableUsnMaker", function () {
       3,
     );
 
-    this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(this.swapFlashLoan.address,this.user3.address,this.usn.address,this.usdc.address, this.usdt.address)
+    this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(this.swapFlashLoan.address,this.user3.address,this.usn.address,this.usdc.address, this.usdt.address, this.swapToken.address)
     await this.usnMaker.deployed()
-   this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address)
+    this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address)
     await this.exploiter.deployed()
 
     await this.usdc.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
@@ -123,37 +123,45 @@ describe("StableUsnMaker", function () {
       expect(await this.usdt.balanceOf(this.usnMaker.address)).to.equal(0);
     });
 
-    it("should send assets to LpMaker ", async function () {
+    it("should add liquidity to stableswap", async function () {
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(19979939773100);
-      await this.usnMaker.sendUsnToLPMaker();
-      expect(await this.usn.balanceOf(this.user3.address)).to.equal(19979939773100);
+      await this.usnMaker.addLiquidityToStableSwap();
+      expect(await this.swapToken.balanceOf(this.usnMaker.address)).to.equal(19968778622668);
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
     });
 
-    it("should fail to send usn when not enough balance", async function () {
-      await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
-    })
 
-    it("should revert if caller is not EOA", async function () {
-      await expect(
-        this.exploiter.convertStables(
-          this.swapFlashLoan.address,
-          [this.usdc.address, this.usdt.address],
-          [
-            [this.usdc.address, this.usdt.address],
-            [this.usdt.address, this.usdc.address],
-          ],
-        ),
-      ).to.be.revertedWith("StableUsnMaker: must use EOA");
-    });
+    // it("should send assets to LpMaker ", async function () {
+    //   expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(19979939773100);
+    //   await this.usnMaker.sendUsnToLPMaker();
+    //   expect(await this.usn.balanceOf(this.user3.address)).to.equal(19979939773100);
+    //   expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
+    // });
 
-    it("only owner should be able to change addresses", async function () {
-      await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
-      await expect(this.usnMaker.connect(this.owner).setLPMaker(this.user1.address))
-        .to.emit(this.usnMaker, "LogSetLPMaker")
-        .withArgs(this.user3.address, this.user1.address);
-      expect(await this.usnMaker.lpMaker()).to.equal(this.user1.address);
-    });
+    // it("should fail to send usn when not enough balance", async function () {
+    //   await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
+    // })
+
+    // it("should revert if caller is not EOA", async function () {
+    //   await expect(
+    //     this.exploiter.convertStables(
+    //       this.swapFlashLoan.address,
+    //       [this.usdc.address, this.usdt.address],
+    //       [
+    //         [this.usdc.address, this.usdt.address],
+    //         [this.usdt.address, this.usdc.address],
+    //       ],
+    //     ),
+    //   ).to.be.revertedWith("StableUsnMaker: must use EOA");
+    // });
+
+    // it("only owner should be able to change addresses", async function () {
+    //   await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
+    //   await expect(this.usnMaker.connect(this.owner).setLPMaker(this.user1.address))
+    //     .to.emit(this.usnMaker, "LogSetLPMaker")
+    //     .withArgs(this.user3.address, this.user1.address);
+    //   expect(await this.usnMaker.lpMaker()).to.equal(this.user1.address);
+    // });
 
   });
 });

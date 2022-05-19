@@ -17,6 +17,9 @@ contract StableUsnMaker is Ownable {
     address private immutable usdc;
     address private immutable usdt;
     address private immutable tlpToken;
+    address private immutable dao;
+
+    uint256 public polPercent; 
 
     event LogSetpTri(address oldpTri, address newpTri);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
@@ -27,6 +30,9 @@ contract StableUsnMaker is Ownable {
     event LogAddliquidityToStableSwap(uint256 usnAmount);
 
     event LogLpTokensSentTopTRI(uint256 tlpAmount);
+    event LogLpTokensSentToDao(uint256 daoAmount);
+    event LogProtocolOwnedLiquidity(uint256 oldpolPercent, uint256 newStableSwap);
+    event LogSetdao(address oldDao, address newDao);
 
     constructor(
         address _stableSwap,
@@ -34,7 +40,8 @@ contract StableUsnMaker is Ownable {
         address _usn,
         address _usdt,
         address _usdc ,
-        address _tlpToken
+        address _tlpToken,
+        address _dao
     ) public {
         stableSwap = ISwap(_stableSwap);
         pTri = _pTri;
@@ -42,12 +49,7 @@ contract StableUsnMaker is Ownable {
         usdt = _usdt;
         usdc = _usdc;
         tlpToken = _tlpToken;
-    }
-
-    function setStableSwap(ISwap _stableSwap) public onlyOwner {
-        stableSwap = _stableSwap;
-
-        emit LogSetStableSwap(address(stableSwap), address(_stableSwap));
+        dao = _dao;
     }
 
     function setpTri(address _pTri) public onlyOwner {
@@ -57,6 +59,16 @@ contract StableUsnMaker is Ownable {
 
         emit LogSetpTri(oldpTri, _pTri);
     }
+
+    function setprotocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
+        require(_polPercent < 50, "POL is too high");
+        uint256 oldpolPercent;
+        oldpolPercent = polPercent;
+        _polPercent = _polPercent;
+
+        emit LogProtocolOwnedLiquidity(oldpolPercent, _polPercent);
+    }
+
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
@@ -98,7 +110,14 @@ contract StableUsnMaker is Ownable {
     function addLiquidityToStableSwap() public onlyEOA {
         uint256 usnAmount = IERC20(usn).balanceOf(address(this));
         require(usnAmount > 0, "StableUsnMaker: no Usn to add liquidity");
+
+        IERC20(usn).approve(
+            address(stableSwap),
+            usnAmount
+        );
+
         uint256[] memory ma = new uint[](3);
+
         ma[0] = 0;
         ma[1] = 0;
         ma[2] = usnAmount;
@@ -111,13 +130,22 @@ contract StableUsnMaker is Ownable {
         emit LogAddliquidityToStableSwap(usnAmount);
     }
 
-    function sendLpTokenTopTri() public onlyEOA {
+    function sendLpToken() public onlyEOA {
         // Check the balanceOf converted TLP and send to pTri for dishing out
         uint256 tlpAmount = IERC20(tlpToken).balanceOf(address(this));
         require(tlpAmount > 0, "StableUsnMaker: no TLP to send");
-        IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
+        if (polPercent < 0) {
+            IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
+            emit LogLpTokensSentTopTRI(tlpAmount);
+        } else {
+            uint256 daoAmount = tlpAmount.mul(polPercent/100);
+            uint256 tlpAmount = tlpAmount - daoAmount;
+            IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
+            IERC20(tlpToken).safeTransfer(dao, daoAmount);
+            emit LogLpTokensSentTopTRI(tlpAmount);
+            emit LogLpTokensSentToDao(daoAmount);
+        }
 
-        emit LogLpTokensSentTopTRI(tlpAmount);
     }
 
     // Emergency Withdraw function
@@ -140,6 +168,6 @@ contract StableUsnMaker is Ownable {
         addLiquidityToStableSwap();
 
         // Converted stable tokens to usn get sent to LP Maker
-        sendLpTokenTopTri();
+        sendLpToken();
     }
 }
