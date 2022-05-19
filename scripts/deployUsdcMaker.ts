@@ -23,7 +23,7 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const UsdcMaker = await ethers.getContractFactory("UsdcMakerV2")
+    const UsdcMaker = await ethers.getContractFactory("UsdcMaker")
       
     const usdcMaker = await UsdcMaker.connect(deployer).deploy(factoryAddress, stableUsnMaker, usdcAddress, wethAddress)
     await usdcMaker.deployed()
