@@ -26,7 +26,7 @@ contract StableUsnMaker is Ownable {
     event LogSwapStableTokenToUsn(address stableTokenToConvertToUsn, uint256 stableTokenAmount);
     event LogAddliquidityToStableSwap(uint256 usnAmount);
 
-    event LogLpTokensSentTopTRI(uint256 usnAmount);
+    event LogLpTokensSentTopTRI(uint256 tlpAmount);
 
     constructor(
         address _stableSwap,
