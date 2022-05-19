@@ -41,7 +41,7 @@ describe("RevenueDistributionToken - Deposit", function () {
     await this.tri.transfer(this.alice.address, "1000");
 
     await expect(this.rdt.connect(this.alice).deposit("1000", this.ZeroAddress)).to.be.revertedWith(
-      "RDT:M:ZERO_RECEIVER",
+      "RDT:D:ZERO_RECEIVER",
     );
   });
 
