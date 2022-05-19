@@ -16,9 +16,8 @@ describe("StableLpMaker", function () {
     await setupStableSwap(this, this.owner)
 
     this.UsnMaker = await ethers.getContractFactory("StableLpMaker");
-    this.UsnMakerExploitMock = await ethers.getContractFactory("StableUsnMakerExploitMock");
+    this.UsnMakerExploitMock = await ethers.getContractFactory("StableLpMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
-
 
     // deploying mock tokens
     const ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.owner)
@@ -132,36 +131,40 @@ describe("StableLpMaker", function () {
     });
 
     it("should send assets to pTRI ", async function () {
-      expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(19979939773100);
-      await this.usnMaker.sendUsnToLPMaker();
-      expect(await this.usn.balanceOf(this.pTRI.address)).to.equal(19979939773100);
+      expect(await this.swapToken.balanceOf(this.usnMaker.address)).to.equal(19968778622668);
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
+      await this.usnMaker.sendLpToken();
+      // expect(await this.usn.balanceOf(this.pTRI.address)).to.equal(19979939773100);
+      // expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
     });
 
-    // it("should fail to send usn when not enough balance", async function () {
-    //   await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
-    // })
+    it("should fail to send usn when not enough balance", async function () {
+      await expect(this.usnMaker.sendLpToken()).to.be.revertedWith("StableLpMaker: no TLP to send");
+    })
 
-    // it("should revert if caller is not EOA", async function () {
-    //   await expect(
-    //     this.exploiter.convertStables(
-    //       this.swapFlashLoan.address,
-    //       [this.usdc.address, this.usdt.address],
-    //       [
-    //         [this.usdc.address, this.usdt.address],
-    //         [this.usdt.address, this.usdc.address],
-    //       ],
-    //     ),
-    //   ).to.be.revertedWith("StableUsnMaker: must use EOA");
-    // });
+    it("should revert if caller is not EOA", async function () {
+      await expect(
+        this.exploiter.convertStables(
+          this.swapFlashLoan.address,
+          [this.usdc.address, this.usdt.address],
+          [
+            [this.usdc.address, this.usdt.address],
+            [this.usdt.address, this.usdc.address],
+          ],
+        ),
+      ).to.be.revertedWith("StableLpMaker: must use EOA");
+    });
 
-    // it("only owner should be able to change addresses", async function () {
-    //   await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
-    //   await expect(this.usnMaker.connect(this.owner).setLPMaker(this.user1.address))
-    //     .to.emit(this.usnMaker, "LogSetLPMaker")
-    //     .withArgs(this.pTRI.address, this.user1.address);
-    //   expect(await this.usnMaker.lpMaker()).to.equal(this.user1.address);
-    // });
+    it("only owner should be able to change addresses", async function () {
+      await expect(this.usnMaker.connect(this.user1).setpTri(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
+      await expect(this.usnMaker.connect(this.owner).setpTri(this.user1.address))
+        .to.emit(this.usnMaker, "LogSetpTri")
+        .withArgs(this.pTRI.address, this.user1.address);
+      expect(await this.usnMaker.pTri()).to.equal(this.user1.address);
+    });
+  });
 
+  describe("StableUsnMaker Dao Tests", function () {
+    
   });
 });

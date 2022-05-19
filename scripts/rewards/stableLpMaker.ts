@@ -7,8 +7,10 @@ import {
     usdtAddress,
     usdcAddress,
     usnAddress,
-    threePoolLpMaker,
+    pTri,
+    dao,
     threePoolSwapFlashLoanAddress,
+    threePoolLpTokenAddress,
     wethAddress
 } from '.././constants';
 
@@ -25,13 +27,13 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const StableUsnMaker = await ethers.getContractFactory("StableUsnMaker")
+    const StableLpMaker = await ethers.getContractFactory("StableLpMaker")
 
-    console.log(threePoolSwapFlashLoanAddress,threePoolLpMaker,usnAddress,usdcAddress,usdtAddress)
+    console.log(threePoolSwapFlashLoanAddress,pTri,usnAddress,usdcAddress,usdtAddress,dao)
 
-    const stableUsnMaker = await StableUsnMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,threePoolLpMaker,usnAddress,usdcAddress,usdtAddress)
-    await stableUsnMaker.deployed()
-    console.log(`Maker deployed at: ${stableUsnMaker.address}`)
+    const stableLpMaker = await StableLpMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,pTri,usnAddress,usdcAddress,usdtAddress,threePoolLpTokenAddress,dao)
+    await stableLpMaker.deployed()
+    console.log(`Maker deployed at: ${stableLpMaker.address}`)
  
 }
 

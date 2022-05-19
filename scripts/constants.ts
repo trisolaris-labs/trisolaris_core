@@ -59,6 +59,7 @@ export const threePoolSwapFlashLoanAddress = "0x458459E48dbAC0C8Ca83F8D0b7b29FEf
 export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 
 
-//
-//TODO change this to the LP maker contract
-export const threePoolLpMaker = "0xc80d315989ff64499FA31B6389406eA5F71cAB69";
+
+//TODO change this to deployed pTRI contract
+export const pTri = "0x2863AA2bCD6293ddD97BD9162d9e3D44EB53cb4c";
+export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
