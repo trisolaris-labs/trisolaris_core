@@ -17,7 +17,7 @@ contract StableUsnMaker is Ownable {
     address private immutable usdc;
     address private immutable usdt;
     address private immutable tlpToken;
-    address private immutable dao;
+    address public immutable dao;
 
     uint256 public polPercent; 
 
@@ -32,7 +32,6 @@ contract StableUsnMaker is Ownable {
     event LogLpTokensSentTopTRI(uint256 tlpAmount);
     event LogLpTokensSentToDao(uint256 daoAmount);
     event LogProtocolOwnedLiquidity(uint256 oldpolPercent, uint256 newStableSwap);
-    event LogSetdao(address oldDao, address newDao);
 
     constructor(
         address _stableSwap,
