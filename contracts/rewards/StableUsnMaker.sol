@@ -12,13 +12,13 @@ contract StableUsnMaker is Ownable {
     using SafeERC20 for IERC20;
 
     ISwap public stableSwap;
-    address public pTRI;
+    address public pTri;
     address private immutable usn;
     address private immutable usdc;
     address private immutable usdt;
     address private immutable tlpToken;
 
-    event LogSetpTRI(address oldpTRI, address newpTRI);
+    event LogSetpTri(address oldpTri, address newpTri);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
 
     event LogWithdrawFees();
@@ -26,7 +26,7 @@ contract StableUsnMaker is Ownable {
     event LogSwapStableTokenToUsn(address stableTokenToConvertToUsn, uint256 stableTokenAmount);
     event LogAddliquidityToStableSwap(uint256 usnAmount);
 
-    event LogUsnSentTopTRI(uint256 usnAmount);
+    event LogLpTokensSentTopTRI(uint256 usnAmount);
 
     constructor(
         address _stableSwap,
@@ -55,7 +55,7 @@ contract StableUsnMaker is Ownable {
         oldpTri = pTri;
         pTri = _pTri;
 
-        emit LogSetpTri(oldpTri, _pTri);
+        emit LogLpTokensSentTopTRI(oldpTri, _pTri);
     }
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
@@ -117,7 +117,7 @@ contract StableUsnMaker is Ownable {
         require(tlpAmount > 0, "StableUsnMaker: no TLP to send");
         IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
 
-        emit LogUsnSentTopTri(tlpAmount);
+        emit LogLpTokensSentTopTri(tlpAmount);
     }
 
     // Emergency Withdraw function
