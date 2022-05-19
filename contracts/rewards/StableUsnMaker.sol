@@ -55,7 +55,7 @@ contract StableUsnMaker is Ownable {
         oldpTri = pTri;
         pTri = _pTri;
 
-        emit LogLpTokensSentTopTRI(oldpTri, _pTri);
+        emit LogSetpTri(oldpTri, _pTri);
     }
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
@@ -117,7 +117,7 @@ contract StableUsnMaker is Ownable {
         require(tlpAmount > 0, "StableUsnMaker: no TLP to send");
         IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
 
-        emit LogLpTokensSentTopTri(tlpAmount);
+        emit LogLpTokensSentTopTRI(tlpAmount);
     }
 
     // Emergency Withdraw function
