@@ -52,6 +52,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*****************/
 
     event Migrated(address xTRI, address asset, uint256 triUnstaked, uint256 shares);
+    event ReclaimTokens(address token_, uint256 amount_, address payable receiver_);
 
     constructor(
         string memory name_,
@@ -110,6 +111,23 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         emit IssuanceParamsUpdated(freeAssets_, issuanceRate_);
         emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish);
+    }
+
+    // @notice Allows owner to reclaim/withdraw any tokens (including reward tokens) held by this contract
+    /// @param token_ Token to reclaim, use 0x00 for Ethereum
+    /// @param amount_ Amount of tokens to reclaim
+    /// @param receiver_ Receiver of the tokens
+    function reclaimTokens(
+        address token_,
+        uint256 amount_,
+        address payable receiver_
+    ) public {
+        require(msg.sender == owner, "RDT:RT:NOT_OWNER");
+        if (token_ == address(0)) {
+            receiver_.transfer(amount_);
+        } else {
+            ERC20Helper.transfer(token_, receiver_, amount_);
+        }
     }
 
     /************************/
