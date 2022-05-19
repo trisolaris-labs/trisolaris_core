@@ -24,7 +24,6 @@ describe("RevenueDistributionToken - Deposit", function () {
       "pTRI",
       this.minter.address,
       this.revenueAsset.address,
-      18,
       this.tri.address,
     );
 

@@ -17,7 +17,7 @@ import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToke
 */
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
-    uint256 public immutable override precision; // Precision of rates, equals max deposit amounts before rounding errors occur
+    uint256 public immutable override precision = 1e9; // Precision of rates, equals max deposit amounts before rounding errors occur
 
     address public override asset; // Underlying revenue share asset
     address public revenueAsset;
@@ -59,13 +59,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         string memory symbol_,
         address owner_,
         address revenueAsset_,
-        uint256 precision_,
         address asset_
-    ) ERC20(name_, symbol_, ERC20(revenueAsset_).decimals()) {
+    ) ERC20(name_, symbol_, ERC20(asset_).decimals()) {
         require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
 
         revenueAsset = revenueAsset_; // Don't need to check zero address as ERC20(asset_).decimals() will fail in ERC20 constructor.
-        precision = precision_;
         asset = asset_;
     }
 
