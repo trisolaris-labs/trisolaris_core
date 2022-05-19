@@ -31,6 +31,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     uint256 public override vestingPeriodFinish; // Timestamp when current vesting schedule ends.
 
     uint256 private locked = 1; // Used in reentrancy check.
+    mapping (address => uint) private lastDeposited; // Used in preventing flashloan claims
 
     /*****************/
     /*** Modifiers ***/
@@ -173,6 +174,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function claim(address receiver_) external virtual nonReentrant returns (uint256 claimableRevenueAssets_) {
+        console.log("here: ", lastDeposited[receiver_], block.number);
+        if (lastDeposited[receiver_] > block.number - 2) {
+            revert("RDT:C:DEPOSITED_TOO_RECENTLY");
+        }
+
         require(ERC20Helper.transfer(revenueAsset, receiver_, claimableRevenueAssets(receiver_)), "RDT:C:TRANSFER");
 
         claimableRevenueAssets_ = claimableRevenueAssets(receiver_);
@@ -204,6 +210,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(receiver_ != address(0), "RDT:M:ZERO_RECEIVER");
         require(shares_ != uint256(0), "RDT:M:ZERO_SHARES");
         require(triAmount_ != uint256(0), "RDT:M:ZERO_ASSETS");
+        lastDeposited[caller_] = block.number;
 
         _mint(receiver_, shares_);
 
@@ -265,8 +272,9 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     {
         uint256 supply = totalSupply; // Cache to stack.
 
-
-        claimableRevenueAssets_ = (supply == 0 || shares_ == 0) ? 0 : (shares_ * totalClaimableRevenueAssets()) / supply;
+        claimableRevenueAssets_ = (supply == 0 || shares_ == 0)
+            ? 0
+            : _divRoundUp((shares_ * totalClaimableRevenueAssets()), supply);
     }
 
     function convertToShares(uint256 assets_) public view virtual override returns (uint256 shares_) {
@@ -315,7 +323,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function totalRevenueAssets() external view returns (uint256 totalAssets_) {
         return ERC20(revenueAsset).balanceOf(address(this));
     }
-    
+
     function totalClaimableRevenueAssets() public view virtual returns (uint256 totalClaimableManagedAssets_) {
         uint256 issuanceRate_ = issuanceRate;
 

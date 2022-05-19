@@ -248,6 +248,32 @@ describe("RevenueDistributionToken - Stake", function () {
       ),
     );
   });
+
+  it("Does not allow users to claim within 2 blocks of depositing", async function () {
+    const depositAmountAlice = "1";
+    const depositAmountBob = "1000";
+    const totalRevenueAmount = "10000";
+    this.tri.transfer(this.alice.address, depositAmountAlice);
+    this.tri.transfer(this.bob.address, depositAmountBob);
+
+    // Fund RDT Contract
+    const dayInSeconds = 100;
+    const totalVestDays = 100;
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
+
+    await deposit(this.tri, this.alice, this.rdt, depositAmountAlice);
+
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * dayInSeconds);
+
+    await deposit(this.tri, this.bob, this.rdt, "1000");
+
+    await expect(this.rdt.connect(this.bob).claim(this.bob.address)).to.be.revertedWith("RDT:C:DEPOSITED_TOO_RECENTLY");
+    
+    await advanceBlock();
+    await advanceBlock();
+    
+    await expect(this.rdt.connect(this.bob).claim(this.bob.address)).not.to.be.reverted;
+  });
 });
 
 async function deposit(token: any, depositor: any, rdt: any, amount: string = "1000") {
