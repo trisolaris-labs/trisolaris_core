@@ -2,19 +2,20 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { getBigNumber, setupStableSwap, asyncForEach } from "../utils";
 
-describe("StableUsnMaker", function () {
+describe("StableLpMaker", function () {
   before(async function () {
     this.signers = await ethers.getSigners()
     this.owner = this.signers[0]
     this.user1 = this.signers[1]
     this.user2 = this.signers[2]
-    this.user3 = this.signers[3]
+    this.pTRI = this.signers[3]
+    this.dao = this.signers[4]
         
     this.MAX_UINT256 = ethers.constants.MaxUint256;
     this.ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     await setupStableSwap(this, this.owner)
 
-    this.UsnMaker = await ethers.getContractFactory("StableUsnMaker");
+    this.UsnMaker = await ethers.getContractFactory("StableLpMaker");
     this.UsnMakerExploitMock = await ethers.getContractFactory("StableUsnMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
 
@@ -70,7 +71,7 @@ describe("StableUsnMaker", function () {
       3,
     );
 
-    this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(this.swapFlashLoan.address,this.user3.address,this.usn.address,this.usdc.address, this.usdt.address, this.swapToken.address)
+    this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(this.swapFlashLoan.address,this.pTRI.address,this.usn.address,this.usdc.address, this.usdt.address, this.swapToken.address, this.dao.address)
     await this.usnMaker.deployed()
     this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address)
     await this.exploiter.deployed()
@@ -130,13 +131,12 @@ describe("StableUsnMaker", function () {
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
     });
 
-
-    // it("should send assets to LpMaker ", async function () {
-    //   expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(19979939773100);
-    //   await this.usnMaker.sendUsnToLPMaker();
-    //   expect(await this.usn.balanceOf(this.user3.address)).to.equal(19979939773100);
-    //   expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
-    // });
+    it("should send assets to pTRI ", async function () {
+      expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(19979939773100);
+      await this.usnMaker.sendUsnToLPMaker();
+      expect(await this.usn.balanceOf(this.pTRI.address)).to.equal(19979939773100);
+      expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
+    });
 
     // it("should fail to send usn when not enough balance", async function () {
     //   await expect(this.usnMaker.sendUsnToLPMaker()).to.be.revertedWith("StableUsnMaker: no Usn to send");
@@ -159,7 +159,7 @@ describe("StableUsnMaker", function () {
     //   await expect(this.usnMaker.connect(this.user1).setLPMaker(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
     //   await expect(this.usnMaker.connect(this.owner).setLPMaker(this.user1.address))
     //     .to.emit(this.usnMaker, "LogSetLPMaker")
-    //     .withArgs(this.user3.address, this.user1.address);
+    //     .withArgs(this.pTRI.address, this.user1.address);
     //   expect(await this.usnMaker.lpMaker()).to.equal(this.user1.address);
     // });
 

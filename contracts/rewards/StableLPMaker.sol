@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
 
-contract StableUsnMaker is Ownable {
+contract StableLpMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
