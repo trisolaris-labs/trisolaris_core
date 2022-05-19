@@ -12,32 +12,36 @@ contract StableUsnMaker is Ownable {
     using SafeERC20 for IERC20;
 
     ISwap public stableSwap;
-    address public lpMaker;
+    address public rdt;
     address private immutable usn;
     address private immutable usdc;
     address private immutable usdt;
+    address private immutable tlpToken;
 
-    event LogSetLPMaker(address oldLPMaker, address newLPMaker);
+    event LogSetRDT(address oldRDT, address newRDT);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
 
     event LogWithdrawFees();
 
     event LogSwapStableTokenToUsn(address stableTokenToConvertToUsn, uint256 stableTokenAmount);
+    event LogAddliquidityToStableSwap(uint256 usnAmount);
 
-    event LogUsnSentToLPMaker(uint256 usnAmount);
+    event LogUsnSentToRDT(uint256 usnAmount);
 
     constructor(
         address _stableSwap,
-        address _lpMaker,
+        address _rdt,
         address _usn,
         address _usdt,
-        address _usdc 
+        address _usdc ,
+        address _tlpToken
     ) public {
         stableSwap = ISwap(_stableSwap);
         lpMaker = _lpMaker;
         usn = _usn;
         usdt = _usdt;
         usdc = _usdc;
+        tlpToken = _tlpToken
     }
 
     function setStableSwap(ISwap _stableSwap) public onlyOwner {
@@ -91,13 +95,29 @@ contract StableUsnMaker is Ownable {
         }
     }
 
-    function sendUsnToLPMaker() public onlyEOA {
-        // Check the balanceOf converted USN and send to RDT for dishing up
+    function addLiquidityToStableSwap() public onlyEOA {
         uint256 usnAmount = IERC20(usn).balanceOf(address(this));
-        require(usnAmount > 0, "StableUsnMaker: no Usn to send");
-        IERC20(usn).safeTransfer(lpMaker, usnAmount);
+        require(usnAmount > 0, "StableUsnMaker: no Usn to add liquidity");
+        uint256[] memory ma = new uint[](3);
+        ma[0] = 0;
+        ma[1] = 0;
+        ma[2] = usnAmount;
+        stableSwap.addLiquidity(
+            ma,
+            0,
+            block.timestamp + 60
+        );
 
-        emit LogUsnSentToLPMaker(usnAmount);
+        emit LogAddliquidityToStableSwap(usnAmount);
+    }
+
+    function sendUsnToLPMaker() public onlyEOA {
+        // Check the balanceOf converted TLP and send to RDT for dishing out
+        uint256 tlpAmount = IERC20(tlpToken).balanceOf(address(this));
+        require(tlpAmount > 0, "StableUsnMaker: no TLP to send");
+        IERC20(tlpToken).safeTransfer(lpMaker, usnAmount);
+
+        emit LogUsnSentToRDT(usnAmount);
     }
 
     // Emergency Withdraw function
@@ -116,7 +136,10 @@ contract StableUsnMaker is Ownable {
         // For each stable token, we need to convert it to usn via the stableswap
         swapStableTokensToUsn();
 
+        // Add USN liquidity to the stable swap
+        addLiquidityToStableSwap();
+
         // Converted stable tokens to usn get sent to LP Maker
-        sendUsnToLPMaker();
+        sendUsnToRDT();
     }
 }
