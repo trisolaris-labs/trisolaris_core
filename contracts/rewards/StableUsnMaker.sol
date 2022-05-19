@@ -30,18 +30,18 @@ contract StableUsnMaker is Ownable {
 
     constructor(
         address _stableSwap,
-        address _rdt,
+        address _pTri,
         address _usn,
         address _usdt,
         address _usdc ,
         address _tlpToken
     ) public {
         stableSwap = ISwap(_stableSwap);
-        lpMaker = _lpMaker;
+        pTri = _pTri;
         usn = _usn;
         usdt = _usdt;
         usdc = _usdc;
-        tlpToken = _tlpToken
+        tlpToken = _tlpToken;
     }
 
     function setStableSwap(ISwap _stableSwap) public onlyOwner {
@@ -50,12 +50,12 @@ contract StableUsnMaker is Ownable {
         emit LogSetStableSwap(address(stableSwap), address(_stableSwap));
     }
 
-    function setLPMaker(address _lpMaker) public onlyOwner {
-        address oldlpMaker;
-        oldlpMaker = lpMaker;
-        lpMaker = _lpMaker;
+    function setpTri(address _pTri) public onlyOwner {
+        address oldpTri;
+        oldpTri = pTri;
+        pTri = _pTri;
 
-        emit LogSetLPMaker(oldlpMaker, _lpMaker);
+        emit LogSetpTri(oldpTri, _pTri);
     }
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
@@ -111,13 +111,13 @@ contract StableUsnMaker is Ownable {
         emit LogAddliquidityToStableSwap(usnAmount);
     }
 
-    function sendUsnToLPMaker() public onlyEOA {
-        // Check the balanceOf converted TLP and send to RDT for dishing out
+    function sendLpTokenTopTri() public onlyEOA {
+        // Check the balanceOf converted TLP and send to pTri for dishing out
         uint256 tlpAmount = IERC20(tlpToken).balanceOf(address(this));
         require(tlpAmount > 0, "StableUsnMaker: no TLP to send");
-        IERC20(tlpToken).safeTransfer(lpMaker, usnAmount);
+        IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
 
-        emit LogUsnSentToRDT(usnAmount);
+        emit LogUsnSentTopTri(tlpAmount);
     }
 
     // Emergency Withdraw function
@@ -140,6 +140,6 @@ contract StableUsnMaker is Ownable {
         addLiquidityToStableSwap();
 
         // Converted stable tokens to usn get sent to LP Maker
-        sendUsnToRDT();
+        sendLpTokenTopTri();
     }
 }
