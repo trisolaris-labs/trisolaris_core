@@ -141,6 +141,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         nonReentrant
         returns (uint256 shares_)
     {
+        require(receiver_ != address(0), "RDT:D:ZERO_RECEIVER");
         _claim(receiver_);
         _mint(shares_ = asset_, asset_, receiver_, msg.sender);
     }
@@ -153,6 +154,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         bytes32 r_,
         bytes32 s_
     ) external virtual override nonReentrant returns (uint256 shares_) {
+        require(receiver_ != address(0), "RDT:DWP:ZERO_RECEIVER");
         _claim(receiver_);
         ERC20(asset).permit(msg.sender, address(this), asset_, deadline_, v_, r_, s_);
         _mint(shares_ = asset_, asset_, receiver_, msg.sender);
