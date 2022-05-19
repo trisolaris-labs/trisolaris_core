@@ -12,13 +12,13 @@ contract StableUsnMaker is Ownable {
     using SafeERC20 for IERC20;
 
     ISwap public stableSwap;
-    address public rdt;
+    address public pTRI;
     address private immutable usn;
     address private immutable usdc;
     address private immutable usdt;
     address private immutable tlpToken;
 
-    event LogSetRDT(address oldRDT, address newRDT);
+    event LogSetpTRI(address oldpTRI, address newpTRI);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
 
     event LogWithdrawFees();
@@ -26,7 +26,7 @@ contract StableUsnMaker is Ownable {
     event LogSwapStableTokenToUsn(address stableTokenToConvertToUsn, uint256 stableTokenAmount);
     event LogAddliquidityToStableSwap(uint256 usnAmount);
 
-    event LogUsnSentToRDT(uint256 usnAmount);
+    event LogUsnSentTopTRI(uint256 usnAmount);
 
     constructor(
         address _stableSwap,
