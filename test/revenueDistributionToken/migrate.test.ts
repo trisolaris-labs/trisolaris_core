@@ -23,7 +23,7 @@ describe("RevenueDistributionToken - Migrate", function () {
     const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.usn = await ERC20Mock.deploy("usn", "usn", 18, getBigNumber("300") as any);
-    const rdtConstructorArgs = ["RDT", "RDT", this.deployer.address, this.usn.address, 18, this.tri.address];
+    const rdtConstructorArgs = ["RDT", "RDT", this.deployer.address, this.usn.address, this.tri.address];
     this.RDT = await this.RDT.deploy(...rdtConstructorArgs);
     await this.xTRI.approve(this.RDT.address, "100");
   });
