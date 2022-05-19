@@ -133,11 +133,11 @@ contract StableLpMaker is Ownable {
         // Check the balanceOf converted TLP and send to pTri for dishing out
         uint256 tlpAmount = IERC20(tlpToken).balanceOf(address(this));
         require(tlpAmount > 0, "StableUsnMaker: no TLP to send");
-        if (polPercent < 0) {
+        if (polPercent == 0) {
             IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
             emit LogLpTokensSentTopTRI(tlpAmount);
         } else {
-            uint256 daoAmount = tlpAmount.mul(polPercent/100);
+            uint256 daoAmount = tlpAmount.mul(polPercent.div(100));
             uint256 tlpAmount = tlpAmount - daoAmount;
             IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
             IERC20(tlpToken).safeTransfer(dao, daoAmount);
