@@ -123,6 +123,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         nonReentrant
         returns (uint256 shares_)
     {
+        _claim(receiver_);
         _mint(shares_ = asset_, asset_, receiver_, msg.sender);
     }
 
@@ -134,6 +135,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         bytes32 r_,
         bytes32 s_
     ) external virtual override nonReentrant returns (uint256 shares_) {
+        _claim(receiver_);
         ERC20(asset).permit(msg.sender, address(this), asset_, deadline_, v_, r_, s_);
         _mint(shares_ = asset_, asset_, receiver_, msg.sender);
     }
@@ -174,14 +176,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function claim(address receiver_) external virtual nonReentrant returns (uint256 claimableRevenueAssets_) {
-        console.log("here: ", lastDeposited[receiver_], block.number);
-        if (lastDeposited[receiver_] > block.number - 2) {
-            revert("RDT:C:DEPOSITED_TOO_RECENTLY");
-        }
-
-        require(ERC20Helper.transfer(revenueAsset, receiver_, claimableRevenueAssets(receiver_)), "RDT:C:TRANSFER");
-
-        claimableRevenueAssets_ = claimableRevenueAssets(receiver_);
+        _claim(receiver_);
     }
 
     function migrate(
@@ -189,7 +184,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         address xTRI_,
         uint256 xTRIAmount_
     ) external virtual nonReentrant returns (uint256 shares_) {
-        require(ERC20(xTRI_).transferFrom(receiver_, address(this), xTRIAmount_));
+        require(ERC20(xTRI_).transferFrom(receiver_, address(this), xTRIAmount_), "RDT:M:INSUFFICIENT_PERMIT");
         uint256 triBalanceBefore = ERC20(asset).balanceOf(address(this));
         ITriBar(xTRI_).leave(xTRIAmount_);
         uint256 triBalanceUnstaked = ERC20(asset).balanceOf(address(this)) - triBalanceBefore;
@@ -250,6 +245,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transfer(asset, receiver_, triAmount_), "RDT:B:TRANSFER");
+    }
+
+    function _claim(address receiver_) internal returns (uint256 claimableRevenueAssets_) {
+        require(ERC20Helper.transfer(revenueAsset, receiver_, claimableRevenueAssets(receiver_)), "RDT:C:TRANSFER");
+
+        claimableRevenueAssets_ = claimableRevenueAssets(receiver_);
     }
 
     function _updateIssuanceParams() internal returns (uint256 issuanceRate_) {
