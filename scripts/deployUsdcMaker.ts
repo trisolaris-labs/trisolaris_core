@@ -23,11 +23,11 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const TriMaker = await ethers.getContractFactory("TriMakerV2")
+    const UsdcMaker = await ethers.getContractFactory("UsdcMakerV2")
       
-    const triMaker = await TriMaker.connect(deployer).deploy(factoryAddress, stableUsnMaker, usdcAddress, wethAddress)
-    await triMaker.deployed()
-    console.log(`Maker deployed at: ${triMaker.address}`)
+    const usdcMaker = await UsdcMaker.connect(deployer).deploy(factoryAddress, stableUsnMaker, usdcAddress, wethAddress)
+    await usdcMaker.deployed()
+    console.log(`Maker deployed at: ${usdcMaker.address}`)
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -9,11 +9,11 @@ import "../amm/interfaces/IUniswapV2ERC20.sol";
 import "../amm/interfaces/IUniswapV2Pair.sol";
 import "../amm/interfaces/IUniswapV2Factory.sol";
 
-// TriMaker is MasterChef's left hand and kinda a wizard. He can cook up Tri from pretty much anything!
+// UsdcMaker is MasterChef's left hand and kinda a wizard. He can cook up Tri from pretty much anything!
 // This contract handles "serving up" rewards for xTri holders by trading tokens collected from fees for Tri.
 
 // T1 - T4: OK
-contract TriMakerV2 is Ownable {
+contract UsdcMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -64,7 +64,7 @@ contract TriMakerV2 is Ownable {
     // C1 - C24: OK
     function setBridge(address token, address bridge) external onlyOwner {
         // Checks
-        require(token != usdc && token != weth && token != bridge, "TriMaker: Invalid bridge");
+        require(token != usdc && token != weth && token != bridge, "UsdcMaker: Invalid bridge");
 
         // Effects
         _bridges[token] = bridge;
@@ -76,7 +76,7 @@ contract TriMakerV2 is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
-        require(msg.sender == tx.origin, "TriMaker: must use EOA");
+        require(msg.sender == tx.origin, "UsdcMaker: must use EOA");
         _;
     }
 
@@ -116,7 +116,7 @@ contract TriMakerV2 is Ownable {
         // Interactions
         // S1 - S4: OK
         IUniswapV2Pair pair = IUniswapV2Pair(factory.getPair(token0, token1));
-        require(address(pair) != address(0), "TriMaker: Invalid pair");
+        require(address(pair) != address(0), "UsdcMaker: Invalid pair");
         // balanceOf: S1 - S4: OK
         // transfer: X1 - X5: OK
         IERC20(address(pair)).safeTransfer(address(pair), pair.balanceOf(address(this)));
@@ -197,7 +197,7 @@ contract TriMakerV2 is Ownable {
         // Checks
         // X1 - X5: OK
         IUniswapV2Pair pair = IUniswapV2Pair(factory.getPair(fromToken, toToken));
-        require(address(pair) != address(0), "TriMaker: Cannot convert");
+        require(address(pair) != address(0), "UsdcMaker: Cannot convert");
 
         // Interactions
         // X1 - X5: OK
