@@ -15,7 +15,7 @@ describe("StableLpMaker", function () {
     this.ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     await setupStableSwap(this, this.owner)
 
-    this.UsnMaker = await ethers.getContractFactory("StableLPMaker");
+    this.UsnMaker = await ethers.getContractFactory("StableLpMaker");
     this.UsnMakerExploitMock = await ethers.getContractFactory("StableLpMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
 
@@ -142,15 +142,7 @@ describe("StableLpMaker", function () {
 
     it("should revert if caller is not EOA", async function () {
       await expect(
-        this.exploiter.convertStables(
-          this.swapFlashLoan.address,
-          [this.usdc.address, this.usdt.address],
-          [
-            [this.usdc.address, this.usdt.address],
-            [this.usdt.address, this.usdc.address],
-          ],
-        ),
-      ).to.be.revertedWith("StableLpMaker: must use EOA");
+        this.exploiter.convertStables(this.swapFlashLoan.address)).to.be.revertedWith("StableLpMaker: must use EOA");
     });
 
     it("only owner should be able to change addresses", async function () {
