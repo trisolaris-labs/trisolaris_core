@@ -182,6 +182,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         address receiver_,
         address owner_
     ) external virtual override nonReentrant returns (uint256 shares_) {
+        _claim(receiver_);
         _burn(shares_ = asset_, asset_, receiver_, owner_, msg.sender);
     }
 
@@ -190,6 +191,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         address receiver_,
         address owner_
     ) external override returns (uint256 assets_) {
+        _claim(receiver_);
         _burn(shares_, assets_ = shares_, receiver_, owner_, msg.sender);
     }
 
@@ -316,7 +318,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
-        maxAssets_ = claimableRevenueAssets(owner_);
+        owner_; // Silence warning
+        maxAssets_ = type(uint256).max;
     }
 
     function previewMint(uint256 shares_) public pure virtual override returns (uint256 assets_) {
