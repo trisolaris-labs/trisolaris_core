@@ -225,7 +225,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(receiver_ != address(0), "RDT:M:ZERO_RECEIVER");
         require(shares_ != uint256(0), "RDT:M:ZERO_SHARES");
         require(triAmount_ != uint256(0), "RDT:M:ZERO_ASSETS");
-        lastDeposited[caller_] = block.number;
+        lastDeposited[caller_] = block.timestamp;
 
         _mint(receiver_, shares_);
 
@@ -281,8 +281,28 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** View Functions ***/
     /**********************/
 
+    // function claimableRevenueAssets(address account_) public view virtual returns (uint256 balanceOfAssets_) {
+    //     return convertSharesToClaimableRevenueAssets(balanceOf[account_]);
+    // }
     function claimableRevenueAssets(address account_) public view virtual returns (uint256 balanceOfAssets_) {
-        return convertSharesToClaimableRevenueAssets(balanceOf[account_]);
+        uint256 issuanceRate_ = issuanceRate;
+
+        if (ERC20(asset).balanceOf(address(this)) == 0) return 0;
+        if (issuanceRate_ == 0) return freeAssets;
+
+        uint256 vestingPeriodFinish_ = vestingPeriodFinish;
+        uint256 lastUpdated_ = lastUpdated;
+
+        uint256 vestingTimePassed = block.timestamp > vestingPeriodFinish_
+            ? vestingPeriodFinish_ - lastDeposited[account_]
+            : block.timestamp - lastDeposited[account_];
+
+        uint256 supply = totalSupply; // Cache to stack.
+        uint256 shares_ = balanceOf[account_];
+
+        balanceOfAssets_ = (supply == 0 || shares_ == 0)
+            ? 0
+            : _divRoundUp((shares_ * ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets), supply);
     }
 
     function convertSharesToClaimableRevenueAssets(uint256 shares_)
