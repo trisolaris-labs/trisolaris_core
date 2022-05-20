@@ -11,6 +11,14 @@ contract StableLpMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+
+    /**
+     * @notice Params that this function takes in
+     * @param pTri is the contract that disburses TLP tokens 
+     * @param tlpToken is the trisolaris lp token address
+     * @param dao is the dao address to send portion of funds
+     */
+
     ISwap public stableSwap;
     address public pTri;
     address private immutable usn;
@@ -118,7 +126,7 @@ contract StableLpMaker is Ownable {
             emit LogLpTokensSentTopTRI(tlpAmount);
         } else {
             uint256 daoAmount = tlpAmount.mul(polPercent.div(100));
-            uint256 tlpAmount = tlpAmount - daoAmount;
+            uint256 tlpAmount = tlpAmount,sub(daoAmount);
             IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
             IERC20(tlpToken).safeTransfer(dao, daoAmount);
             emit LogLpTokensSentTopTRI(tlpAmount);
