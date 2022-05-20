@@ -149,7 +149,7 @@ contract StableLpMaker is Ownable {
     }
 
     function setprotocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
-        require(_polPercent < 50, "POL is too high");
+        require(_polPercent <= 50, "POL is too high");
         uint256 oldpolPercent;
         oldpolPercent = polPercent;
         _polPercent = _polPercent;

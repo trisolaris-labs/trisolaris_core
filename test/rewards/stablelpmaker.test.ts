@@ -156,9 +156,26 @@ describe("StableLpMaker", function () {
 
   describe("StableUsnMaker Dao Tests", function () {
     it("should have correct address", async function () {
-      await expect(this.usnMaker.dao()).to.eq("StableLpMaker: no TLP to send");
+      expect(await this.usnMaker.dao()).to.equal(this.dao.address);
     })
+
+    it("Only admin can change dao address", async function () {
+      await expect(this.usnMaker.connect(this.user1).setDaoAddress(this.user1.address)).to.be.reverted
+      await this.usnMaker.connect(this.owner).setDaoAddress(this.user1.address)
+      expect(await this.usnMaker.dao()).to.equal(this.user1.address);
+      await this.usnMaker.connect(this.owner).setDaoAddress(this.dao.address)
+      expect(await this.usnMaker.dao()).to.equal(this.dao.address);
+    })
+
+    it("it should set protocol owned liquidity", async function () {
+      expect(await this.usnMaker.polPercent()).to.equal(0);
+      expect(await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(100)).to.be.revertedWith("POL is too high");
+      // await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(50)
+      // expect(await this.usnMaker.polPercent()).to.equal(50);
+    })
+
   });
+
 });
 
 
