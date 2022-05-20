@@ -17,11 +17,12 @@ contract StableLpMaker is Ownable {
     address private immutable usdc;
     address private immutable usdt;
     address private immutable tlpToken;
-    address public immutable dao;
+    address public dao;
 
     uint256 public polPercent; 
 
     event LogSetpTri(address oldpTri, address newpTri);
+    event LogSetdao(address oldDao, address newDao);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
 
     event LogWithdrawFees();
@@ -50,24 +51,6 @@ contract StableLpMaker is Ownable {
         tlpToken = _tlpToken;
         dao = _dao;
     }
-
-    function setpTri(address _pTri) public onlyOwner {
-        address oldpTri;
-        oldpTri = pTri;
-        pTri = _pTri;
-
-        emit LogSetpTri(oldpTri, _pTri);
-    }
-
-    function setprotocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
-        require(_polPercent < 50, "POL is too high");
-        uint256 oldpolPercent;
-        oldpolPercent = polPercent;
-        _polPercent = _polPercent;
-
-        emit LogProtocolOwnedLiquidity(oldpolPercent, _polPercent);
-    }
-
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
@@ -116,9 +99,6 @@ contract StableLpMaker is Ownable {
         );
 
         uint256[] memory ma = new uint[](3);
-
-        ma[0] = 0;
-        ma[1] = 0;
         ma[2] = usnAmount;
         stableSwap.addLiquidity(
             ma,
@@ -147,6 +127,32 @@ contract StableLpMaker is Ownable {
 
     }
 
+    // Only Owner Functions
+    function setpTri(address _pTri) public onlyOwner {
+        address oldpTri;
+        oldpTri = pTri;
+        pTri = _pTri;
+
+        emit LogSetpTri(oldpTri, _pTri);
+    }
+
+    function setDaoAddress(address _dao) public onlyOwner {
+        address oldDao;
+        oldDao = dao;
+        dao = _dao;
+
+        emit LogSetdao(oldDao, dao);
+    }
+
+    function setprotocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
+        require(_polPercent < 50, "POL is too high");
+        uint256 oldpolPercent;
+        oldpolPercent = polPercent;
+        _polPercent = _polPercent;
+
+        emit LogProtocolOwnedLiquidity(oldpolPercent, _polPercent);
+    }
+
     // Emergency Withdraw function
     function reclaimTokens(address token, uint256 amount, address payable to) public onlyOwner {
         if (token == address(0)) {
@@ -156,6 +162,7 @@ contract StableLpMaker is Ownable {
         }
     }
 
+    // Run the whole contract
     function convertStables() external onlyEOA {
         // Withdraw admin fees from the stableswap pool to stable tokens
         withdrawStableTokenFees();
