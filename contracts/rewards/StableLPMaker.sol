@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
 
-contract StableLpMaker is Ownable {
+contract StableLPMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -59,7 +59,7 @@ contract StableLpMaker is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
-        require(msg.sender == tx.origin, "StableLpMaker: must use EOA");
+        require(msg.sender == tx.origin, "StableLPMaker: must use EOA");
         _;
     }
 
@@ -95,7 +95,7 @@ contract StableLpMaker is Ownable {
 
     function addLiquidityToStableSwap() public onlyEOA {
         uint256 usnAmount = IERC20(usn).balanceOf(address(this));
-        require(usnAmount > 0, "StableLpMaker: no Usn to add liquidity");
+        require(usnAmount > 0, "StableLPMaker: no Usn to add liquidity");
 
         IERC20(usn).approve(
             address(stableSwap),

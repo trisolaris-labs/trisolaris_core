@@ -137,12 +137,12 @@ describe("StableLpMaker", function () {
     });
 
     it("should fail to send usn when not enough balance", async function () {
-      await expect(this.usnMaker.sendLpToken()).to.be.revertedWith("StableLpMaker: no TLP to send");
+      await expect(this.usnMaker.sendLpToken()).to.be.revertedWith("StableLPMaker: no TLP to send");
     })
 
     it("should revert if caller is not EOA", async function () {
       await expect(
-        this.exploiter.convertStables(this.swapFlashLoan.address)).to.be.revertedWith("StableLpMaker: must use EOA");
+        this.exploiter.convertStables(this.swapFlashLoan.address)).to.be.revertedWith("StableLPMaker: must use EOA");
     });
 
     it("only owner should be able to change addresses", async function () {
