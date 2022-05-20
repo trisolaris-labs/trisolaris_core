@@ -15,7 +15,7 @@ describe("StableLpMaker", function () {
     this.ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     await setupStableSwap(this, this.owner)
 
-    this.UsnMaker = await ethers.getContractFactory("StableLpMaker");
+    this.UsnMaker = await ethers.getContractFactory("StableLPMaker");
     this.UsnMakerExploitMock = await ethers.getContractFactory("StableLpMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
 
@@ -137,7 +137,7 @@ describe("StableLpMaker", function () {
     });
 
     it("should fail to send usn when not enough balance", async function () {
-      await expect(this.usnMaker.sendLpToken()).to.be.revertedWith("StableLPMaker: no TLP to send");
+      await expect(this.usnMaker.sendLpToken()).to.be.revertedWith("StableLpMaker: no TLP to send");
     })
 
     it("should revert if caller is not EOA", async function () {
