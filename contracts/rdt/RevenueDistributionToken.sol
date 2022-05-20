@@ -269,8 +269,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     function _claim(address receiver_) internal returns (uint256 claimableRevenueAssets_) {
         claimableRevenueAssets_ = claimableRevenueAssets(receiver_);
-        
-        freeAssets -= claimableRevenueAssets_;
 
         require(ERC20Helper.transfer(revenueAsset, receiver_, claimableRevenueAssets_), "RDT:C:TRANSFER");
     }

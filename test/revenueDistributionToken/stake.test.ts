@@ -209,15 +209,15 @@ describe("RevenueDistributionToken - Stake", function () {
     expect(aliceRevenueAssetBalanceAfter - aliceRevenueAssetBalanceBefore).to.equal(3507);
     expect(await this.rdt.balanceOf(this.alice.address)).to.equal(0);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(3500);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(7007);
     expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(0);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3007);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3011);
 
     await advanceBlockTo(totalVestDays * DAYS_CONSTANT); // @TODO Should this be 10000?
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(3500);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(7007);
     expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(0);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3007);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3011);
   });
   
   it("User 1 stakes, and User 2 stakes and immediately unstakes before vest end", async function () {
@@ -289,31 +289,47 @@ describe("RevenueDistributionToken - Stake", function () {
       this.tri.balanceOf(this.bob.address),
     ]);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(5995);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(6013);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(6006);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(6014);
     expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
     
     await advanceBlockByDays(5);
     
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9987);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(9989);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9998);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(9988);
     expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
   });
 
   it("multiple update vesting test", async function () {
-    expect(false).equal(true);
+    const totalRevenueAmount = "10000";
 
-    // await expect(this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24)).to.not.be.reverted;
+    // Fund RDT Contract
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
 
-    // await this.rdt.connect(this.alice).claim(this.alice.address);
-    // console.log(
-    //   "end: alice revenue asset: ",
-    //   (await this.revenueAsset.balanceOf(this.alice.address)).toString(),
-    // );
-    // console.log(
-    //   "end: bob revenue asset: ",
-    //   (await this.revenueAsset.balanceOf(this.bob.address)).toString(),
-    // );
+    const totalVestDays = 10;
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
+
+    // Alice deposits
+    await deposit(this.tri, this.alice, this.rdt, "1000");
+
+    await advanceBlockByDays(1);
+
+    await this.rdt.connect(this.alice).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(1001);
+
+    await advanceBlockByDays(5);
+
+    await this.rdt.connect(this.alice).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(7007);
+
+    // Add Funds and Extend Vesting
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
+
+    await advanceBlockByDays(1);
+
+    await this.rdt.connect(this.alice).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(11910);
   })
 });
 
