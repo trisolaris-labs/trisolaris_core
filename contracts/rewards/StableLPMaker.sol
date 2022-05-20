@@ -7,17 +7,13 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
 
-contract StableLpMaker is Ownable {
+contract StableLPMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-
-    /**
-     * @notice Params that this function takes in
-     * @param pTri is the contract that disburses TLP tokens 
-     * @param tlpToken is the trisolaris lp token address
-     * @param dao is the dao address to send portion of funds
-     */
+    // pTri is the contract that disburses TLP tokens 
+    // tlpToken is the trisolaris lp token address
+    // dao is the dao address that receives funds
 
     ISwap public stableSwap;
     address public pTri;
@@ -32,6 +28,7 @@ contract StableLpMaker is Ownable {
     event LogSetpTri(address oldpTri, address newpTri);
     event LogSetdao(address oldDao, address newDao);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
+    event LogProtocolOwnedLiquidity(uint256 oldpolPercent, uint256 newStableSwap);
 
     event LogWithdrawFees();
 
@@ -40,7 +37,6 @@ contract StableLpMaker is Ownable {
 
     event LogLpTokensSentTopTRI(uint256 tlpAmount);
     event LogLpTokensSentToDao(uint256 daoAmount);
-    event LogProtocolOwnedLiquidity(uint256 oldpolPercent, uint256 newStableSwap);
 
     constructor(
         address _stableSwap,
@@ -63,7 +59,7 @@ contract StableLpMaker is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
-        require(msg.sender == tx.origin, "StableLpMaker: must use EOA");
+        require(msg.sender == tx.origin, "StableLPMaker: must use EOA");
         _;
     }
 
@@ -99,7 +95,7 @@ contract StableLpMaker is Ownable {
 
     function addLiquidityToStableSwap() public onlyEOA {
         uint256 usnAmount = IERC20(usn).balanceOf(address(this));
-        require(usnAmount > 0, "StableLpMaker: no Usn to add liquidity");
+        require(usnAmount > 0, "StableLPMaker: no Usn to add liquidity");
 
         IERC20(usn).approve(
             address(stableSwap),
@@ -120,13 +116,13 @@ contract StableLpMaker is Ownable {
     function sendLpToken() public onlyEOA {
         // Check the balanceOf converted TLP and send to pTri for dishing out
         uint256 tlpAmount = IERC20(tlpToken).balanceOf(address(this));
-        require(tlpAmount > 0, "StableLpMaker: no TLP to send");
+        require(tlpAmount > 0, "StableLPMaker: no TLP to send");
         if (polPercent == 0) {
             IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
             emit LogLpTokensSentTopTRI(tlpAmount);
         } else {
-            uint256 daoAmount = tlpAmount.mul(polPercent.div(100));
-            uint256 tlpAmount = tlpAmount,sub(daoAmount);
+            uint256 daoAmount = tlpAmount.mul(polPercent).div(100);
+            uint256 tlpAmount = tlpAmount.sub(daoAmount);
             IERC20(tlpToken).safeTransfer(pTri, tlpAmount);
             IERC20(tlpToken).safeTransfer(dao, daoAmount);
             emit LogLpTokensSentTopTRI(tlpAmount);

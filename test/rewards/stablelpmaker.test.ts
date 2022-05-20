@@ -15,7 +15,7 @@ describe("StableLpMaker", function () {
     this.ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     await setupStableSwap(this, this.owner)
 
-    this.UsnMaker = await ethers.getContractFactory("StableLpMaker");
+    this.UsnMaker = await ethers.getContractFactory("StableLPMaker");
     this.UsnMakerExploitMock = await ethers.getContractFactory("StableLpMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
 
@@ -134,8 +134,6 @@ describe("StableLpMaker", function () {
       expect(await this.swapToken.balanceOf(this.usnMaker.address)).to.equal(19968778622668);
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
       await this.usnMaker.sendLpToken();
-      // expect(await this.usn.balanceOf(this.pTRI.address)).to.equal(19979939773100);
-      // expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
     });
 
     it("should fail to send usn when not enough balance", async function () {
@@ -165,6 +163,27 @@ describe("StableLpMaker", function () {
   });
 
   describe("StableUsnMaker Dao Tests", function () {
-    
+    it("should have correct address", async function () {
+      await expect(this.usnMaker.dao()).to.eq("StableLpMaker: no TLP to send");
+    })
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
