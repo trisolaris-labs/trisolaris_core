@@ -29,7 +29,7 @@ async function main(): Promise<void> {
 
     const StableLPMaker = await ethers.getContractFactory("StableLPMaker")
 
-    console.log(threePoolSwapFlashLoanAddress,pTri,usnAddress,usdcAddress,usdtAddress,dao)
+    console.log(threePoolSwapFlashLoanAddress,pTri,usnAddress,usdcAddress,usdtAddress,threePoolLpTokenAddress,dao)
 
     const stableLpMaker = await StableLPMaker.connect(deployer).deploy(threePoolSwapFlashLoanAddress,pTri,usnAddress,usdcAddress,usdtAddress,threePoolLpTokenAddress,dao)
     await stableLpMaker.deployed()
