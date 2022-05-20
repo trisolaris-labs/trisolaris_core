@@ -7,7 +7,7 @@ import {
     usdcAddress, 
     factoryAddress,
     wethAddress,
-    stableUsnMaker
+    stableLPMaker
 } from './constants';
 
 async function main(): Promise<void> {
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
 
     const UsdcMaker = await ethers.getContractFactory("UsdcMaker")
       
-    const usdcMaker = await UsdcMaker.connect(deployer).deploy(factoryAddress, stableUsnMaker, usdcAddress, wethAddress)
+    const usdcMaker = await UsdcMaker.connect(deployer).deploy(factoryAddress, stableLPMaker, usdcAddress, wethAddress)
     await usdcMaker.deployed()
     console.log(`Maker deployed at: ${usdcMaker.address}`)
 }

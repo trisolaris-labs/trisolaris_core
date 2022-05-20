@@ -18,7 +18,7 @@ contract UsdcMaker is Ownable {
     using SafeERC20 for IERC20;
 
     IUniswapV2Factory public immutable factory;
-    address public stableusnmaker;
+    address public stablelpmaker;
     address private immutable usdc;
     address private immutable weth;
 
@@ -37,16 +37,16 @@ contract UsdcMaker is Ownable {
         uint256 amountUSDC
     );
 
-    event LogSetStableUsnMaker(address oldStableUsnMaker, address newStableUsnMaker);
+    event LogSetStableLpMaker(address oldStableLpMaker, address newStableLpMaker);
 
     constructor(
         address _factory,
-        address _stableusnmaker,
+        address _stablelpmaker,
         address _usdc,
         address _weth
     ) public {
         factory = IUniswapV2Factory(_factory);
-        stableusnmaker = _stableusnmaker;
+        stablelpmaker = _stablelpmaker;
         usdc = _usdc;
         weth = _weth;
     }
@@ -80,13 +80,13 @@ contract UsdcMaker is Ownable {
         _;
     }
 
-    // Function to set a different stableusnmaker address to send fees to
-    function setStableUsnMaker(address _stableusnmaker) public onlyOwner {
-        address oldStableUsnMaker;
-        oldStableUsnMaker = stableusnmaker;
-        stableusnmaker = _stableusnmaker;
+    // Function to set a different stablelpmaker address to send fees to
+    function setStableLpMaker(address _stablelpmaker) public onlyOwner {
+        address oldStableLpMaker;
+        oldStableLpMaker = stablelpmaker;
+        stablelpmaker = _stablelpmaker;
 
-        emit LogSetStableUsnMaker(oldStableUsnMaker, stableusnmaker);
+        emit LogSetStableLpMaker(oldStableLpMaker, stablelpmaker);
     }
 
     // F1 - F10: OK
@@ -141,7 +141,7 @@ contract UsdcMaker is Ownable {
         if (token0 == token1) {
             uint256 amount = amount0.add(amount1);
             if (token0 == usdc) {
-                IERC20(usdc).safeTransfer(stableusnmaker, amount);
+                IERC20(usdc).safeTransfer(stablelpmaker, amount);
                 usdcOut = amount;
             } else if (token0 == weth) {
                 usdcOut = _toUSDC(weth, amount);
@@ -152,11 +152,11 @@ contract UsdcMaker is Ownable {
             }
         } else if (token0 == usdc) {
             // eg. TRI - ETH
-            IERC20(usdc).safeTransfer(stableusnmaker, amount0);
+            IERC20(usdc).safeTransfer(stablelpmaker, amount0);
             usdcOut = _toUSDC(token1, amount1).add(amount0);
         } else if (token1 == usdc) {
             // eg. USDT - TRI
-            IERC20(usdc).safeTransfer(stableusnmaker, amount1);
+            IERC20(usdc).safeTransfer(stablelpmaker, amount1);
             usdcOut = _toUSDC(token0, amount0).add(amount1);
         } else if (token0 == weth) {
             // eg. ETH - USDC
@@ -220,7 +220,7 @@ contract UsdcMaker is Ownable {
     // C1 - C24: OK
     function _toUSDC(address token, uint256 amountIn) internal returns (uint256 amountOut) {
         // X1 - X5: OK
-        amountOut = _swap(token, usdc, amountIn, stableusnmaker);
+        amountOut = _swap(token, usdc, amountIn, stablelpmaker);
     }
 
     // @notice Allows owner to reclaim/withdraw any tokens (including reward tokens) held by this contract

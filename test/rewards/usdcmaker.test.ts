@@ -201,16 +201,16 @@ describe("UsdcMaker", function () {
     });
   });
 
-  describe("setStableUsnMaker", () => {
-    it("should only setStableUsnMaker if owner", async function () {
-      await expect(this.usdcMaker.connect(this.minter).setStableUsnMaker(this.alice.address))
-        .to.emit(this.usdcMaker, "LogSetStableUsnMaker")
+  describe("setStableLpMaker", () => {
+    it("should only setStableLpMaker if owner", async function () {
+      await expect(this.usdcMaker.connect(this.minter).setStableLpMaker(this.alice.address))
+        .to.emit(this.usdcMaker, "LogSetStableLpMaker")
         .withArgs(this.bar.address, this.alice.address);
-      expect(await this.usdcMaker.stableusnmaker()).to.equal(this.alice.address);
+      expect(await this.usdcMaker.stablelpmaker()).to.equal(this.alice.address);
     });
 
-    it("should not be able to setStableUsnMaker if not owner", async function () {
-      await expect(this.usdcMaker.connect(this.alice).setStableUsnMaker(this.bob.address)).to.be.revertedWith(
+    it("should not be able to setStableLpMaker if not owner", async function () {
+      await expect(this.usdcMaker.connect(this.alice).setStableLpMaker(this.bob.address)).to.be.revertedWith(
         "Ownable: caller is not the owner",
       );
     });
