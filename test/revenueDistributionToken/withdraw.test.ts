@@ -30,18 +30,9 @@ describe("RevenueDistributionToken - Withdraw", function () {
     await Promise.all([this.tri.deployed, this.revenueAsset.deployed, this.rdt.deployed]);
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async function deposit(token: any, depositor: any, rdt: any, amount: string = "1000") {
-    await token.transfer(depositor.address, amount);
-
-    await token.connect(depositor).approve(rdt.address, amount);
-
-    await rdt.connect(depositor).deposit(amount, depositor.address);
-  }
-
   it("Cannot withdraw if insufficient balance", async function () {
-    await deposit(this.tri, this.alice, this.rdt)
-    
+    await deposit(this.tri, this.alice, this.rdt);
+
     await expect(
       this.rdt.connect(this.alice).withdraw("1001", this.alice.address, this.alice.address),
     ).to.be.revertedWith("RDT:B:INSUFFICIENT_BALANCE");
@@ -53,15 +44,14 @@ describe("RevenueDistributionToken - Withdraw", function () {
     await Promise.all([
       expect(this.rdt.connect(this.bob).withdraw("1000", this.bob.address, this.alice.address)).to.be.reverted,
       expect(this.rdt.connect(this.bob).withdraw("1000", this.alice.address, this.alice.address)).to.be.reverted,
-    ])
+    ]);
   });
 
   it("User receives amount they deposited", async function () {
     await deposit(this.tri, this.alice, this.rdt, "2000");
 
-    await expect(
-      this.rdt.connect(this.alice).withdraw("1000", this.alice.address, this.alice.address),
-    ).to.not.be.reverted;
+    await expect(this.rdt.connect(this.alice).withdraw("1000", this.alice.address, this.alice.address)).to.not.be
+      .reverted;
 
     expect(await this.tri.balanceOf(this.alice.address)).to.equal("1000");
     expect(await this.rdt.balanceOf(this.alice.address)).to.equal("1000");
@@ -72,4 +62,29 @@ describe("RevenueDistributionToken - Withdraw", function () {
     expect(await this.tri.balanceOf(this.alice.address)).to.equal("2000");
     expect(await this.rdt.balanceOf(this.alice.address)).to.equal("0");
   });
+
+  it("Correct user receives TRI when setting recipient as a different user", async function () {
+    await deposit(this.tri, this.alice, this.rdt, "1000");
+
+    await expect(this.rdt.connect(this.alice).withdraw("1000", this.bob.address, this.alice.address)).to.not.be
+      .reverted;
+
+    expect(await this.tri.balanceOf(this.bob.address)).to.equal("1000");
+    expect(await this.tri.balanceOf(this.alice.address)).to.equal("0");
+  });
+
+  it("Users cannot withdraw for other users", async function () {
+    await deposit(this.tri, this.alice, this.rdt, "1000");
+
+    await expect(this.rdt.connect(this.bob).withdraw("1000", this.bob.address, this.alice.address)).to.be.reverted;
+  });
 });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function deposit(token: any, depositor: any, rdt: any, amount: string = "1000") {
+  await token.transfer(depositor.address, amount);
+
+  await token.connect(depositor).approve(rdt.address, amount);
+
+  await rdt.connect(depositor).deposit(amount, depositor.address);
+}
