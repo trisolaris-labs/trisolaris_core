@@ -167,12 +167,14 @@ describe("StableLpMaker", function () {
       expect(await this.usnMaker.dao()).to.equal(this.dao.address);
     })
 
-    it("it should set protocol owned liquidity", async function () {
+    it("should have correct address", async function () {
       expect(await this.usnMaker.polPercent()).to.equal(0);
-      expect(await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(100)).to.be.revertedWith("POL is too high");
-      // await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(50)
-      // expect(await this.usnMaker.polPercent()).to.equal(50);
+      await expect(this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(101)).to.be.revertedWith("POL is too high")
+      await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(50)
+      expect(await this.usnMaker.polPercent()).to.equal(50);
     })
+
+
 
   });
 
