@@ -93,6 +93,12 @@ describe("Meta-Swap", async function () {
       })
     })
   })
+
+  describe("feeAddress", () => {
+    it("Returns correct addresses of fee address", async function () {
+      expect(await this.metaSwap.feeAddress()).to.eq(this.owner.address)
+    })
+  })
   
   describe("getToken", function () {
     it("Returns correct addresses of pooled tokens", async function () {
@@ -1419,6 +1425,32 @@ describe("Meta-Swap", async function () {
     })
   })
 
+  describe("setFeeAddress", () => {
+    it("Succeeds in changing the feeAddress", async function () {
+      await this.metaSwap.setFeeAddress(this.user2.address)
+      expect((await this.metaSwap.feeAddress())).to.eq(this.user2.address)
+    })
+
+    it("Emits NewFeeAddress event", async function () {
+      await expect(this.metaSwap.setFeeAddress(this.user2.address)).to.emit(
+        this.metaSwap,
+        "NewFeeAddress",
+        )
+    })
+
+    it("Reverts when called by non-owners", async function () {
+      await expect(this.metaSwap.connect(this.user1).setFeeAddress(this.user2.address)).to.be.reverted
+      await expect(this.metaSwap.connect(this.user2).setFeeAddress(this.user2.address)).to.be
+        .reverted
+    })
+
+    it("Reverts when setting zero address", async function () {
+      await expect(this.metaSwap.setFeeAddress(this.ZERO_ADDRESS)).to.be.reverted
+      await expect(this.metaSwap.setFeeAddress()).to.be.reverted
+    })
+
+  })
+
   describe("getAdminBalance", function () {
     it("Reverts with 'Token index out of range'", async function () {
       await expect(this.metaSwap.getAdminBalance(3)).to.be.revertedWith(
@@ -1456,32 +1488,41 @@ describe("Meta-Swap", async function () {
   })
 
   describe("withdrawAdminFees", function () {
-    it("Reverts when called by non-owners", async function () {
+
+    it("Reverts when called by non-fee-address", async function () {
+      await this.metaSwap.setFeeAddress(this.user2.address)
+
       await expect(this.metaSwap.connect(this.user1).withdrawAdminFees()).to.be.reverted
-      await expect(this.metaSwap.connect(this.user2).withdrawAdminFees()).to.be.reverted
+      await expect(this.metaSwap.connect(this.owner).withdrawAdminFees()).to.be.reverted
     })
 
     it("Succeeds when there are no fees withdrawn", async function () {
+      // Sets feeAddress to user2
+      await this.metaSwap.setFeeAddress(this.user2.address)
+
       // Sets adminFee to 1% of the swap fees
       await this.metaSwap.setAdminFee(BigNumber.from(10 ** 8))
 
+      
       const [firstTokenBefore, secondTokenBefore] = await getUserTokenBalances(
-        this.owner,
+        this.user1,
         [this.ust, this.swapLPToken],
       )
 
-      await this.metaSwap.withdrawAdminFees()
+      await this.metaSwap.connect(this.user2).withdrawAdminFees()
 
       const [firstTokenAfter, secondTokenAfter] = await getUserTokenBalances(
-        this.owner,
+        this.user1,
         [this.ust, this.swapLPToken],
       )
 
       expect(firstTokenBefore).to.eq(firstTokenAfter)
       expect(secondTokenBefore).to.eq(secondTokenAfter)
     })
-
+    
     it("Succeeds with expected amount of fees withdrawn (swap)", async function () {
+      await this.metaSwap.setFeeAddress(this.user2.address)
+
       // Sets adminFee to 1% of the swap fees
       await this.metaSwap.setAdminFee(BigNumber.from(10 ** 8))
       await this.metaSwap.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256)
@@ -1491,14 +1532,14 @@ describe("Meta-Swap", async function () {
       expect(await this.metaSwap.getAdminBalance(1)).to.eq(String(998024139765))
 
       const [firstTokenBefore, secondTokenBefore] = await getUserTokenBalances(
-        this.owner,
+        this.user2,
         [this.ust, this.swapLPToken],
       )
 
-      await this.metaSwap.withdrawAdminFees()
+      await this.metaSwap.connect(this.user2).withdrawAdminFees()
 
       const [firstTokenAfter, secondTokenAfter] = await getUserTokenBalances(
-        this.owner,
+        this.user2,
         [this.ust, this.swapLPToken],
       )
 
@@ -1509,6 +1550,8 @@ describe("Meta-Swap", async function () {
     })
 
     it("Succeeds with expected amount of fees withdrawn (swapUnderlying)", async function () {
+      await this.metaSwap.setFeeAddress(this.user2.address)
+      
       // Sets adminFee to 1% of the swap fees
       await this.metaSwap.setAdminFee(BigNumber.from(10 ** 8))
       await this.metaSwap
@@ -1522,14 +1565,14 @@ describe("Meta-Swap", async function () {
       expect(await this.metaSwap.getAdminBalance(1)).to.eq(String(998024139765))
 
       const [firstTokenBefore, secondTokenBefore] = await getUserTokenBalances(
-        this.owner,
+        this.user2,
         [this.ust, this.swapLPToken],
       )
 
-      await this.metaSwap.withdrawAdminFees()
+      await this.metaSwap.connect(this.user2).withdrawAdminFees()
 
       const [firstTokenAfter, secondTokenAfter] = await getUserTokenBalances(
-        this.owner,
+        this.user2,
         [this.ust, this.swapLPToken],
       )
 
@@ -1540,6 +1583,9 @@ describe("Meta-Swap", async function () {
     })
 
     it("Withdrawing admin fees has no impact on users' withdrawal", async function () {
+      // Sets feeAddress to user2
+      await this.metaSwap.setFeeAddress(this.user2.address)
+      
       // Sets adminFee to 1% of the swap fees
       await this.metaSwap.setAdminFee(BigNumber.from(10 ** 8))
       await this.metaSwap
@@ -1551,7 +1597,7 @@ describe("Meta-Swap", async function () {
         await this.metaSwap.connect(this.user2).swap(1, 0, String(1e17), 0, this.MAX_UINT256)
       }
 
-      await this.metaSwap.withdrawAdminFees()
+      await this.metaSwap.connect(this.user2).withdrawAdminFees()
 
       const [firstTokenBefore, secondTokenBefore] = await getUserTokenBalances(
         this.user1,
