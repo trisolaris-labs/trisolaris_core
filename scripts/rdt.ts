@@ -22,14 +22,14 @@ async function main(): Promise<void> {
   console.log(`Account balance: ${balance.toString()}`);
 
   const rdtFactory: RevenueDistributionToken__factory = await ethers.getContractFactory("RevenueDistributionToken");
-  const factory = await rdtFactory.deploy("Test xTRI V2", "xTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS);
+  const factory = await rdtFactory.deploy("pTRI", "pTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS);
   await factory.deployed();
 
   console.log(`RDT address: ${factory.address}`);
 
   await run("verify:verify", {
     address: factory.address,
-    constructorArguments: ["Test xTRI V2", "xTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS],
+    constructorArguments: ["pTRI", "pTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS],
   });
 }
 

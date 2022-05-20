@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { advanceBlock, advanceBlockTo } from "../time";
+import { advanceBlockTo } from "../time";
 
-const DAYS_CONSTANT = 100;
+const DAYS_CONSTANT: number = 100;
 
 describe("RevenueDistributionToken - Stake", function () {
   before(async function () {
@@ -64,26 +64,21 @@ describe("RevenueDistributionToken - Stake", function () {
     await advanceBlockTo(depositedBlockNumber + 1);
 
     const totalVestDays = 10;
-    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * DAYS_CONSTANT);
-
-    expect(await this.rdt.issuanceRate()).to.equal("10000000000");
-
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(0);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(0);
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
 
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1000);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1000);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1001);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1001);
 
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(2000);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(2000);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(2002);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(2002);
 
     await advanceBlockByDays(8);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(10000);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9999);
     expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(10000);
   });
 
@@ -94,8 +89,7 @@ describe("RevenueDistributionToken - Stake", function () {
     await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
 
     const totalVestDays = 10;
-    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * DAYS_CONSTANT);
-    expect(await this.rdt.issuanceRate()).to.equal("10000000000");
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
 
     await deposit(this.tri, this.alice, this.rdt, "1000");
     await deposit(this.tri, this.bob, this.rdt, "1000");
@@ -105,27 +99,21 @@ describe("RevenueDistributionToken - Stake", function () {
 
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1040);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(520);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(520);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1001);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(501);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(501);
 
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(2040);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1020);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(1020);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(2002);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1001);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(1001);
 
     await advanceBlockByDays(8);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9970);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(4985);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(4985);
-
-    await advanceBlockTo(totalVestDays * DAYS_CONSTANT); // @TODO Should this be 10000?
-
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9970);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(4985);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(4985);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9999);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(5000);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(5000);
   });
 
   it("User 1 and User 2 stake at different times", async function () {
@@ -135,8 +123,8 @@ describe("RevenueDistributionToken - Stake", function () {
     await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
 
     const totalVestDays = 10;
-    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * DAYS_CONSTANT);
-    expect(await this.rdt.issuanceRate()).to.equal("10000000000");
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
+    // expect(await this.rdt.issuanceRate()).to.equal("10000000000");
 
     // Alice deposits
     await deposit(this.tri, this.alice, this.rdt, "1000");
@@ -146,8 +134,8 @@ describe("RevenueDistributionToken - Stake", function () {
 
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1010);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1010);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1001);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1001);
     expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
 
     await advanceBlockByDays(5);
@@ -155,21 +143,21 @@ describe("RevenueDistributionToken - Stake", function () {
     // Bob deposits
     await deposit(this.tri, this.bob, this.rdt, "1000");
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(6040);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(3020);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3020);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(6006);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(3007);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(4);
 
     await advanceBlockByDays(8);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9970);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(4985);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(4985);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9998);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(5003);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(2000);
 
-    await advanceBlockTo(totalVestDays * DAYS_CONSTANT); // @TODO Should this be 10000?
+    await advanceBlockByDays(5);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9970);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(4985);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(4985);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9998);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(5003);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(2000);
   });
 
   it("User 1 stakes, and User 2 stakes, User 1 unstakes", async function () {
@@ -179,8 +167,7 @@ describe("RevenueDistributionToken - Stake", function () {
     await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
 
     const totalVestDays = 10;
-    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * DAYS_CONSTANT);
-    expect(await this.rdt.issuanceRate()).to.equal("10000000000");
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
 
     // Alice deposits
     await deposit(this.tri, this.alice, this.rdt, "1000");
@@ -190,8 +177,8 @@ describe("RevenueDistributionToken - Stake", function () {
 
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1010);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1010);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1001);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1001);
     expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
 
     await advanceBlockByDays(3);
@@ -199,9 +186,9 @@ describe("RevenueDistributionToken - Stake", function () {
     // Bob deposits
     await deposit(this.tri, this.bob, this.rdt, "1000");
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(4040);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(2020);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(2020);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(4004);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(2005);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3);
 
     await advanceBlockByDays(3);
 
@@ -219,46 +206,46 @@ describe("RevenueDistributionToken - Stake", function () {
     ]);
 
     expect(aliceTRIBalanceAfter - aliceTRIBalanceBefore).to.equal(1000);
-    expect(aliceRevenueAssetBalanceAfter - aliceRevenueAssetBalanceBefore).to.equal(3525);
+    expect(aliceRevenueAssetBalanceAfter - aliceRevenueAssetBalanceBefore).to.equal(3507);
     expect(await this.rdt.balanceOf(this.alice.address)).to.equal(0);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(7050);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(7007);
     expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(0);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(7050);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3011);
 
     await advanceBlockTo(totalVestDays * DAYS_CONSTANT); // @TODO Should this be 10000?
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(7050);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(7007);
     expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(0);
-    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(7050);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(3011);
   });
   
-  xit("User 1 stakes, and User 2 stakes and immediately unstakes before vest end", async function () {
+  it("User 1 stakes, and User 2 stakes and immediately unstakes before vest end", async function () {
     const totalRevenueAmount = "10000";
 
     // Fund RDT Contract
     await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
 
     const totalVestDays = 10;
-    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * DAYS_CONSTANT);
-    expect(await this.rdt.issuanceRate()).to.equal("10000000000");
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
 
     // Alice deposits
     await deposit(this.tri, this.alice, this.rdt, "1000");
 
-    const depositedBlockNumber = await ethers.provider.getBlockNumber();
-    await advanceBlockTo(depositedBlockNumber + 1);
-
     await advanceBlockByDays(1);
 
-    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1010);
-    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1010);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(1001);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(1001);
     expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
 
     await advanceBlockByDays(5);
 
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(6006);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(6006);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
+
     // Bob deposits and immediately withdraws
-    let [bobTRIBalanceBefore, bobRevenueAssetBalanceBefore] = await Promise.all([
+    let [bobTRIBalanceBefore] = await Promise.all([
       this.tri.balanceOf(this.bob.address),
       this.revenueAsset.balanceOf(this.bob.address),
     ]);
@@ -266,60 +253,84 @@ describe("RevenueDistributionToken - Stake", function () {
     await deposit(this.tri, this.bob, this.rdt, "1000");
     await this.rdt.connect(this.bob).withdraw("1000", this.bob.address, this.bob.address);
 
-    let [bobTRIBalanceAfter, bobRevenueAssetBalanceAfter] = await Promise.all([
+    let [bobTRIBalanceAfter] = await Promise.all([
       this.tri.balanceOf(this.bob.address),
-      this.revenueAsset.balanceOf(this.bob.address),
     ]);
 
     expect(bobTRIBalanceAfter - bobTRIBalanceBefore).to.equal(1000);
-    expect(bobRevenueAssetBalanceAfter - bobRevenueAssetBalanceBefore).to.equal(3025);
+    expect(await this.revenueAsset.balanceOf(this.bob.address)).to.equal(4);
     expect(await this.rdt.balanceOf(this.bob.address)).to.equal(0);
     
     // Bob deposits and immediately withdraws AGAIN
-    [bobTRIBalanceBefore, bobRevenueAssetBalanceBefore] = await Promise.all([
+    [bobTRIBalanceBefore] = await Promise.all([
       this.tri.balanceOf(this.bob.address),
-      this.revenueAsset.balanceOf(this.bob.address),
     ]);
     
     await deposit(this.tri, this.bob, this.rdt, "1000");
     await this.rdt.connect(this.bob).withdraw("1000", this.bob.address, this.bob.address);
 
-    [bobTRIBalanceAfter, bobRevenueAssetBalanceAfter] = await Promise.all([
+    [bobTRIBalanceAfter] = await Promise.all([
       this.tri.balanceOf(this.bob.address),
-      this.revenueAsset.balanceOf(this.bob.address),
     ]);
 
     expect(bobTRIBalanceAfter - bobTRIBalanceBefore).to.equal(1000);
-    expect(bobRevenueAssetBalanceAfter - bobRevenueAssetBalanceBefore).to.equal(3045);
+    expect(await this.revenueAsset.balanceOf(this.bob.address)).to.equal(8);
     expect(await this.rdt.balanceOf(this.bob.address)).to.equal(0);
     
     // Bob deposits and immediately withdraws AGAIN
-    [bobTRIBalanceBefore, bobRevenueAssetBalanceBefore] = await Promise.all([
+    [bobTRIBalanceBefore] = await Promise.all([
       this.tri.balanceOf(this.bob.address),
-      this.revenueAsset.balanceOf(this.bob.address),
     ]);
     
     await deposit(this.tri, this.bob, this.rdt, "1000");
     await this.rdt.connect(this.bob).withdraw("1000", this.bob.address, this.bob.address);
 
-    [bobTRIBalanceAfter, bobRevenueAssetBalanceAfter] = await Promise.all([
+    [bobTRIBalanceAfter] = await Promise.all([
       this.tri.balanceOf(this.bob.address),
-      this.revenueAsset.balanceOf(this.bob.address),
     ]);
 
-    // expect(bobTRIBalanceAfter - bobTRIBalanceBefore).to.equal(1000);
-    // expect(bobRevenueAssetBalanceAfter - bobRevenueAssetBalanceBefore).to.equal(3065);
-    // expect(await this.rdt.balanceOf(this.bob.address)).to.equal(0);
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(6006);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(6014);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
     
-
-    // await advanceBlockTo(totalVestDays * DAYS_CONSTANT); // @TODO Should this be 10000?
-
-    // expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(6130);
-    // expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(6130);
-    // expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
-
-    console.log("rdt balance: ", (await this.rdt.totalRevenueAssets()).toString());
+    await advanceBlockByDays(5);
+    
+    expect(await this.rdt.totalClaimableRevenueAssets()).to.equal(9998);
+    expect(await this.rdt.connect(this.alice).claimableRevenueAssets(this.alice.address)).to.equal(9988);
+    expect(await this.rdt.connect(this.bob).claimableRevenueAssets(this.bob.address)).to.equal(0);
   });
+
+  it("multiple update vesting test", async function () {
+    const totalRevenueAmount = "10000";
+
+    // Fund RDT Contract
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
+
+    const totalVestDays = 10;
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
+
+    // Alice deposits
+    await deposit(this.tri, this.alice, this.rdt, "1000");
+
+    await advanceBlockByDays(1);
+
+    await this.rdt.connect(this.alice).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(1001);
+
+    await advanceBlockByDays(5);
+
+    await this.rdt.connect(this.alice).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(7007);
+
+    // Add Funds and Extend Vesting
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestDays * 60 * 60 * 24);
+
+    await advanceBlockByDays(1);
+
+    await this.rdt.connect(this.alice).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(11910);
+  })
 });
 
 async function deposit(token: any, depositor: any, rdt: any, amount: string = "1000") {
@@ -331,5 +342,6 @@ async function deposit(token: any, depositor: any, rdt: any, amount: string = "1
 }
 
 async function advanceBlockByDays(daysToAdvance: number = 0) {
+  await ethers.provider.send("evm_increaseTime", [daysToAdvance * 60 * 60 * 24]);
   await advanceBlockTo((await ethers.provider.getBlockNumber()) + daysToAdvance * DAYS_CONSTANT);
 }
