@@ -27,7 +27,7 @@ async function main(): Promise<void> {
     const balance = await deployer.getBalance();
     console.log(`Account balance: ${balance.toString()}`)
 
-    const StableLPMaker = await ethers.getContractFactory("StableLPMaker")
+    const StableLPMaker = await ethers.getContractFactory("StableLpMaker")
 
     console.log(threePoolSwapFlashLoanAddress,pTri,usnAddress,usdcAddress,usdtAddress,threePoolLpTokenAddress,dao)
 
