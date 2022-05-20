@@ -152,9 +152,9 @@ contract StableLpMaker is Ownable {
         require(_polPercent <= 100, "POL is too high");
         uint256 oldpolPercent;
         oldpolPercent = polPercent;
-        _polPercent = _polPercent;
+        polPercent = _polPercent;
 
-        emit LogProtocolOwnedLiquidity(oldpolPercent, _polPercent);
+        emit LogProtocolOwnedLiquidity(oldpolPercent, polPercent);
     }
 
     // Emergency Withdraw function

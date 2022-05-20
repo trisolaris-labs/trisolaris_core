@@ -174,8 +174,20 @@ describe("StableLpMaker", function () {
       expect(await this.usnMaker.polPercent()).to.equal(50);
     })
 
-
-
+    it("should send 50% of fees to dao", async function () {
+      expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
+       expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
+      await this.usnMaker.withdrawStableTokenFees();
+      expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(2499512096);
+      expect(await this.usdc.balanceOf(this.usnMaker.address)).to.equal(249710331);
+      expect(await this.usdt.balanceOf(this.usnMaker.address)).to.equal(249808873);
+      await this.usnMaker.swapStableTokensToUsn();
+      await this.usnMaker.addLiquidityToStableSwap();
+      await this.usnMaker.sendLpToken();
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(1498427689);
+      expect(await this.swapToken.balanceOf(this.user1.address)).to.equal(1498427689);
+      // the ptri address was changed in old test
+    })
   });
 
 });
