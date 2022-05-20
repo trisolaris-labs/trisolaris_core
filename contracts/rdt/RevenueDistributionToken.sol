@@ -6,6 +6,7 @@ import { ERC20Helper } from "./ERC20Helper.sol";
 import { ITriBar } from "../rewards/interfaces/ITriBar.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
+import { IMasterChefV2 } from "./interfaces/IMasterChefV2.sol";
 
 /*
     ██████╗ ██████╗ ████████╗
@@ -223,6 +224,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         _mint(shares_ = triBalanceUnstaked, triBalanceUnstaked, receiver_, address(this));
     }
 
+    function claimAndStake(
+        address masterChef_,
+        address receiver_,
+        uint256 pid_
+    ) external {
+        uint256 claimedRevenueAssets_ = _claim(receiver_);
+
+        ERC20(revenueAsset).approve(masterChef_, claimedRevenueAssets_);
+        IMasterChefV2(masterChef_).deposit(pid_, claimedRevenueAssets_, receiver_);
+    }
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -386,7 +398,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
             ? vestingPeriodFinish_ - lastUpdated_
             : block.number - lastUpdated_;
 
-        return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
+        return (uint256(issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
     }
 
     function balanceOfAssets(address account_) external view override returns (uint256 assets_) {
