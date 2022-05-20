@@ -5,7 +5,7 @@
 import { RevenueDistributionToken__factory } from "../typechain";
 import { ethers, run } from "hardhat";
 
-const USDT_ADDRESS = "0x4988a896b1227218e4A686fdE5EabdcAbd91571f";
+const USN_ADDRESS = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 const TRI_ADDRESS = "0xfa94348467f64d5a457f75f8bc40495d33c65abb";
 
 async function main(): Promise<void> {
@@ -22,14 +22,14 @@ async function main(): Promise<void> {
   console.log(`Account balance: ${balance.toString()}`);
 
   const rdtFactory: RevenueDistributionToken__factory = await ethers.getContractFactory("RevenueDistributionToken");
-  const factory = await rdtFactory.deploy("Test xTRI V2", "xTRI", deployer.address, USDT_ADDRESS, TRI_ADDRESS);
+  const factory = await rdtFactory.deploy("Test xTRI V2", "xTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS);
   await factory.deployed();
 
   console.log(`RDT address: ${factory.address}`);
 
   await run("verify:verify", {
     address: factory.address,
-    constructorArguments: ["Test xTRI V2", "xTRI", deployer.address, USDT_ADDRESS, TRI_ADDRESS],
+    constructorArguments: ["Test xTRI V2", "xTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS],
   });
 }
 
