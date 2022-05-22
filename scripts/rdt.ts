@@ -7,6 +7,8 @@ import { ethers, run } from "hardhat";
 
 const USN_ADDRESS = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 const TRI_ADDRESS = "0xfa94348467f64d5a457f75f8bc40495d33c65abb";
+// TODO: Move into constants for production
+const vestingUpdater = "0x168109Ece4E1A13b1C9Eb50698f9Cc359091fd11";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -31,6 +33,9 @@ async function main(): Promise<void> {
     address: factory.address,
     constructorArguments: ["pTRI", "pTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS],
   });
+
+  // Set vesting updater to the address of the cronjob invocation
+  await factory.setVestingUpdater(vestingUpdater);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
