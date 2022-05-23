@@ -8,6 +8,7 @@ import { ITriBar } from "../rewards/interfaces/ITriBar.sol";
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 import { IMasterChefV2 } from "./interfaces/IMasterChefV2.sol";
 
+
 /*
     ██████╗ ██████╗ ████████╗
     ██╔══██╗██╔══██╗╚══██╔══╝
@@ -324,7 +325,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
             ? vestingPeriodFinish_ - lastClaimed[account_] // block deposits if vesting perdio finished
             : block.number - lastClaimed[account_];
 
-        balanceOfAssets_ = _divRoundUp((shares_ * ((issuanceRate_ * vestingTimePassed))), supply * precision);
+        balanceOfAssets_ = _divRoundUp(
+            (shares_ * ((issuanceRate_ * vestingTimePassed))),
+            supply * precision
+        );
 
         uint256 revenueAssetBalance_ = ERC20(revenueAsset).balanceOf(address(this));
 
