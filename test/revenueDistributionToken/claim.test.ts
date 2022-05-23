@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { advanceBlockBy } from '../time';
+import { advanceBlockBy } from "../time";
 
 describe("RevenueDistributionToken - Claim", function () {
   before(async function () {
@@ -19,6 +19,7 @@ describe("RevenueDistributionToken - Claim", function () {
   });
 
   beforeEach(async function () {
+    await ethers.provider.send("hardhat_reset", []);
     this.tri = await this.ERC20Mock.deploy("Trisolaris", "TRI", 18, "10000000000");
     this.revenueAsset = await this.ERC20Mock.deploy("Revenue Asset", "USN", 18, "10000000000");
     this.rdt = await this.RDT.deploy(
