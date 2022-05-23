@@ -80,12 +80,12 @@ contract StableLPMaker is Ownable {
             );
 
             uint256 stableTokenAmount = IERC20(stableTokensToSwapToUsn[i]).balanceOf(address(this));
-
+            uint256 minAmount = stableTokenAmount.mul(999).div(1005);
             stableSwap.swap(
                 stableSwap.getTokenIndex(stableTokensToSwapToUsn[i]),
                 stableSwap.getTokenIndex(usn),
                 stableTokenAmount,
-                0,
+                minAmount,
                 block.timestamp + 60
             );
 
