@@ -43,4 +43,9 @@ describe("RevenueDistributionToken - Vesting Updater", function () {
       "RDT:SVU:NOT_OWNER",
     );
   });
+
+  it("Only vesting updater can update vesting schedule", async function () {
+    await this.rdt.connect(this.minter).setVestingUpdater(this.alice.address);
+    await expect(this.rdt.connect(this.alice).updateVestingSchedule(100)).to.not.throw;
+  });
 });
