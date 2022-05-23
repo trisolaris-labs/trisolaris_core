@@ -29,13 +29,14 @@ async function main(): Promise<void> {
 
   console.log(`RDT address: ${factory.address}`);
 
+  // Set vesting updater to the address of the cronjob invocation
+  await factory.connect(deployer).setVestingUpdater(vestingUpdater);
+  console.log(`Vesting updater set to ${vestingUpdater}`);
+
   await run("verify:verify", {
     address: factory.address,
     constructorArguments: ["pTRI", "pTRI", deployer.address, USN_ADDRESS, TRI_ADDRESS],
   });
-
-  // Set vesting updater to the address of the cronjob invocation
-  await factory.connect(deployer).setVestingUpdater(vestingUpdater);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
