@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { expect } from "chai";
 import { advanceBlockBy } from '../time';
 
-describe("RevenueDistributionToken - Stake", function () {
+describe("RevenueDistributionToken - Claim", function () {
   before(async function () {
     this.signers = await ethers.getSigners();
     this.alice = this.signers[0];
@@ -30,6 +30,8 @@ describe("RevenueDistributionToken - Stake", function () {
     );
 
     await Promise.all([this.tri.deployed, this.revenueAsset.deployed, this.rdt.deployed]);
+
+    await this.rdt.connect(this.minter).setVestingUpdater(this.minter.address);
   });
 
   it("Claiming for another user sends funds to correct user", async function () {

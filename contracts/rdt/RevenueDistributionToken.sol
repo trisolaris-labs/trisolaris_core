@@ -24,6 +24,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     address public override owner; // Current owner of the contract, able to update the vesting schedule.
     address public override pendingOwner; // Pending owner of the contract, able to accept ownership.
+    address public override vestingUpdater; // Vesting updater of the contract, able to transfer and update vesting schedule.
 
     uint256 public override freeAssets; // Amount of revenue assets unlocked regardless of time passed.
     uint256 public override issuanceRate; // asset/second rate dependent on aggregate vesting schedule.
@@ -53,6 +54,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     event Migrated(address xTRI, address asset, uint256 triUnstaked, uint256 shares);
     event ReclaimTokens(address token_, uint256 amount_, address payable receiver_);
+    event LogSetVestingUpdater(address oldVestingUpdater_, address newVestingUpdater_);
 
     constructor(
         string memory name_,
@@ -88,13 +90,22 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit PendingOwnerSet(msg.sender, pendingOwner_);
     }
 
+    function setVestingUpdater(address vestingUpdater_) external virtual override {
+        require(msg.sender == owner, "RDT:SVU:NOT_OWNER");
+        require(vestingUpdater_ != address(0), "RDT:SVU:ZERO_ADDRESS");
+        address oldVestingUpdater = vestingUpdater;
+        vestingUpdater = vestingUpdater_;
+
+        emit LogSetVestingUpdater(oldVestingUpdater, vestingUpdater);
+    }
+
     function updateVestingSchedule(uint256 vestingPeriod_)
         external
         virtual
         override
         returns (uint256 issuanceRate_, uint256 freeAssets_)
     {
-        require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
+        require(msg.sender == vestingUpdater, "RDT:UVS:NOT_VESTING_UPDATER");
 
         // Update "y-intercept" to reflect current available asset.
         freeAssets_ = freeAssets = totalClaimableRevenueAssets();
@@ -196,7 +207,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function claim(address receiver_) external virtual nonReentrant returns (uint256 claimableRevenueAssets_) {
-        _claim(receiver_);
+        claimableRevenueAssets_ = _claim(receiver_);
     }
 
     function migrate(
