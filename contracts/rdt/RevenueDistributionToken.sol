@@ -65,9 +65,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         address asset_
     ) ERC20(name_, symbol_, ERC20(asset_).decimals()) {
         require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
-
-        revenueAsset = revenueAsset_; // Don't need to check zero address as ERC20(asset_).decimals() will fail in ERC20 constructor.
-        asset = asset_;
+        require((revenueAsset = revenueAsset_) != address(0), "RDT:C:REVENUE_ASSET_ZERO_ADDRESS");
+        require((asset = asset_) != address(0), "RDT:C:ASSET_ZERO_ADDRESS");
     }
 
     /********************************/
