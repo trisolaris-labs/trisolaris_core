@@ -318,14 +318,14 @@ describe("RevenueDistributionToken - Stake", function () {
     await advanceBlockBy(300);
 
     await this.rdt.connect(this.alice).claim(this.alice.address);
-    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(10548);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(10547);
     
     // Vest 1 is 100% complete, 6000 rev units released
     // Vest 2 is 50% complete, 6000 rev units released
     await advanceBlockBy(300); // Initial vesting period is completed
     
     await this.rdt.connect(this.alice).claim(this.alice.address);
-    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(15056);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(15054);
     
     await advanceBlockBy(600); // Initial vesting period is completed
     
@@ -360,7 +360,7 @@ describe("RevenueDistributionToken - Stake", function () {
     await advanceBlockBy(600); // Initial vesting period is completed
     
     await this.rdt.connect(this.alice).claim(this.alice.address);
-    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(15040);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(15039);
     
     await advanceBlockBy(600); // Initial vesting period is completed
     

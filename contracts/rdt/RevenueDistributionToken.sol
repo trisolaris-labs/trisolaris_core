@@ -3,6 +3,7 @@ pragma solidity 0.8.7;
 
 import { ERC20 } from "./ERC20.sol";
 import { ERC20Helper } from "./ERC20Helper.sol";
+import { SafeMath } from "./SafeMath.sol";
 import { ITriBar } from "../interfaces/ITriBar.sol";
 
 import { IRevenueDistributionToken } from "../interfaces/IRevenueDistributionToken.sol";
@@ -18,6 +19,8 @@ import { IMasterChefV2 } from "../interfaces/IMasterChefV2-solc_0.8.7.sol";
 */
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
+    using SafeMath for uint256;
+
     uint256 public immutable override precision = 1e30; // Precision of rates, equals max deposit amounts before rounding errors occur
 
     address public override asset; // Underlying revenue share asset
@@ -111,12 +114,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         freeAssets_ = freeAssets = totalClaimableRevenueAssets();
 
         // Calculate slope.
-        issuanceRate_ = issuanceRate =
-            ((ERC20(revenueAsset).balanceOf(address(this)) - freeAssets_) * precision) /
-            vestingPeriod_;
+        issuanceRate_ = issuanceRate = ERC20(revenueAsset).balanceOf(address(this)).sub(freeAssets_).mul(precision).div(
+                vestingPeriod_
+            );
 
         // Update timestamp and period finish.
-        vestingPeriodFinish = (lastUpdated = block.number) + vestingPeriod_;
+        vestingPeriodFinish = (lastUpdated = block.number).add(vestingPeriod_);
 
         emit IssuanceParamsUpdated(freeAssets_, issuanceRate_);
         emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish);
@@ -322,10 +325,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         uint256 vestingPeriodFinish_ = vestingPeriodFinish;
 
         uint256 vestingTimePassed = block.number > vestingPeriodFinish_
-            ? vestingPeriodFinish_ - lastClaimed[account_] // block deposits if vesting perdio finished
-            : block.number - lastClaimed[account_];
+            ? vestingPeriodFinish_.sub(lastClaimed[account_]) // block deposits if vesting perdio finished
+            : block.number.sub(lastClaimed[account_]);
 
-        balanceOfAssets_ = _divRoundUp((shares_ * ((issuanceRate_ * vestingTimePassed))), supply * precision);
+        balanceOfAssets_ = shares_.mul(issuanceRate_).mul(vestingTimePassed).div(supply).div(precision);
 
         uint256 revenueAssetBalance_ = ERC20(revenueAsset).balanceOf(address(this));
 
@@ -390,10 +393,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         uint256 lastUpdated_ = lastUpdated;
 
         uint256 vestingTimePassed = block.number > vestingPeriodFinish_
-            ? vestingPeriodFinish_ - lastUpdated_
-            : block.number - lastUpdated_;
+            ? vestingPeriodFinish_.sub(lastUpdated_)
+            : block.number.sub(lastUpdated_);
 
-        return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
+        return issuanceRate_.mul(vestingTimePassed).div(precision).add(freeAssets);
     }
 
     function balanceOfAssets(address account_) external view override returns (uint256 assets_) {
@@ -402,13 +405,5 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     function convertToAssets(uint256 shares_) external pure override returns (uint256 assets_) {
         return shares_;
-    }
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    function _divRoundUp(uint256 numerator_, uint256 divisor_) internal pure returns (uint256 result_) {
-        return (numerator_ / divisor_) + (numerator_ % divisor_ > 0 ? 1 : 0);
     }
 }
