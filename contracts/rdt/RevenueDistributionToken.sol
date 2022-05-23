@@ -3,10 +3,10 @@ pragma solidity 0.8.7;
 
 import { ERC20 } from "./ERC20.sol";
 import { ERC20Helper } from "./ERC20Helper.sol";
-import { ITriBar } from "../rewards/interfaces/ITriBar.sol";
+import { ITriBar } from "../interfaces/ITriBar.sol";
 
-import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
-import { IMasterChefV2 } from "./interfaces/IMasterChefV2.sol";
+import { IRevenueDistributionToken } from "../interfaces/IRevenueDistributionToken.sol";
+import { IMasterChefV2 } from "../interfaces/IMasterChefV2-solc_0.8.7.sol";
 
 /*
     ██████╗ ██████╗ ████████╗
