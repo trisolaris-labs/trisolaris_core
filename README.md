@@ -83,6 +83,20 @@ Deploy the contracts to Hardhat Network:
 $ yarn deploy --greeting "Bonjour, le monde!"
 ```
 
+### Testing Misc. Notes
+
+If your test suite manipulates block timestamp or block number state, i.e. advanced blocks by N blocks,
+
+you need to make sure you add:
+
+```js
+  beforeEach(async function () {
+    await ethers.provider.send("hardhat_reset", []);
+    ...
+```
+
+otherwise it will cause other test suites to fail that also do the same.
+
 ## Syntax Highlighting
 
 If you use VSCode, you can enjoy syntax highlighting for your Solidity code via the

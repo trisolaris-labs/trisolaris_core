@@ -6,6 +6,8 @@ import { ERC20Helper } from "./ERC20Helper.sol";
 import { ITriBar } from "../rewards/interfaces/ITriBar.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
+import { IMasterChefV2 } from "./interfaces/IMasterChefV2.sol";
+
 
 /*
     ██████╗ ██████╗ ████████╗
@@ -291,6 +293,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return issuanceRate = (lastUpdated = block.number) > vestingPeriodFinish ? 0 : issuanceRate;
     }
 
+    function claimAndStake(
+        address masterChef_,
+        address receiver_,
+        uint256 pid_
+    ) external {
+        uint256 claimedRevenueAssets_ = _claim(receiver_);
+
+        ERC20(revenueAsset).approve(masterChef_, claimedRevenueAssets_);
+        IMasterChefV2(masterChef_).deposit(pid_, claimedRevenueAssets_, receiver_);
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
@@ -321,7 +334,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         return balanceOfAssets_ > revenueAssetBalance_ ? revenueAssetBalance_ : balanceOfAssets_;
     }
-
 
     function convertToShares(uint256 assets_) public view virtual override returns (uint256 shares_) {
         return assets_;

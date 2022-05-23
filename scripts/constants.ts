@@ -9,6 +9,7 @@ export const triBarAddress = "0x802119e4e253D5C19aA06A5d567C5a41596D6803";
 export const triMakerAddress = "0xe793455c9728fc91A3E5a33FAfF9eB2F228aE151";
 export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7";
 export const multiSigAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
+export const stableLPMaker = "0x035B1c3d2b6D89906697F67bf6D56F6eEdb3120C" // TODO: Replace with real stableLpMaker
 
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
 export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
