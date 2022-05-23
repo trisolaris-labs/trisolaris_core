@@ -12,6 +12,13 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
 
     /**
      *  @dev   Issuance parameters have been updated after a `_mint` or `_burn`.
+     *  @param receiver_   Account claiming revenue tokens.
+     *  @param claimableRevenueAssets_ Quantity of revenue tokens claimed.
+     */
+    event Claim(address indexed receiver_, uint256 claimableRevenueAssets_);
+    
+    /**
+     *  @dev   Issuance parameters have been updated after a `_mint` or `_burn`.
      *  @param freeAssets_   Resulting `freeAssets` (y-intercept) value after accounting update.
      *  @param issuanceRate_ The new issuance rate of `asset` until `vestingPeriodFinish_`.
      */

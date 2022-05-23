@@ -32,7 +32,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     uint256 public override vestingPeriodFinish; // Timestamp when current vesting schedule ends.
 
     uint256 private locked = 1; // Used in reentrancy check.
-    mapping(address => uint256) private lastDeposited; // Used in preventing flashloan claims
+    mapping(address => uint256) private lastClaimed; // Used to give time-weight to deposited users
 
     /*****************/
     /*** Modifiers ***/
@@ -116,7 +116,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
             vestingPeriod_;
 
         // Update timestamp and period finish.
-        vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
+        vestingPeriodFinish = (lastUpdated = block.number) + vestingPeriod_;
 
         emit IssuanceParamsUpdated(freeAssets_, issuanceRate_);
         emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish);
@@ -236,7 +236,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(receiver_ != address(0), "RDT:M:ZERO_RECEIVER");
         require(shares_ != uint256(0), "RDT:M:ZERO_SHARES");
         require(triAmount_ != uint256(0), "RDT:M:ZERO_ASSETS");
-        lastDeposited[receiver_] = block.timestamp;
 
         _mint(receiver_, shares_);
 
@@ -280,12 +279,16 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     function _claim(address receiver_) internal returns (uint256 claimableRevenueAssets_) {
         claimableRevenueAssets_ = claimableRevenueAssets(receiver_);
-
         require(ERC20Helper.transfer(revenueAsset, receiver_, claimableRevenueAssets_), "RDT:C:TRANSFER");
+
+        lastClaimed[receiver_] = block.number;
+        _updateIssuanceParams();
+
+        emit Claim(receiver_, claimableRevenueAssets_);
     }
 
     function _updateIssuanceParams() internal returns (uint256 issuanceRate_) {
-        return issuanceRate = (lastUpdated = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;
+        return issuanceRate = (lastUpdated = block.number) > vestingPeriodFinish ? 0 : issuanceRate;
     }
 
     /**********************/
@@ -298,36 +301,27 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         if (ERC20(asset).balanceOf(address(this)) == 0) return 0;
         if (issuanceRate_ == 0) return freeAssets;
 
-        uint256 vestingPeriodFinish_ = vestingPeriodFinish;
-
-        uint256 vestingTimePassed = block.timestamp > vestingPeriodFinish_
-            ? vestingPeriodFinish_ - lastDeposited[account_] // block deposits if vesting perdio finished
-            : block.timestamp - lastDeposited[account_];
-
         uint256 supply = totalSupply; // Cache to stack.
         uint256 shares_ = balanceOf[account_];
 
-        balanceOfAssets_ = (supply == 0 || shares_ == 0)
-            ? 0
-            : _divRoundUp((shares_ * ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets), supply);
+        if (supply == 0 || shares_ == 0) return 0;
+
+        uint256 vestingPeriodFinish_ = vestingPeriodFinish;
+
+        uint256 vestingTimePassed = block.number > vestingPeriodFinish_
+            ? vestingPeriodFinish_ - lastClaimed[account_] // block deposits if vesting perdio finished
+            : block.number - lastClaimed[account_];
+
+        balanceOfAssets_ = _divRoundUp(
+            (shares_ * ((issuanceRate_ * vestingTimePassed))),
+            supply * precision
+        );
 
         uint256 revenueAssetBalance_ = ERC20(revenueAsset).balanceOf(address(this));
 
         return balanceOfAssets_ > revenueAssetBalance_ ? revenueAssetBalance_ : balanceOfAssets_;
     }
 
-    function convertSharesToClaimableRevenueAssets(uint256 shares_)
-        public
-        view
-        virtual
-        returns (uint256 claimableRevenueAssets_)
-    {
-        uint256 supply = totalSupply; // Cache to stack.
-
-        claimableRevenueAssets_ = (supply == 0 || shares_ == 0)
-            ? 0
-            : _divRoundUp((shares_ * totalClaimableRevenueAssets()), supply);
-    }
 
     function convertToShares(uint256 assets_) public view virtual override returns (uint256 shares_) {
         return assets_;
@@ -386,9 +380,9 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         uint256 vestingPeriodFinish_ = vestingPeriodFinish;
         uint256 lastUpdated_ = lastUpdated;
 
-        uint256 vestingTimePassed = block.timestamp > vestingPeriodFinish_
+        uint256 vestingTimePassed = block.number > vestingPeriodFinish_
             ? vestingPeriodFinish_ - lastUpdated_
-            : block.timestamp - lastUpdated_;
+            : block.number - lastUpdated_;
 
         return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
     }
