@@ -189,24 +189,4 @@ describe("StableLpMaker", function () {
       // the ptri address was changed in old test
     })
   });
-
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
