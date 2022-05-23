@@ -35,7 +35,7 @@ async function main(): Promise<void> {
   });
 
   // Set vesting updater to the address of the cronjob invocation
-  await factory.setVestingUpdater(vestingUpdater);
+  await factory.connect(deployer).setVestingUpdater(vestingUpdater);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
