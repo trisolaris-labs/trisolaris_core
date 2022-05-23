@@ -8,7 +8,6 @@ import { ITriBar } from "../rewards/interfaces/ITriBar.sol";
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 import { IMasterChefV2 } from "./interfaces/IMasterChefV2.sol";
 
-
 /*
     ██████╗ ██████╗ ████████╗
     ██╔══██╗██╔══██╗╚══██╔══╝
@@ -218,11 +217,13 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         uint256 xTRIAmount_
     ) external virtual nonReentrant returns (uint256 shares_) {
         require(ERC20(xTRI_).transferFrom(receiver_, address(this), xTRIAmount_), "RDT:M:INSUFFICIENT_PERMIT");
-        uint256 triBalanceBefore = ERC20(asset).balanceOf(address(this));
+        uint256 triBalanceBefore_ = ERC20(asset).balanceOf(address(this));
         ITriBar(xTRI_).leave(xTRIAmount_);
-        uint256 triBalanceUnstaked = ERC20(asset).balanceOf(address(this)) - triBalanceBefore;
+        uint256 triBalanceUnstaked_ = ERC20(asset).balanceOf(address(this)) - triBalanceBefore_;
 
-        _mint(shares_ = triBalanceUnstaked, triBalanceUnstaked, receiver_, address(this));
+        _mint(shares_ = triBalanceUnstaked_, triBalanceUnstaked_, receiver_, address(this));
+
+        emit Migrated(receiver_, xTRI_, triBalanceUnstaked_, xTRIAmount_);
     }
 
     /**************************/
@@ -325,10 +326,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
             ? vestingPeriodFinish_ - lastClaimed[account_] // block deposits if vesting perdio finished
             : block.number - lastClaimed[account_];
 
-        balanceOfAssets_ = _divRoundUp(
-            (shares_ * ((issuanceRate_ * vestingTimePassed))),
-            supply * precision
-        );
+        balanceOfAssets_ = _divRoundUp((shares_ * ((issuanceRate_ * vestingTimePassed))), supply * precision);
 
         uint256 revenueAssetBalance_ = ERC20(revenueAsset).balanceOf(address(this));
 
