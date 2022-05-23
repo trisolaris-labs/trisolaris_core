@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { advanceBlockTo } from "../time";
+import { advanceBlockBy } from '../time';
 
 describe("RevenueDistributionToken - Stake", function () {
   before(async function () {
@@ -33,7 +33,22 @@ describe("RevenueDistributionToken - Stake", function () {
   });
 
   it("Claiming for another user sends funds to correct user", async function () {
-    expect(false).to.equal(true);
+    const totalRevenueAmount = "12000";
+
+    // Fund RDT Contract
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
+
+    const totalVestBlocks = 1200;
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestBlocks);
+
+    // Alice deposits
+    await deposit(this.tri, this.alice, this.rdt, "1000");
+
+    await advanceBlockBy(300);
+
+    await this.rdt.connect(this.bob).claim(this.alice.address);
+    expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(3010);
+    expect(await this.revenueAsset.balanceOf(this.bob.address)).to.equal(0);
   });
 });
 
