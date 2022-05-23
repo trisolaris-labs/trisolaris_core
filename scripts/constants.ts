@@ -62,5 +62,5 @@ export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113
 
 
 //TODO change this to deployed pTRI contract
-export const pTri = "0x6072DC9ca3362Fde9b32aBAAa2a7e764C56E7e7e";
+export const pTri = "0x04ED68E80a3c36A61E991a51B656FB733712cec8";
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
