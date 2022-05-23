@@ -33,6 +33,8 @@ describe("RevenueDistributionToken - Stake", function () {
 
     await Promise.all([this.tri.deployed, this.revenueAsset.deployed, this.rdt.deployed]);
 
+    await this.rdt.connect(this.minter).setVestingUpdater(this.minter.address);
+
     this.tri.transfer(this.alice.address, "1000");
     this.tri.transfer(this.alice.address, "1000");
   });
@@ -374,3 +376,4 @@ async function deposit(token: any, depositor: any, rdt: any, amount: string = "1
 
   await rdt.connect(depositor).deposit(amount, depositor.address);
 }
+
