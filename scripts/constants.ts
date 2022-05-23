@@ -58,3 +58,9 @@ export const threePoolAmplificationUtilsAddress = "0x114ECaa70256aFAd393f733aA4B
 export const threePoolSwapUtilsAddress = "0x0564d68404608599e8c567A0bD74F90a942A69A0";
 export const threePoolSwapFlashLoanAddress = "0x458459E48dbAC0C8Ca83F8D0b7b29FEfE60c3970";
 export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
+
+
+
+//TODO change this to deployed pTRI contract
+export const pTri = "0x04ED68E80a3c36A61E991a51B656FB733712cec8";
+export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
