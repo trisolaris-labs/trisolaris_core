@@ -67,6 +67,13 @@ describe("RevenueDistributionToken - Deposit", function () {
   });
   
   it("Correct user receives shares when depositing for another user", async function () {
-    expect(false).to.equal(true);
+    await this.tri.transfer(this.alice.address, "1000");
+
+    await this.tri.connect(this.alice).approve(this.rdt.address, "1000");
+
+    await this.rdt.connect(this.alice).deposit("1000", this.bob.address);
+
+    expect(await this.rdt.balanceOf(this.alice.address)).to.equal(0);
+    expect(await this.rdt.balanceOf(this.bob.address)).to.equal("1000");
   });
 });
