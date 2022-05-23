@@ -376,3 +376,4 @@ async function deposit(token: any, depositor: any, rdt: any, amount: string = "1
 
   await rdt.connect(depositor).deposit(amount, depositor.address);
 }
+
