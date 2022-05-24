@@ -129,14 +129,6 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @param _amount The amount of TRI to deposit
      */
     function deposit(uint256 _amount) external {
-        _deposit(_amount);
-    }
-
-    /**
-     * @notice Deposit TRI for reward token allocation
-     * @param _amount The amount of TRI to deposit
-     */
-    function _deposit(uint256 _amount) internal {
         UserInfo storage user = userInfo[_msgSender()];
 
         uint256 _fee = _amount.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
@@ -369,18 +361,43 @@ contract StableTRIStaking is Ownable, ERC20 {
     }
 
     function migrate(
-        address receiver_,
         address xTRI_,
         uint256 xTRIAmount_
-    ) external virtual returns (uint256 shares_) {
-        IERC20(xTRI_).safeTransferFrom(receiver_, address(this), xTRIAmount_);
+    ) external {
+        IERC20(xTRI_).safeTransferFrom(_msgSender(), address(this), xTRIAmount_);
         
         uint256 triBalanceBefore_ = tri.balanceOf(address(this));
         ITriBar(xTRI_).leave(xTRIAmount_);
-        uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)) - triBalanceBefore_;
+        uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)).sub(triBalanceBefore_);
 
-        _deposit(triBalanceUnstaked_);
+        UserInfo storage user = userInfo[_msgSender()];
 
-        emit Migrated(receiver_, xTRI_, triBalanceUnstaked_, xTRIAmount_);
+        uint256 _previousAmount = user.amount;
+        uint256 _newAmount = user.amount.add(triBalanceUnstaked_);
+        user.amount = _newAmount;
+
+        uint256 _len = rewardTokens.length;
+        for (uint256 i; i < _len; i++) {
+            IERC20 _token = rewardTokens[i];
+            updateReward(_token);
+
+            uint256 _previousRewardDebt = user.rewardDebt[_token];
+            user.rewardDebt[_token] = _newAmount.mul(accRewardPerShare[_token]).div(ACC_REWARD_PER_SHARE_PRECISION);
+
+            if (_previousAmount != 0) {
+                uint256 _pending = _previousAmount
+                    .mul(accRewardPerShare[_token])
+                    .div(ACC_REWARD_PER_SHARE_PRECISION)
+                    .sub(_previousRewardDebt);
+                if (_pending != 0) {
+                    safeTokenTransfer(_token, _msgSender(), _pending);
+                    emit ClaimReward(_msgSender(), address(_token), _pending);
+                }
+            }
+        }
+
+        internalTRIBalance = internalTRIBalance.add(triBalanceUnstaked_);
+        _mint(_msgSender(), triBalanceUnstaked_);
+        emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
     }
 }
