@@ -91,6 +91,9 @@ contract StableTRIStaking is Ownable, ERC20 {
 
     /// @notice Emitted when owner migrates from xTRI to pTRI
     event Migrated(address xTRI, address asset, uint256 triUnstaked, uint256 shares);
+    
+    /// @notice Emitted when owner updates the feeCollector
+    event FeeCollectorUpdated(address feeCollector);
 
     /**
      * @notice Initialize a new StableTRIStaking contract
@@ -199,6 +202,15 @@ contract StableTRIStaking is Ownable, ERC20 {
         isRewardToken[_rewardToken] = true;
         updateReward(_rewardToken);
         emit RewardTokenAdded(address(_rewardToken));
+    }
+    
+    /**
+     * @notice Add a reward token
+     * @param feeCollector_ The address where deposit fees will be sent
+     */
+    function setFeeCollector(address feeCollector_) external onlyOwner {
+        feeCollector = feeCollector_;
+        emit FeeCollectorUpdated(feeCollector);
     }
 
     /**
