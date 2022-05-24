@@ -311,7 +311,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function claimableRevenueAssets(address account_) public view virtual returns (uint256 balanceOfAssets_) {
         uint256 issuanceRate_ = issuanceRate;
 
-        if (ERC20(asset).balanceOf(address(this)) == 0) return 0;
+        if (ERC20(revenueAsset).balanceOf(address(this)) == 0) return 0;
         if (issuanceRate_ == 0) return freeAssets;
 
         uint256 supply = totalSupply; // Cache to stack.
@@ -383,7 +383,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function totalClaimableRevenueAssets() public view virtual returns (uint256 totalClaimableManagedAssets_) {
         uint256 issuanceRate_ = issuanceRate;
 
-        if (ERC20(asset).balanceOf(address(this)) == 0) return 0;
+        if (ERC20(revenueAsset).balanceOf(address(this)) == 0) return 0;
         if (issuanceRate_ == 0) return freeAssets;
 
         uint256 vestingPeriodFinish_ = vestingPeriodFinish;
