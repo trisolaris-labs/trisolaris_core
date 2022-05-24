@@ -177,7 +177,7 @@ describe("Stable TRI Staking", function () {
         ethers.utils.parseEther("0.0001"),
       );
     });
-    
+
     it("should distribute token accordingly even if update isn't called every day", async function () {
       await this.pTRI.connect(this.alice).deposit(1);
       expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.equal(0);
@@ -467,6 +467,15 @@ describe("Stable TRI Staking", function () {
       const userInfo = await this.pTRI.getUserInfo(this.pTRI.address, this.rewardToken.address);
       expect(userInfo[0]).to.be.equal(0);
       expect(userInfo[1]).to.be.equal(0);
+    });
+
+    it("allows owner to update fee collector", async function () {
+      await expect(this.pTRI.connect(this.alice).setFeeCollector(this.alice.address)).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
+      expect(await this.pTRI.feeCollector()).to.equal(this.penaltyCollector.address);
+      await expect(this.pTRI.connect(this.owner).setFeeCollector(this.alice.address)).to.not.be.reverted;
+      expect(await this.pTRI.feeCollector()).to.equal(this.alice.address);
     });
   });
 
