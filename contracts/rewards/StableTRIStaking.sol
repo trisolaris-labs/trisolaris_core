@@ -372,8 +372,11 @@ contract StableTRIStaking is Ownable, ERC20 {
 
         UserInfo storage user = userInfo[_msgSender()];
 
+        uint256 _fee = triBalanceUnstaked_.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
+        uint256 _amountMinusFee = triBalanceUnstaked_.sub(_fee);
+
         uint256 _previousAmount = user.amount;
-        uint256 _newAmount = user.amount.add(triBalanceUnstaked_);
+        uint256 _newAmount = user.amount.add(_amountMinusFee);
         user.amount = _newAmount;
 
         uint256 _len = rewardTokens.length;
@@ -396,8 +399,8 @@ contract StableTRIStaking is Ownable, ERC20 {
             }
         }
 
-        internalTRIBalance = internalTRIBalance.add(triBalanceUnstaked_);
-        _mint(_msgSender(), triBalanceUnstaked_);
+        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
+        _mint(_msgSender(), _amountMinusFee);
         emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
     }
 }
