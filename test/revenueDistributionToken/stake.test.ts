@@ -367,6 +367,39 @@ describe("RevenueDistributionToken - Stake", function () {
     await this.rdt.connect(this.alice).claim(this.alice.address);
     expect(await this.revenueAsset.balanceOf(this.alice.address)).to.equal(24000);
   });
+
+  it.only("Calculates the wrong amount of revenueAsset to be allocated (3 claims)", async function () {
+    // claimableAssets = issuanceRate*blockDelta
+    // if a user claims then the lastClaimed changes
+    // if a user does not claim the even if there are several updateVestingSchedule function calls
+    // the amount of blockDelta keeps on increasing
+    const totalRevenueAmount = 12000;
+
+    // Fund RDT Contract
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount);
+    const totalVestBlocks = 1200;
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestBlocks);
+
+    // issuance rate is 10 per block
+    expect(await this.rdt.issuanceRate()).to.equal("10000000000000000000000000000000")
+
+    await deposit(this.tri, this.alice, this.rdt, "1000");
+    await advanceBlockBy(600);
+
+    expect(await this.rdt.claimableRevenueAssets(this.alice.address)).to.equal(6000);
+
+    await this.revenueAsset.transfer(this.rdt.address, totalRevenueAmount*2);
+    await this.rdt.connect(this.minter).updateVestingSchedule(totalVestBlocks);
+
+    // new issuance rate is approx 25 per block
+    expect(await this.rdt.issuanceRate()).to.equal("24983333333333333333333333333333") 
+
+    await advanceBlockBy(600); // Initial vesting period is completed
+    // The new claimable reward should be 
+    // 600*10 + 600*25 = 21000
+    // but its actually (600+600)*25 = ~30000
+    expect(await this.rdt.claimableRevenueAssets(this.alice.address)).to.equal(21000);
+  });
 });
 
 async function deposit(token: any, depositor: any, rdt: any, amount: string = "1000") {
