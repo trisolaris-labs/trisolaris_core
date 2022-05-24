@@ -9,7 +9,7 @@ const { expect } = chai;
 
 describe("RevenueDistributionToken - Migrate", function () {
   beforeEach(async function () {
-    const [deployer, user0,] = await ethers.getSigners();
+    const [deployer, user0] = await ethers.getSigners();
     this.deployer = deployer;
     this.user0 = user0;
     const triFactory = new Tri__factory(this.deployer);
@@ -37,7 +37,7 @@ describe("RevenueDistributionToken - Migrate", function () {
 
   it("should migrate", async function () {
     expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("100");
-    await this.pTRI.migrate(this.deployer.address, this.xTRI.address, "100");
+    await this.pTRI.connect(this.deployer).migrate(this.xTRI.address, "100");
     expect(await this.tri.balanceOf(this.deployer.address)).to.equal("0");
     expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("0");
     expect(await this.tri.balanceOf(this.pTRI.address)).to.equal("100");
@@ -53,12 +53,28 @@ describe("RevenueDistributionToken - Migrate", function () {
 
     expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("0");
     expect(await this.xTRI.balanceOf(this.user0.address)).to.equal("100");
-    await expect(this.pTRI.migrate(this.deployer.address, this.xTRI.address, "100")).to.be.revertedWith(
+    await expect(this.pTRI.connect(this.deployer).migrate(this.xTRI.address, "100")).to.be.revertedWith(
       "ERC20: transfer amount exceeds balance",
     );
 
     await this.xTRI.connect(this.user0).approve(this.pTRI.address, "100");
-    await this.pTRI.migrate(this.user0.address, this.xTRI.address, "100");
+    await this.pTRI.connect(this.user0).migrate(this.xTRI.address, "100");
     expect(await this.pTRI.balanceOf(this.user0.address)).to.equal("100");
   });
+  
+  it("should fail migrate if user has no xTRI", async function () {
+    await this.rewardToken.transfer(this.pTRI.address, ethers.utils.parseEther("4"));
+    await increase(86400);
+
+    expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("100");
+    await this.pTRI.connect(this.deployer).migrate(this.xTRI.address, "100");
+
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal("100");
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal("0");
+  });
 });
+
+const increase = (seconds: number) => {
+  void ethers.provider.send("evm_increaseTime", [seconds]);
+  void ethers.provider.send("evm_mine", []);
+};

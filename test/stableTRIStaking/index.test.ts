@@ -177,10 +177,9 @@ describe("Stable TRI Staking", function () {
         ethers.utils.parseEther("0.0001"),
       );
     });
-
+    
     it("should distribute token accordingly even if update isn't called every day", async function () {
       await this.pTRI.connect(this.alice).deposit(1);
-      expect(await this.pTRI.balanceOf(this.alice.address)).to.equal(ethers.utils.parseEther(1).mul(97).div(100));
       expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.equal(0);
 
       await this.rewardToken.connect(this.triMaker).transfer(this.pTRI.address, ethers.utils.parseEther("1"));
@@ -196,6 +195,9 @@ describe("Stable TRI Staking", function () {
     it("should allow deposits and withdraws of multiple users and distribute rewards accordingly even if someone enters or leaves", async function () {
       await this.pTRI.connect(this.alice).deposit(ethers.utils.parseEther("100"));
       await this.pTRI.connect(this.carol).deposit(ethers.utils.parseEther("100"));
+
+      expect(await this.pTRI.balanceOf(this.alice.address)).to.equal(ethers.utils.parseEther("100").mul(97).div(100));
+      expect(await this.pTRI.balanceOf(this.carol.address)).to.equal(ethers.utils.parseEther("100").mul(97).div(100));
 
       await this.rewardToken.connect(this.triMaker).transfer(this.pTRI.address, ethers.utils.parseEther("4"));
       await increase(86400);
