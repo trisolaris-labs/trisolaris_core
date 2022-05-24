@@ -29,7 +29,7 @@ describe("RevenueDistributionToken - Migrate", function () {
       this.rewardToken.address,
       this.tri.address,
       this.deployer.address,
-      ethers.utils.parseEther("0.03"),
+      0,
     ];
     this.pTRI = await this.pTRI.deploy(...pTRIConstructorArgs);
     await this.xTRI.approve(this.pTRI.address, "100");
