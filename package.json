@@ -44,6 +44,7 @@
     "hardhat-deploy": "^0.11.10",
     "hardhat-deploy-ethers": "^0.3.0-beta.7",
     "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-watcher": "^2.3.0",
     "husky": "^7.0.2",
     "lint-staged": "^11.1.2",
     "mocha": "^9.1.1",
@@ -81,6 +82,11 @@
     "prettier": "prettier --config ./.prettierrc.yaml --write \"**/*.{js,json,md,sol,ts}\"",
     "prettier:check": "prettier --check --config ./.prettierrc.yaml \"**/*.{js,json,md,sol,ts}\"",
     "test": "hardhat test",
-    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
+    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
+    "watch-test": "npx hardhat watch test",
+    "watch-compile": "npx hardhat watch compilation"
+  },
+  "dependencies": {
+    "hardhat-watcher": "^2.3.0"
   }
 }

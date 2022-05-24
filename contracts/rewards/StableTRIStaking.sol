@@ -1,12 +1,14 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { ITriBar } from "../interfaces/ITriBar.sol";
 
 /**
  * @title Stable TRI Staking
@@ -18,14 +20,14 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol
  * Every time `updateReward(token)` is called, We distribute the balance of that tokens as rewards to users that are
  * currently staking inside this contract, and they can claim it using `withdraw(0)`
  */
-contract StableTRIStaking is Initializable, OwnableUpgradeable {
-    using SafeMathUpgradeable for uint256;
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+contract StableTRIStaking is Ownable, ERC20 {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     /// @notice Info of each user
     struct UserInfo {
         uint256 amount;
-        mapping(IERC20Upgradeable => uint256) rewardDebt;
+        mapping(IERC20 => uint256) rewardDebt;
         /**
          * @notice We do some fancy math here. Basically, any point in time, the amount of TRIs
          * entitled to a user but is pending to be distributed is:
@@ -40,16 +42,16 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
          */
     }
 
-    IERC20Upgradeable public tri;
+    IERC20 public tri;
 
     /// @dev Internal balance of TRI, this gets updated on user deposits / withdrawals
     /// this allows to reward users with TRI
     uint256 public internalTRIBalance;
     /// @notice Array of tokens that users can claim
-    IERC20Upgradeable[] public rewardTokens;
-    mapping(IERC20Upgradeable => bool) public isRewardToken;
+    IERC20[] public rewardTokens;
+    mapping(IERC20 => bool) public isRewardToken;
     /// @notice Last reward balance of `token`
-    mapping(IERC20Upgradeable => uint256) public lastRewardBalance;
+    mapping(IERC20 => uint256) public lastRewardBalance;
 
     address public feeCollector;
 
@@ -59,7 +61,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
     uint256 public DEPOSIT_FEE_PERCENT_PRECISION;
 
     /// @notice Accumulated `token` rewards per share, scaled to `ACC_REWARD_PER_SHARE_PRECISION`
-    mapping(IERC20Upgradeable => uint256) public accRewardPerShare;
+    mapping(IERC20 => uint256) public accRewardPerShare;
     /// @notice The precision of `accRewardPerShare`
     uint256 public ACC_REWARD_PER_SHARE_PRECISION;
 
@@ -87,6 +89,9 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
     /// @notice Emitted when owner removes a token from the reward tokens list
     event RewardTokenRemoved(address token);
 
+    /// @notice Emitted when owner migrates from xTRI to pTRI
+    event Migrated(address xTRI, address asset, uint256 triUnstaked, uint256 shares);
+
     /**
      * @notice Initialize a new StableTRIStaking contract
      * @dev This contract needs to receive an ERC20 `_rewardToken` in order to distribute them
@@ -96,13 +101,14 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @param _feeCollector The address where deposit fees will be sent
      * @param _depositFeePercent The deposit fee percent, scalled to 1e18, e.g. 3% is 3e16
      */
-    function initialize(
-        IERC20Upgradeable _rewardToken,
-        IERC20Upgradeable _tri,
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        IERC20 _rewardToken,
+        IERC20 _tri,
         address _feeCollector,
         uint256 _depositFeePercent
-    ) external initializer {
-        __Ownable_init();
+    ) ERC20(name_, symbol_) {
         require(address(_rewardToken) != address(0), "StableTRIStaking: reward token can't be address(0)");
         require(address(_tri) != address(0), "StableTRIStaking: tri can't be address(0)");
         require(_feeCollector != address(0), "StableTRIStaking: fee collector can't be address(0)");
@@ -123,6 +129,14 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @param _amount The amount of TRI to deposit
      */
     function deposit(uint256 _amount) external {
+        _deposit(_amount);
+    }
+
+    /**
+     * @notice Deposit TRI for reward token allocation
+     * @param _amount The amount of TRI to deposit
+     */
+    function _deposit(uint256 _amount) internal {
         UserInfo storage user = userInfo[_msgSender()];
 
         uint256 _fee = _amount.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
@@ -134,7 +148,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
 
         uint256 _len = rewardTokens.length;
         for (uint256 i; i < _len; i++) {
-            IERC20Upgradeable _token = rewardTokens[i];
+            IERC20 _token = rewardTokens[i];
             updateReward(_token);
 
             uint256 _previousRewardDebt = user.rewardDebt[_token];
@@ -155,6 +169,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
         internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
         tri.safeTransferFrom(_msgSender(), feeCollector, _fee);
         tri.safeTransferFrom(_msgSender(), address(this), _amountMinusFee);
+        _mint(_msgSender(), _amountMinusFee);
         emit Deposit(_msgSender(), _amountMinusFee, _fee);
     }
 
@@ -165,7 +180,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @return The amount of TRI user has deposited
      * @return The reward debt for the chosen token
      */
-    function getUserInfo(address _user, IERC20Upgradeable _rewardToken) external view returns (uint256, uint256) {
+    function getUserInfo(address _user, IERC20 _rewardToken) external view returns (uint256, uint256) {
         UserInfo storage user = userInfo[_user];
         return (user.amount, user.rewardDebt[_rewardToken]);
     }
@@ -182,7 +197,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @notice Add a reward token
      * @param _rewardToken The address of the reward token
      */
-    function addRewardToken(IERC20Upgradeable _rewardToken) external onlyOwner {
+    function addRewardToken(IERC20 _rewardToken) external onlyOwner {
         require(
             !isRewardToken[_rewardToken] && address(_rewardToken) != address(0),
             "StableTRIStaking: token can't be added"
@@ -198,7 +213,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @notice Remove a reward token
      * @param _rewardToken The address of the reward token
      */
-    function removeRewardToken(IERC20Upgradeable _rewardToken) external onlyOwner {
+    function removeRewardToken(IERC20 _rewardToken) external onlyOwner {
         require(isRewardToken[_rewardToken], "StableTRIStaking: token can't be removed");
         updateReward(_rewardToken);
         isRewardToken[_rewardToken] = false;
@@ -230,7 +245,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @param _token The address of the token
      * @return `_user`'s pending reward token
      */
-    function pendingReward(address _user, IERC20Upgradeable _token) external view returns (uint256) {
+    function pendingReward(address _user, IERC20 _token) external view returns (uint256) {
         require(isRewardToken[_token], "StableTRIStaking: wrong reward token");
         UserInfo storage user = userInfo[_user];
         uint256 _totalTRI = internalTRIBalance;
@@ -263,7 +278,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
         uint256 _len = rewardTokens.length;
         if (_previousAmount != 0) {
             for (uint256 i; i < _len; i++) {
-                IERC20Upgradeable _token = rewardTokens[i];
+                IERC20 _token = rewardTokens[i];
                 updateReward(_token);
 
                 uint256 _pending = _previousAmount
@@ -281,6 +296,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
 
         internalTRIBalance = internalTRIBalance.sub(_amount);
         tri.safeTransfer(_msgSender(), _amount);
+        _burn(_msgSender(), _amount);
         emit Withdraw(_msgSender(), _amount);
     }
 
@@ -294,7 +310,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
         user.amount = 0;
         uint256 _len = rewardTokens.length;
         for (uint256 i; i < _len; i++) {
-            IERC20Upgradeable _token = rewardTokens[i];
+            IERC20 _token = rewardTokens[i];
             user.rewardDebt[_token] = 0;
         }
         internalTRIBalance = internalTRIBalance.sub(_amount);
@@ -307,7 +323,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @param _token The address of the reward token
      * @dev Needs to be called before any deposit or withdrawal
      */
-    function updateReward(IERC20Upgradeable _token) public {
+    function updateReward(IERC20 _token) public {
         require(isRewardToken[_token], "StableTRIStaking: wrong reward token");
 
         uint256 _totalTRI = internalTRIBalance;
@@ -336,7 +352,7 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
      * @param _amount The amount to send to `_to`
      */
     function safeTokenTransfer(
-        IERC20Upgradeable _token,
+        IERC20 _token,
         address _to,
         uint256 _amount
     ) internal {
@@ -350,5 +366,21 @@ contract StableTRIStaking is Initializable, OwnableUpgradeable {
             lastRewardBalance[_token] = lastRewardBalance[_token].sub(_amount);
             _token.safeTransfer(_to, _amount);
         }
+    }
+
+    function migrate(
+        address receiver_,
+        address xTRI_,
+        uint256 xTRIAmount_
+    ) external virtual returns (uint256 shares_) {
+        IERC20(xTRI_).safeTransferFrom(receiver_, address(this), xTRIAmount_);
+        
+        uint256 triBalanceBefore_ = tri.balanceOf(address(this));
+        ITriBar(xTRI_).leave(xTRIAmount_);
+        uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)) - triBalanceBefore_;
+
+        _deposit(triBalanceUnstaked_);
+
+        emit Migrated(receiver_, xTRI_, triBalanceUnstaked_, xTRIAmount_);
     }
 }

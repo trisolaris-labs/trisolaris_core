@@ -9,7 +9,6 @@ import "./tasks/clean";
 import { resolve } from "path";
 
 import { config as dotenvConfig } from "dotenv";
-import { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
@@ -36,7 +35,7 @@ if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
 }
 
-const config: HardhatUserConfig = {
+const config = {
   defaultNetwork: "hardhat",
   gasReporter: {
     currency: "USD",
@@ -84,7 +83,7 @@ const config: HardhatUserConfig = {
         path: "m/44'/60'/0'/0",
       },
       chainId: 1313161554,
-    }
+    },
   },
   paths: {
     artifacts: "./artifacts",
@@ -148,9 +147,24 @@ const config: HardhatUserConfig = {
     outDir: "typechain",
     target: "ethers-v5",
   },
+  watcher: {
+    compilation: {
+      tasks: ["compile"],
+      files: ["./contracts"],
+      ignoredFiles: ["**/.vscode"],
+      verbose: true,
+    },
+
+    test: {
+      tasks: [{ command: "test", params: { testFiles: ["{path}"] } }],
+      files: ["./test/**/*"],
+      ignoredFiles: ["**/.vscode"],
+      verbose: true,
+    },
+  },
   etherscan: {
     apiKey: etherscanKey,
-  }
+  },
 };
 
 export default config;

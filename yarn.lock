@@ -1702,6 +1702,7 @@ __metadata:
     hardhat-deploy: ^0.11.10
     hardhat-deploy-ethers: ^0.3.0-beta.7
     hardhat-gas-reporter: ^1.0.4
+    hardhat-watcher: ^2.3.0
     husky: ^7.0.2
     lint-staged: ^11.1.2
     mocha: ^9.1.1
@@ -4391,7 +4392,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:^3.5.2":
+"chokidar@npm:^3.5.2, chokidar@npm:^3.5.3":
   version: 3.5.3
   resolution: "chokidar@npm:3.5.3"
   dependencies:
@@ -8131,6 +8132,17 @@ fsevents@~2.1.1:
   peerDependencies:
     hardhat: ^2.0.2
   checksum: c8c1d79bfbb6956cabbe5563e0f40c3bb7f2227a3c278f9afe73bc8f44125440e1b1f7ab60f5280b93ed8ae8f748dad73d7bbca892074f5f1edf026394c8ee09
+  languageName: node
+  linkType: hard
+
+"hardhat-watcher@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "hardhat-watcher@npm:2.3.0"
+  dependencies:
+    chokidar: ^3.5.3
+  peerDependencies:
+    hardhat: ^2.0.0
+  checksum: 9c99c8f3f476990b4b8f452d5257d2060bc0bbe21e24cd4472c0f2eb63fd71c28ca054353ccdf27947198303be768b12185ffd902d470d7a8e750945a4249eb1
   languageName: node
   linkType: hard
 
