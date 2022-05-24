@@ -312,7 +312,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         uint256 issuanceRate_ = issuanceRate;
 
         if (ERC20(revenueAsset).balanceOf(address(this)) == 0) return 0;
-        if (issuanceRate_ == 0) return freeAssets;
 
         uint256 supply = totalSupply; // Cache to stack.
         uint256 shares_ = balanceOf[account_];
