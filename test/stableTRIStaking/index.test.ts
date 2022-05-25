@@ -2,6 +2,7 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
 
 import chai from "chai";
+import { BigNumber } from "ethers";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -21,6 +22,10 @@ describe("Stable TRI Staking", function () {
   });
 
   beforeEach(async function () {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [],
+    });
     this.tri = await this.ERC20Mock.connect(this.owner).deploy("TRI", "TRI", 18, ethers.utils.parseEther("1000000"));
 
     this.rewardToken = await this.ERC20Mock.connect(this.owner).deploy(
@@ -155,7 +160,7 @@ describe("Stable TRI Staking", function () {
       //        = 0.999999999999999999e18
       expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.closeTo(
         ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("0.0001"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
       );
 
       await this.pTRI.connect(this.carol).withdraw(ethers.utils.parseEther("100"));
@@ -165,7 +170,7 @@ describe("Stable TRI Staking", function () {
       //        = 2.999999999999999999e18
       expect(await this.rewardToken.balanceOf(this.carol.address)).to.be.closeTo(
         ethers.utils.parseEther("3"),
-        ethers.utils.parseEther("0.0001"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
       );
 
       await this.pTRI.connect(this.bob).withdraw("0");
@@ -174,7 +179,7 @@ describe("Stable TRI Staking", function () {
       //        = 1.999999999999999999e18
       expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
         ethers.utils.parseEther("2"),
-        ethers.utils.parseEther("0.0001"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
       );
     });
 
@@ -216,7 +221,7 @@ describe("Stable TRI Staking", function () {
       //        = 1.999999999999999999e18
       expect(await this.rewardToken.balanceOf(this.carol.address)).to.be.closeTo(
         ethers.utils.parseEther("2"),
-        ethers.utils.parseEther("0.0001"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
       );
 
       await this.pTRI.connect(this.alice).deposit(ethers.utils.parseEther("100")); // Alice enters again to try to get more rewards
@@ -229,7 +234,7 @@ describe("Stable TRI Staking", function () {
       // reward = accRewardBalance * aliceShare / PRECISION
       //        = accRewardBalance * 97e18 / 1e24
       //        = 1.999999999999999999e18
-      expect(aliceBalance).to.be.closeTo(ethers.utils.parseEther("2"), ethers.utils.parseEther("0.0001"));
+      expect(aliceBalance).to.be.closeTo(ethers.utils.parseEther("2"), ethers.utils.parseEther("0.0001")?.toNumber());
 
       await this.rewardToken.connect(this.triMaker).transfer(this.pTRI.address, ethers.utils.parseEther("4"));
       await increase(86400);
@@ -240,7 +245,7 @@ describe("Stable TRI Staking", function () {
       //        = 4e18
       expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
         ethers.utils.parseEther("4"),
-        ethers.utils.parseEther("0.0001"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
       );
 
       // Alice shouldn't receive any token of the last reward
@@ -281,7 +286,10 @@ describe("Stable TRI Staking", function () {
       //        = 0.999999999999999999e18
       // aliceRewardDebt = 0.999999999999999999e18
       const aliceRewardbalance = await this.rewardToken.balanceOf(this.alice.address);
-      expect(aliceRewardbalance).to.be.closeTo(ethers.utils.parseEther("1"), ethers.utils.parseEther("0.0001"));
+      expect(aliceRewardbalance).to.be.closeTo(
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
+      );
       // accJoeBalance = 0
       // reward = 0
       expect(await this.tri.balanceOf(this.alice.address)).to.be.equal(0);
@@ -295,7 +303,7 @@ describe("Stable TRI Staking", function () {
       //        = 0.999999999999999999e18
       expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
         ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("0.0001"),
+        ethers.utils.parseEther("0.0001")?.toNumber(),
       );
       // accJoeBalance = joeBalance * PRECISION / totalStaked
       //                  = 6e18 * 1e24 / 291e18
@@ -303,10 +311,7 @@ describe("Stable TRI Staking", function () {
       // reward = accJoeBalance * aliceShare / PRECISION
       //        = accJoeBalance * 970e18 / 1e24
       //        = 1.999999999999999999e18
-      expect(await this.tri.balanceOf(this.bob.address)).to.be.closeTo(
-        ethers.utils.parseEther("2"),
-        ethers.utils.parseEther("0.0001"),
-      );
+      expect(await this.tri.balanceOf(this.bob.address)).to.be.above(ethers.utils.parseEther("1.99"));
 
       await this.pTRI.connect(this.alice).withdraw(ethers.utils.parseEther("0"));
       // reward = accRewardBalance * aliceShare / PRECISION - aliceRewardDebt
@@ -317,10 +322,7 @@ describe("Stable TRI Staking", function () {
       // reward = accJoeBalance * aliceShare / PRECISION
       //        = accJoeBalance * 970e18 / 1e24
       //        = 1.999999999999999999e18
-      expect(await this.tri.balanceOf(this.alice.address)).to.be.closeTo(
-        ethers.utils.parseEther("2"),
-        ethers.utils.parseEther("0.0001"),
-      );
+      expect(await this.tri.balanceOf(this.alice.address)).to.be.above(ethers.utils.parseEther("1.99"));
     });
 
     it("rewardDebt should be updated as expected, alice deposits before last reward is sent", async function () {
@@ -494,10 +496,7 @@ describe("Stable TRI Staking", function () {
 
       // alice claim
       await this.pTRI.connect(this.alice).withdraw("0");
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.closeTo(
-        ethers.utils.parseEther("0.5"),
-        ethers.utils.parseEther("0.01"),
-      );
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.above(ethers.utils.parseEther("0.49"));
       expect(await this.pTRI.balanceOf(this.alice.address)).to.equal(ethers.utils.parseEther("97"));
 
       // alice send pTRI to bob
@@ -507,36 +506,20 @@ describe("Stable TRI Staking", function () {
 
       // bob claim
       await this.pTRI.connect(this.bob).withdraw("0");
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
-        ethers.utils.parseEther("0.5"),
-        ethers.utils.parseEther("0.01"),
-      );
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.above(ethers.utils.parseEther("0.49"));
 
       // deposit revenue
       await this.rewardToken.connect(this.owner).transfer(this.pTRI.address, ethers.utils.parseEther("1"));
 
       // alice claim
       await this.pTRI.connect(this.alice).withdraw("0");
-      // alice claims another ~0.5
-      expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.closeTo(
-        ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("0.00001"),
-      );
+      // alice claims 0
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.above(ethers.utils.parseEther("0.49"));
 
       // bob claim
       await this.pTRI.connect(this.bob).withdraw("0");
       // bob claims another ~0.5
-      expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
-        ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("0.00001"),
-      );
-    });
-  });
-
-  after(async function () {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [],
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.above(ethers.utils.parseEther("0.99"));
     });
   });
 });
