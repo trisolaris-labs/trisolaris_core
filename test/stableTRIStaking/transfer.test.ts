@@ -51,6 +51,32 @@ describe("RevenueDistributionToken - Transfer", function () {
     expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(depositAmount);
   });
 
+  it("should pre-claim before transferFrom", async function () {
+    const depositAmount = 100;
+    await this.tri.mint(this.deployer.address, depositAmount);
+
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    await this.pTRI.connect(this.deployer).deposit(depositAmount);
+
+    expect(await this.tri.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+
+    await this.pTRI.connect(this.deployer).approve(this.user1.address, depositAmount);
+    let deployerpTRIAllowance = await this.pTRI
+      .connect(this.deployer)
+      .allowance(this.deployer.address, this.user1.address);
+    expect(deployerpTRIAllowance).to.equal(depositAmount);
+
+    await this.pTRI.connect(this.user1).transferFrom(this.deployer.address, this.user1.address, depositAmount);
+    deployerpTRIAllowance = await this.pTRI.allowance(this.deployer.address, this.user1.address);
+    expect(deployerpTRIAllowance).to.equal(0);
+
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    expect(await this.rewardToken.balanceOf(this.user1.address)).to.equal(0);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(depositAmount);
+  });
+
   it("should pre-claim zero before transfer if no claim", async function () {
     const depositAmount = 100;
     await this.tri.mint(this.deployer.address, depositAmount);
@@ -63,6 +89,33 @@ describe("RevenueDistributionToken - Transfer", function () {
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
 
     await this.pTRI.connect(this.deployer).transfer(this.user1.address, depositAmount);
+
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.rewardToken.balanceOf(this.user1.address)).to.equal(0);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(depositAmount);
+  });
+
+  it("should pre-claim zero before transferFrom if no claim", async function () {
+    const depositAmount = 100;
+    await this.tri.mint(this.deployer.address, depositAmount);
+    await this.rewardToken.burn(this.deployer.address, depositAmount);
+
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    await this.pTRI.connect(this.deployer).deposit(depositAmount);
+
+    expect(await this.tri.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+
+    await this.pTRI.connect(this.deployer).approve(this.user1.address, depositAmount);
+    let deployerpTRIAllowance = await this.pTRI
+      .connect(this.deployer)
+      .allowance(this.deployer.address, this.user1.address);
+    expect(deployerpTRIAllowance).to.equal(depositAmount);
+
+    await this.pTRI.connect(this.user1).transferFrom(this.deployer.address, this.user1.address, depositAmount);
+    deployerpTRIAllowance = await this.pTRI.allowance(this.deployer.address, this.user1.address);
+    expect(deployerpTRIAllowance).to.equal(0);
 
     expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
     expect(await this.rewardToken.balanceOf(this.user1.address)).to.equal(0);
@@ -149,6 +202,87 @@ describe("RevenueDistributionToken - Transfer", function () {
 
     expect(escrowAmount).to.equal(0);
     expect(escrowRewardDebt).to.equal(0);
+
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(100);
+    expect(await this.pTRI.balanceOf(this.escrow.address)).to.equal(0);
+
+    [escrowAmount, escrowRewardDebt] = await this.pTRI.getUserInfo(this.escrow.address, this.rewardToken.address);
+
+    expect(escrowAmount).to.equal(0);
+    expect(escrowRewardDebt).to.equal(0);
+
+    [deployerAmount, deployerRewardDebt] = await this.pTRI
+      .connect(this.deployer)
+      .getUserInfo(this.deployer.address, this.rewardToken.address);
+
+    expect(deployerAmount).to.equal(100);
+    expect(deployerRewardDebt).to.equal(200);
+
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.rewardToken.balanceOf(this.escrow.address)).to.equal(100);
+
+    await this.pTRI.connect(this.deployer).withdraw(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal(100);
+    expect(await this.rewardToken.balanceOf(this.escrow.address)).to.equal(100);
+
+    expect(await this.pTRI.pendingReward(this.deployer.address, this.rewardToken.address)).to.equal(0);
+    expect(await this.pTRI.pendingReward(this.escrow.address, this.rewardToken.address)).to.equal(0);
+  });
+
+  it("should claim before deposit and withdraw from escrow, escrow claims on withdrawal then user withdraws from pTRI", async function () {
+    const depositAmount = 100;
+    this.escrow = await ethers.getContractFactory("EscrowMock");
+    this.escrow = await this.escrow.deploy("escrow", "escrow", 18, "100");
+    await this.tri.mint(this.deployer.address, depositAmount);
+
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    await this.pTRI.connect(this.deployer).deposit(depositAmount);
+
+    expect(await this.tri.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+
+    await this.rewardToken.transfer(this.pTRI.address, depositAmount);
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
+
+    expect(await this.pTRI.pendingReward(this.deployer.address, this.rewardToken.address)).to.equal(100);
+
+    await this.pTRI.connect(this.deployer).approve(this.escrow.address, depositAmount);
+    let deployerpTRIAllowance = await this.pTRI
+      .connect(this.deployer)
+      .allowance(this.deployer.address, this.escrow.address);
+    expect(deployerpTRIAllowance).to.equal(depositAmount);
+
+    await this.escrow.connect(this.deployer).deposit(this.deployer.address, this.pTRI.address, depositAmount);
+
+    deployerpTRIAllowance = await this.pTRI
+      .connect(this.deployer)
+      .allowance(this.deployer.address, this.escrow.address);
+    expect(deployerpTRIAllowance).to.equal(0);
+
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    expect(await this.rewardToken.balanceOf(this.pTRI.address)).to.equal(0);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.pTRI.balanceOf(this.escrow.address)).to.equal(depositAmount);
+
+    let [deployerAmount, deployerRewardDebt] = await this.pTRI
+      .connect(this.deployer)
+      .getUserInfo(this.deployer.address, this.rewardToken.address);
+
+    expect(deployerAmount).to.equal(0);
+    expect(deployerRewardDebt).to.equal(0);
+
+    let [escrowAmount, escrowRewardDebt] = await this.pTRI.getUserInfo(this.escrow.address, this.rewardToken.address);
+
+    expect(escrowAmount).to.equal(100);
+    expect(escrowRewardDebt).to.equal(100);
+
+    await this.rewardToken.transfer(this.pTRI.address, depositAmount);
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.pTRI.pendingReward(this.deployer.address, this.rewardToken.address)).to.equal(0);
+    expect(await this.pTRI.pendingReward(this.escrow.address, this.rewardToken.address)).to.equal(100);
+
+    await this.escrow.connect(this.deployer).withdraw(this.deployer.address, this.pTRI.address, depositAmount);
 
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(100);
     expect(await this.pTRI.balanceOf(this.escrow.address)).to.equal(0);
