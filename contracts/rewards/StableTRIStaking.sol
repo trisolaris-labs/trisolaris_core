@@ -132,16 +132,10 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @param _amount The amount of TRI to deposit
      */
     function deposit(uint256 _amount) external {
-        UserInfo storage user = userInfo[_msgSender()];
-
         uint256 _fee = _amount.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
         uint256 _amountMinusFee = _amount.sub(_fee);
 
-        uint256 _previousAmount = user.amount;
-        uint256 _newAmount = user.amount.add(_amountMinusFee);
-        user.amount = _newAmount;
-
-        _harvest(_msgSender(), _previousAmount, _newAmount);
+        _beforeReceive(_msgSender(), _amountMinusFee);
 
         internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
         tri.safeTransferFrom(_msgSender(), feeCollector, _fee);
@@ -255,13 +249,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @param _amount The amount of TRI to withdraw
      */
     function withdraw(uint256 _amount) external {
-        UserInfo storage user = userInfo[_msgSender()];
-        uint256 _previousAmount = user.amount;
-        require(_amount <= _previousAmount, "StableTRIStaking: withdraw amount exceeds balance");
-        uint256 _newAmount = user.amount.sub(_amount);
-        user.amount = _newAmount;
-
-        _harvest(_msgSender(), _previousAmount, _newAmount);
+        _beforeSend(_msgSender(), _amount);
 
         internalTRIBalance = internalTRIBalance.sub(_amount);
         tri.safeTransfer(_msgSender(), _amount);
@@ -347,16 +335,10 @@ contract StableTRIStaking is Ownable, ERC20 {
         ITriBar(xTRI_).leave(xTRIAmount_);
         uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)).sub(triBalanceBefore_);
 
-        UserInfo storage user = userInfo[_msgSender()];
-
         uint256 _fee = triBalanceUnstaked_.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
         uint256 _amountMinusFee = triBalanceUnstaked_.sub(_fee);
 
-        uint256 _previousAmount = user.amount;
-        uint256 _newAmount = user.amount.add(_amountMinusFee);
-        user.amount = _newAmount;
-
-        _harvest(_msgSender(), _previousAmount, _newAmount);
+        _beforeReceive(_msgSender(), _amountMinusFee);
 
         internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
         _mint(_msgSender(), _amountMinusFee);
@@ -394,6 +376,37 @@ contract StableTRIStaking is Ownable, ERC20 {
     }
 
     /**
+     * @notice Internal function called before an address sends pTRI tokens
+     * function manages userInfo and distributes any outstanding rewards
+     * @param _sender The address of the user is sending pTRI tokens
+     * @param _amount The amount of the tokens being sent
+     */
+    function _beforeSend(address _sender, uint256 _amount) internal {
+        // Managing userInfo + pendingTokens of the sender
+        UserInfo storage userSender = userInfo[_sender];
+        uint256 _previousAmountSender = userSender.amount;
+        require(_amount <= _previousAmountSender, "StableTRIStaking: withdraw amount exceeds balance");
+        uint256 _newAmountSender = userSender.amount.sub(_amount);
+        userSender.amount = _newAmountSender;
+        _harvest(_sender, _previousAmountSender, _newAmountSender);
+    }
+
+    /**
+     * @notice Internal function called before an address receives pTRI tokens
+     * function manages userInfo and distributes any outstanding rewards
+     * @param _recipient The address of the user which is receiving pTRI tokens
+     * @param _amount The amount of the tokens being received
+     */
+    function _beforeReceive(address _recipient, uint256 _amount) internal {
+        // Managing userInfo + pendingTokens of the receiver
+        UserInfo storage userRecepient = userInfo[_recipient];
+        uint256 _previousAmountRecepient = userRecepient.amount;
+        uint256 _newAmountRecepient = userRecepient.amount.add(_amount);
+        userRecepient.amount = _newAmountRecepient;
+        _harvest(_recipient, _previousAmountRecepient, _newAmountRecepient);
+    }
+
+    /**
      * @notice external harvest function to claim only rewards till this block
      */
     function harvest() external {
@@ -410,20 +423,9 @@ contract StableTRIStaking is Ownable, ERC20 {
      * - the caller must have a balance qnd userInfo.amount of at least `amount`.
      */
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        // Managing userInfo + pendingTokens of the sender
-        UserInfo storage userSender = userInfo[_msgSender()];
-        uint256 _previousAmountSender = userSender.amount;
-        require(amount <= _previousAmountSender, "StableTRIStaking: withdraw amount exceeds balance");
-        uint256 _newAmountSender = userSender.amount.sub(amount);
-        userSender.amount = _newAmountSender;
-        _harvest(_msgSender(), _previousAmountSender, _newAmountSender);
-
-        // Managing userInfo + pendingTokens of the receiver
-        UserInfo storage userRecepient = userInfo[recipient];
-        uint256 _previousAmountRecepient = userRecepient.amount;
-        uint256 _newAmountRecepient = userRecepient.amount.add(amount);
-        userRecepient.amount = _newAmountRecepient;
-        _harvest(recipient, _previousAmountRecepient, _newAmountRecepient);
+        // manage user info and pendingRewards
+        _beforeSend(_msgSender(), amount);
+        _beforeReceive(recipient, amount);
 
         _transfer(_msgSender(), recipient, amount);
         return true;
@@ -443,23 +445,10 @@ contract StableTRIStaking is Ownable, ERC20 {
      * `amount`.
      */
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        require(allowance(sender, _msgSender()) >= amount, "ERC20: transfer amount exceeds allowance");
+        // manage user info and pendingRewards
+        _beforeSend(sender, amount);
+        _beforeReceive(recipient, amount);
 
-        // Managing userInfo + pendingTokens of the sender
-        UserInfo storage userSender = userInfo[sender];
-        uint256 _previousAmountSender = userSender.amount;
-        require(amount <= _previousAmountSender, "StableTRIStaking: withdraw amount exceeds balance");
-        uint256 _newAmountSender = userSender.amount.sub(amount);
-        userSender.amount = _newAmountSender;
-        _harvest(sender, _previousAmountSender, _newAmountSender);
-
-        // Managing userInfo + pendingTokens of the receiver
-        UserInfo storage userRecepient = userInfo[recipient];
-        uint256 _previousAmountRecepient = userRecepient.amount;
-        uint256 _newAmountRecepient = userRecepient.amount.add(amount);
-        userRecepient.amount = _newAmountRecepient;
-        _harvest(recipient, _previousAmountRecepient, _newAmountRecepient);
-        
         _transfer(sender, recipient, amount);
         uint256 newAllowance = allowance(sender, _msgSender()).sub(amount, "ERC20: transfer amount exceeds allowance");
         _approve(sender, _msgSender(), newAllowance);
