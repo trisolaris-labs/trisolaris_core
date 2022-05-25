@@ -15,14 +15,13 @@ describe("Stable TRI Staking", function () {
     this.carol = this.signers[3];
     this.triMaker = this.signers[4];
     this.penaltyCollector = this.signers[5];
+
+    this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.owner);
+    this.StableTRIStakingFactory = await ethers.getContractFactory("StableTRIStaking", this.owner);
   });
 
   beforeEach(async function () {
-    // deploying mock tokens
-    this.ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.owner);
-    const StableTRIStakingFactory = await ethers.getContractFactory("StableTRIStaking", this.owner);
     this.tri = await this.ERC20Mock.connect(this.owner).deploy("TRI", "TRI", 18, ethers.utils.parseEther("1000000"));
-    await this.tri.deployed();
 
     this.rewardToken = await this.ERC20Mock.connect(this.owner).deploy(
       "USD TLP",
@@ -30,9 +29,8 @@ describe("Stable TRI Staking", function () {
       18,
       ethers.utils.parseEther("100000000"),
     );
-    await this.rewardToken.deployed();
 
-    this.pTRI = await StableTRIStakingFactory.deploy(
+    this.pTRI = await this.StableTRIStakingFactory.deploy(
       "pTRI",
       "pTRI",
       this.rewardToken.address,
@@ -40,6 +38,8 @@ describe("Stable TRI Staking", function () {
       this.penaltyCollector.address,
       ethers.utils.parseEther("0.03"),
     );
+
+    await Promise.all([this.tri.deployed, this.rewardToken.deployed, this.pTRI.deployed]);
 
     await this.tri.transfer(this.alice.address, ethers.utils.parseEther("1000"));
     await this.tri.transfer(this.bob.address, ethers.utils.parseEther("1000"));
@@ -477,6 +477,60 @@ describe("Stable TRI Staking", function () {
       await expect(this.pTRI.connect(this.owner).setFeeCollector(this.alice.address)).to.not.be.reverted;
       expect(await this.pTRI.feeCollector()).to.equal(this.alice.address);
     });
+
+    it("Transferring pTRI does not change the claimable reward amounds", async function () {
+      // alice deposit
+      await this.pTRI.connect(this.alice).deposit(ethers.utils.parseEther("100"));
+      expect(await this.pTRI.balanceOf(this.alice.address)).to.equal(ethers.utils.parseEther("97"));
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal(ethers.utils.parseEther("900"));
+
+      // bob deposit
+      await this.pTRI.connect(this.bob).deposit(ethers.utils.parseEther("100"));
+      expect(await this.pTRI.balanceOf(this.bob.address)).to.equal(ethers.utils.parseEther("97"));
+      expect(await this.tri.balanceOf(this.bob.address)).to.equal(ethers.utils.parseEther("900"));
+
+      // deposit revenue
+      await this.rewardToken.connect(this.owner).transfer(this.pTRI.address, ethers.utils.parseEther("1"));
+
+      // alice claim
+      await this.pTRI.connect(this.alice).withdraw("0");
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.closeTo(
+        ethers.utils.parseEther("0.5"),
+        ethers.utils.parseEther("0.01"),
+      );
+      expect(await this.pTRI.balanceOf(this.alice.address)).to.equal(ethers.utils.parseEther("97"));
+
+      // alice send pTRI to bob
+      await this.pTRI.connect(this.alice).transfer(this.bob.address, ethers.utils.parseEther("97"));
+      expect(await this.pTRI.balanceOf(this.alice.address)).to.equal(0);
+      expect(await this.pTRI.balanceOf(this.bob.address)).to.equal(ethers.utils.parseEther((97 + 97).toString()));
+
+      // bob claim
+      await this.pTRI.connect(this.bob).withdraw("0");
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
+        ethers.utils.parseEther("0.5"),
+        ethers.utils.parseEther("0.01"),
+      );
+
+      // deposit revenue
+      await this.rewardToken.connect(this.owner).transfer(this.pTRI.address, ethers.utils.parseEther("1"));
+
+      // alice claim
+      await this.pTRI.connect(this.alice).withdraw("0");
+      // alice claims another ~0.5
+      expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.closeTo(
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("0.00001"),
+      );
+
+      // bob claim
+      await this.pTRI.connect(this.bob).withdraw("0");
+      // bob claims another ~0.5
+      expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.closeTo(
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("0.00001"),
+      );
+    });
   });
 
   after(async function () {
@@ -487,7 +541,7 @@ describe("Stable TRI Staking", function () {
   });
 });
 
-const increase = (seconds: number) => {
-  void ethers.provider.send("evm_increaseTime", [seconds]);
-  void ethers.provider.send("evm_mine", []);
+const increase = async (seconds: number) => {
+  await ethers.provider.send("evm_increaseTime", [seconds]);
+  await ethers.provider.send("evm_mine", []);
 };
