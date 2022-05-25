@@ -5,7 +5,6 @@ import "solidity-coverage";
 
 import "./tasks/accounts";
 import "./tasks/clean";
-import "hardhat-watcher";
 
 import { resolve } from "path";
 
