@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { ITriBar } from "../interfaces/ITriBar.sol";
+import "hardhat/console.sol";
 
 /**
  * @title Stable TRI Staking
@@ -91,7 +92,7 @@ contract StableTRIStaking is Ownable, ERC20 {
 
     /// @notice Emitted when owner migrates from xTRI to pTRI
     event Migrated(address xTRI, address asset, uint256 triUnstaked, uint256 shares);
-    
+
     /// @notice Emitted when owner updates the feeCollector
     event FeeCollectorUpdated(address feeCollector);
 
@@ -179,7 +180,7 @@ contract StableTRIStaking is Ownable, ERC20 {
         updateReward(_rewardToken);
         emit RewardTokenAdded(address(_rewardToken));
     }
-    
+
     /**
      * @notice Add a reward token
      * @param feeCollector_ The address where deposit fees will be sent
@@ -325,12 +326,9 @@ contract StableTRIStaking is Ownable, ERC20 {
         }
     }
 
-    function migrate(
-        address xTRI_,
-        uint256 xTRIAmount_
-    ) external {
+    function migrate(address xTRI_, uint256 xTRIAmount_) external {
         IERC20(xTRI_).safeTransferFrom(_msgSender(), address(this), xTRIAmount_);
-        
+
         uint256 triBalanceBefore_ = tri.balanceOf(address(this));
         ITriBar(xTRI_).leave(xTRIAmount_);
         uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)).sub(triBalanceBefore_);
@@ -351,7 +349,11 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @param _previousAmount Previous amount of the user in userInfo
      * @param _newAmount New amount of the user in userInfo
      */
-    function _harvest(address userAddress, uint256 _previousAmount, uint256 _newAmount) internal {
+    function _harvest(
+        address userAddress,
+        uint256 _previousAmount,
+        uint256 _newAmount
+    ) internal {
         UserInfo storage user = userInfo[userAddress];
 
         uint256 _len = rewardTokens.length;
@@ -444,7 +446,11 @@ contract StableTRIStaking is Ownable, ERC20 {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         // manage user info and pendingRewards
         _beforeSend(sender, amount);
         _beforeReceive(recipient, amount);
