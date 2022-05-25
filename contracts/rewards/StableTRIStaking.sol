@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { ITriBar } from "../interfaces/ITriBar.sol";
+import { IMasterChefV2 } from "../interfaces/IMasterChefV2-solc_0.7.6.sol";
 
 /**
  * @title Stable TRI Staking
@@ -415,6 +416,28 @@ contract StableTRIStaking is Ownable, ERC20 {
     }
 
     /**
+     * @notice Claims all rewards and stakes in the passed in MasterChefV2 pool
+     */
+    function harvestAndStake(
+        address _masterChef,
+        uint256 _pid,
+        IERC20 _asset
+    ) external {
+        address receiver_ = _msgSender();
+        uint256 _previousAmountRecepient = _asset.balanceOf(receiver_);
+        
+        UserInfo storage user = userInfo[receiver_];
+        _harvest(receiver_, user.amount, user.amount);
+        
+        uint256 _amountToStake = _asset.balanceOf(receiver_).sub(_previousAmountRecepient);
+
+        if (_amountToStake > 0) {
+            _asset.approve(_masterChef, _amountToStake);
+            IMasterChefV2(_masterChef).deposit(_pid, _amountToStake, receiver_);
+        }
+    }
+
+    /**
      * @dev See {IERC20-transfer}.
      *
      * Requirements:
@@ -423,6 +446,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      * - the caller must have a balance qnd userInfo.amount of at least `amount`.
      */
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+
         // manage user info and pendingRewards
         _beforeSend(_msgSender(), amount);
         _beforeReceive(recipient, amount);
