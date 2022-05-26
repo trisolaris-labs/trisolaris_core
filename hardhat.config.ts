@@ -1,13 +1,11 @@
-import "hardhat-watcher";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
-import "hardhat-watcher"
+import "hardhat-watcher";
 
 import "./tasks/accounts";
 import "./tasks/clean";
-import "hardhat-watcher";
 
 import { resolve } from "path";
 
