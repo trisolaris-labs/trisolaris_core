@@ -426,6 +426,11 @@ describe("Stable TRI Staking", function () {
       await this.pTRI.connect(this.owner).removeRewardToken(token1.address);
       expect(await this.pTRI.isRewardToken(token1.address)).to.be.equal(false);
       expect(await this.pTRI.rewardTokensLength()).to.be.equal(1);
+
+      // only owner can remove a token
+      await expect(this.pTRI.connect(this.bob).removeRewardToken(token1.address)).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
     });
 
     it("should allow setting a new deposit fee, only by owner", async function () {
