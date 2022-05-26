@@ -152,6 +152,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @return The reward debt for the chosen token
      */
     function getUserInfo(address _user, IERC20 _rewardToken) external view returns (uint256, uint256) {
+        require(isRewardToken[_rewardToken], "StableTRIStaking: reward token is not a reward token");
         UserInfo storage user = userInfo[_user];
         return (user.amount, user.rewardDebt[_rewardToken]);
     }
