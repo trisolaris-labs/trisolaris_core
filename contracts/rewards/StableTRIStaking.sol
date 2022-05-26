@@ -91,7 +91,7 @@ contract StableTRIStaking is Ownable, ERC20 {
 
     /// @notice Emitted when owner migrates from xTRI to pTRI
     event Migrated(address xTRI, address asset, uint256 triUnstaked, uint256 shares);
-    
+
     /// @notice Emitted when owner updates the feeCollector
     event FeeCollectorUpdated(address feeCollector);
 
@@ -132,34 +132,10 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @param _amount The amount of TRI to deposit
      */
     function deposit(uint256 _amount) external {
-        UserInfo storage user = userInfo[_msgSender()];
-
         uint256 _fee = _amount.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
         uint256 _amountMinusFee = _amount.sub(_fee);
 
-        uint256 _previousAmount = user.amount;
-        uint256 _newAmount = user.amount.add(_amountMinusFee);
-        user.amount = _newAmount;
-
-        uint256 _len = rewardTokens.length;
-        for (uint256 i; i < _len; i++) {
-            IERC20 _token = rewardTokens[i];
-            updateReward(_token);
-
-            uint256 _previousRewardDebt = user.rewardDebt[_token];
-            user.rewardDebt[_token] = _newAmount.mul(accRewardPerShare[_token]).div(ACC_REWARD_PER_SHARE_PRECISION);
-
-            if (_previousAmount != 0) {
-                uint256 _pending = _previousAmount
-                    .mul(accRewardPerShare[_token])
-                    .div(ACC_REWARD_PER_SHARE_PRECISION)
-                    .sub(_previousRewardDebt);
-                if (_pending != 0) {
-                    safeTokenTransfer(_token, _msgSender(), _pending);
-                    emit ClaimReward(_msgSender(), address(_token), _pending);
-                }
-            }
-        }
+        _beforeReceive(_msgSender(), _amountMinusFee);
 
         internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
         tri.safeTransferFrom(_msgSender(), feeCollector, _fee);
@@ -203,7 +179,7 @@ contract StableTRIStaking is Ownable, ERC20 {
         updateReward(_rewardToken);
         emit RewardTokenAdded(address(_rewardToken));
     }
-    
+
     /**
      * @notice Add a reward token
      * @param feeCollector_ The address where deposit fees will be sent
@@ -273,30 +249,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @param _amount The amount of TRI to withdraw
      */
     function withdraw(uint256 _amount) external {
-        UserInfo storage user = userInfo[_msgSender()];
-        uint256 _previousAmount = user.amount;
-        require(_amount <= _previousAmount, "StableTRIStaking: withdraw amount exceeds balance");
-        uint256 _newAmount = user.amount.sub(_amount);
-        user.amount = _newAmount;
-
-        uint256 _len = rewardTokens.length;
-        if (_previousAmount != 0) {
-            for (uint256 i; i < _len; i++) {
-                IERC20 _token = rewardTokens[i];
-                updateReward(_token);
-
-                uint256 _pending = _previousAmount
-                    .mul(accRewardPerShare[_token])
-                    .div(ACC_REWARD_PER_SHARE_PRECISION)
-                    .sub(user.rewardDebt[_token]);
-                user.rewardDebt[_token] = _newAmount.mul(accRewardPerShare[_token]).div(ACC_REWARD_PER_SHARE_PRECISION);
-
-                if (_pending != 0) {
-                    safeTokenTransfer(_token, _msgSender(), _pending);
-                    emit ClaimReward(_msgSender(), address(_token), _pending);
-                }
-            }
-        }
+        _beforeSend(_msgSender(), _amount);
 
         internalTRIBalance = internalTRIBalance.sub(_amount);
         tri.safeTransfer(_msgSender(), _amount);
@@ -372,24 +325,35 @@ contract StableTRIStaking is Ownable, ERC20 {
         }
     }
 
-    function migrate(
-        address xTRI_,
-        uint256 xTRIAmount_
-    ) external {
+    function migrate(address xTRI_, uint256 xTRIAmount_) external {
         IERC20(xTRI_).safeTransferFrom(_msgSender(), address(this), xTRIAmount_);
-        
+
         uint256 triBalanceBefore_ = tri.balanceOf(address(this));
         ITriBar(xTRI_).leave(xTRIAmount_);
         uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)).sub(triBalanceBefore_);
 
-        UserInfo storage user = userInfo[_msgSender()];
-
         uint256 _fee = triBalanceUnstaked_.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
         uint256 _amountMinusFee = triBalanceUnstaked_.sub(_fee);
 
-        uint256 _previousAmount = user.amount;
-        uint256 _newAmount = user.amount.add(_amountMinusFee);
-        user.amount = _newAmount;
+        _beforeReceive(_msgSender(), _amountMinusFee);
+
+        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
+        _mint(_msgSender(), _amountMinusFee);
+        emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
+    }
+
+    /**
+     * @notice internal harvest function to claim only rewards till this block
+     * @param userAddress The address of the user which has to claim the rewards
+     * @param _previousAmount Previous amount of the user in userInfo
+     * @param _newAmount New amount of the user in userInfo
+     */
+    function _harvest(
+        address userAddress,
+        uint256 _previousAmount,
+        uint256 _newAmount
+    ) internal {
+        UserInfo storage user = userInfo[userAddress];
 
         uint256 _len = rewardTokens.length;
         for (uint256 i; i < _len; i++) {
@@ -405,14 +369,94 @@ contract StableTRIStaking is Ownable, ERC20 {
                     .div(ACC_REWARD_PER_SHARE_PRECISION)
                     .sub(_previousRewardDebt);
                 if (_pending != 0) {
-                    safeTokenTransfer(_token, _msgSender(), _pending);
-                    emit ClaimReward(_msgSender(), address(_token), _pending);
+                    safeTokenTransfer(_token, userAddress, _pending);
+                    emit ClaimReward(userAddress, address(_token), _pending);
                 }
             }
         }
+    }
 
-        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
-        _mint(_msgSender(), _amountMinusFee);
-        emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
+    /**
+     * @notice Internal function called before an address sends pTRI tokens
+     * function manages userInfo and distributes any outstanding rewards
+     * @param _sender The address of the user is sending pTRI tokens
+     * @param _amount The amount of the tokens being sent
+     */
+    function _beforeSend(address _sender, uint256 _amount) internal {
+        // Managing userInfo + pendingTokens of the sender
+        UserInfo storage userSender = userInfo[_sender];
+        uint256 _previousAmountSender = userSender.amount;
+        require(_amount <= _previousAmountSender, "StableTRIStaking: withdraw amount exceeds balance");
+        uint256 _newAmountSender = userSender.amount.sub(_amount);
+        userSender.amount = _newAmountSender;
+        _harvest(_sender, _previousAmountSender, _newAmountSender);
+    }
+
+    /**
+     * @notice Internal function called before an address receives pTRI tokens
+     * function manages userInfo and distributes any outstanding rewards
+     * @param _recipient The address of the user which is receiving pTRI tokens
+     * @param _amount The amount of the tokens being received
+     */
+    function _beforeReceive(address _recipient, uint256 _amount) internal {
+        // Managing userInfo + pendingTokens of the receiver
+        UserInfo storage userRecepient = userInfo[_recipient];
+        uint256 _previousAmountRecepient = userRecepient.amount;
+        uint256 _newAmountRecepient = userRecepient.amount.add(_amount);
+        userRecepient.amount = _newAmountRecepient;
+        _harvest(_recipient, _previousAmountRecepient, _newAmountRecepient);
+    }
+
+    /**
+     * @notice external harvest function to claim only rewards till this block
+     */
+    function harvest() external {
+        UserInfo storage user = userInfo[_msgSender()];
+        _harvest(_msgSender(), user.amount, user.amount);
+    }
+
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance qnd userInfo.amount of at least `amount`.
+     */
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        // manage user info and pendingRewards
+        _beforeSend(_msgSender(), amount);
+        _beforeReceive(recipient, amount);
+
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * Requirements:
+     *
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``sender``'s tokens of at least
+     * `amount`.
+     */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        // manage user info and pendingRewards
+        _beforeSend(sender, amount);
+        _beforeReceive(recipient, amount);
+
+        _transfer(sender, recipient, amount);
+        uint256 newAllowance = allowance(sender, _msgSender()).sub(amount, "ERC20: transfer amount exceeds allowance");
+        _approve(sender, _msgSender(), newAllowance);
+        return true;
     }
 }

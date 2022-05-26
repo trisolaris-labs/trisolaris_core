@@ -14,4 +14,8 @@ contract ERC20Mock is ERC20 {
         _setupDecimals(decimals);
         _mint(msg.sender, supply);
     }
+
+    function burn(address account, uint256 amount) public virtual {
+        _burn(account, amount);
+    }
 }

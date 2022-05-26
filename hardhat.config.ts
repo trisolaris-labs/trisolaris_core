@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
-import "hardhat-watcher"
+import "hardhat-watcher";
 
 import "./tasks/accounts";
 import "./tasks/clean";
@@ -13,7 +13,6 @@ import { config as dotenvConfig } from "dotenv";
 import "@nomiclabs/hardhat-etherscan";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
-
 
 // Ensure that we have all the environment variables we need.
 const mnemonic: string | undefined = process.env.MNEMONIC;

@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.6.12;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IRewarder.sol";
 import "../interfaces/IMasterChefV2.sol";
-
-
 
 /**
  * This is a sample contract to be used in the MasterChef contract for partners to reward
@@ -27,13 +24,12 @@ contract ComplexNRewarder is IRewarder, Ownable {
     IMasterChefV2 public immutable MCV2;
     uint256 public immutable numRewardTokens;
 
-    
     /// @notice Info of each MCV2 poolInfo.
     /// `accTokenPerShare` Amount of rewardToken each LP token is worth.
     /// `lastRewardBlock` The last block rewards were rewarded to the poolInfo.
     uint256[] public accTokenPerShare;
     uint256 public lastRewardBlock;
-    
+
     /// @notice Info of each user that stakes LP tokens.
     /// `amount` LP token amount the user has provided.
     /// `rewardDebt` The amount of TRI entitled to the user.
@@ -67,18 +63,17 @@ contract ComplexNRewarder is IRewarder, Ownable {
         lastRewardBlock = block.number;
     }
 
-    
     /// @notice Sets the distribution reward rate. This will also update the poolInfo.
     /// @param _tokenPerBlock The number of tokens to distribute per block
     function setRewardRate(uint256[] calldata _tokenPerBlock) external onlyOwner {
         updatePool();
-        
+
         uint256[] memory oldRate = tokenPerBlock;
         require(numRewardTokens == _tokenPerBlock.length, "tokenperblock length incorrect");
         tokenPerBlock = _tokenPerBlock;
 
         for (uint256 i = 0; i < numRewardTokens; i++) {
-            emit RewardRateUpdated(address(rewardToken[i]), oldRate[i], _tokenPerBlock[i]);    
+            emit RewardRateUpdated(address(rewardToken[i]), oldRate[i], _tokenPerBlock[i]);
         }
     }
 
@@ -86,7 +81,11 @@ contract ComplexNRewarder is IRewarder, Ownable {
     /// @param token Token to reclaim, use 0x00 for Ethereum
     /// @param amount Amount of tokens to reclaim
     /// @param to Receiver of the tokens
-    function reclaimTokens(address token, uint256 amount, address payable to) public onlyOwner {
+    function reclaimTokens(
+        address token,
+        uint256 amount,
+        address payable to
+    ) public onlyOwner {
         if (token == address(0)) {
             to.transfer(amount);
         } else {
@@ -104,7 +103,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
                 for (uint256 i = 0; i < numRewardTokens; i++) {
                     uint256 tokenReward = blocks.mul(tokenPerBlock[i]);
                     // solhint-disable-next-line
-                    accTokenPerShare[i] = accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));    
+                    accTokenPerShare[i] = accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));
                 }
             }
 
@@ -112,23 +111,23 @@ contract ComplexNRewarder is IRewarder, Ownable {
         }
     }
 
-    /// @notice Function called by MasterChef whenever staker claims TRI harvest. 
+    /// @notice Function called by MasterChef whenever staker claims TRI harvest.
     /// Allows staker to also receive a 2nd reward token.
     /// @param _user Address of user
     /// @param _lpAmount Number of LP tokens the user has
     function onTriReward(
-        uint256, 
-        address _user, 
-        address, 
-        uint256, 
+        uint256,
+        address _user,
+        address,
+        uint256,
         uint256 _lpAmount
-        ) external override onlyMCV2 {
+    ) external override onlyMCV2 {
         updatePool();
         uint256 _userAmount = userAmount[_user];
         uint256[] memory _userRewardDebt = userRewardDebt[_user];
         uint256 pendingBal;
         uint256 rewardBal;
-        
+
         if (_userAmount == 0 && _userRewardDebt.length == 0) {
             // initializing userRewardDebt
             _userRewardDebt = new uint256[](numRewardTokens);
@@ -136,7 +135,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
             // if user had deposited
             for (uint256 i = 0; i < numRewardTokens; i++) {
                 // solhint-disable-next-line
-                pendingBal = (_userAmount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);    
+                pendingBal = (_userAmount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);
                 rewardBal = rewardToken[i].balanceOf(address(this));
                 if (pendingBal > rewardBal) {
                     rewardToken[i].safeTransfer(_user, rewardBal);
@@ -145,7 +144,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
                 }
                 emit OnReward(address(rewardToken[i]), _user, pendingBal);
             }
-        } 
+        }
 
         _userAmount = _lpAmount;
         for (uint256 i = 0; i < numRewardTokens; i++) {
@@ -160,8 +159,8 @@ contract ComplexNRewarder is IRewarder, Ownable {
     /// @notice View function to see pending tokens
     /// @param _user Address of user.
     function pendingTokens(
-        uint256, 
-        address _user, 
+        uint256,
+        address _user,
         uint256
     ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
         uint256[] memory _rewardAmounts = new uint256[](numRewardTokens);
@@ -177,9 +176,11 @@ contract ComplexNRewarder is IRewarder, Ownable {
                 // solhint-disable-next-line
                 _accTokenPerShare[i] = accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));
                 // solhint-disable-next-line
-                _rewardAmounts[i] = (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);    
+                _rewardAmounts[i] = (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(
+                    _userRewardDebt[i]
+                );
             }
         }
         return (rewardToken, _rewardAmounts);
-    } 
+    }
 }
