@@ -75,19 +75,19 @@ describe("Stable TRI - harvest", function () {
 
     await this.rewardToken.transfer(this.pTRI.address, ethers.utils.parseEther("300"));
 
-    await this.pTRI.connect(this.alice).harvest();
+    await this.pTRI.connect(this.alice).harvest(this.alice.address);
     expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.alice.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
     );
 
-    await this.pTRI.connect(this.bob).harvest();
+    await this.pTRI.connect(this.bob).harvest(this.bob.address);
     expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.bob.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
     );
 
-    await this.pTRI.connect(this.carol).harvest();
+    await this.pTRI.connect(this.carol).harvest(this.carol.address);
     expect(await this.rewardToken.balanceOf(this.carol.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.carol.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
@@ -115,25 +115,25 @@ describe("Stable TRI - harvest", function () {
 
     await this.rewardToken.transfer(this.pTRI.address, ethers.utils.parseEther("300"));
 
-    await this.pTRI.connect(this.alice).harvest();
+    await this.pTRI.connect(this.alice).harvest(this.alice.address);
     expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.alice.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
     );
     // Alice claims again
-    await this.pTRI.connect(this.alice).harvest();
+    await this.pTRI.connect(this.alice).harvest(this.alice.address);
     expect(await this.rewardToken.balanceOf(this.alice.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.alice.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
     );
 
-    await this.pTRI.connect(this.bob).harvest();
+    await this.pTRI.connect(this.bob).harvest(this.bob.address);
     expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.bob.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
     );
 
-    await this.pTRI.connect(this.carol).harvest();
+    await this.pTRI.connect(this.carol).harvest(this.carol.address);
     expect(await this.rewardToken.balanceOf(this.carol.address)).to.be.equal(ethers.utils.parseEther("100"));
     expect((await this.pTRI.getUserInfo(this.carol.address, this.tri.address))[1]).to.be.equal(
       ethers.utils.parseEther("000"),
