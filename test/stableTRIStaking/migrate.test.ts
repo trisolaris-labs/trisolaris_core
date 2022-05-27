@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { Tri__factory } from "../../typechain";
-import { getBigNumber, increaseTimeBySeconds } from "../utils";
+import { increaseTimeBySeconds } from "../utils";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -24,7 +24,7 @@ describe("RevenueDistributionToken - Migrate", function () {
     this.pTRI = await ethers.getContractFactory("StableTRIStaking");
     const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.rewardToken = await ERC20Mock.deploy("rewardToken", "rewardToken", 18, 100 as any);
+    this.rewardToken = await ERC20Mock.deploy("rewardToken", "rewardToken", 18, "200");
     const pTRIConstructorArgs = ["pTRI", "pTRI", this.rewardToken.address, this.tri.address, this.deployer.address, 0];
     this.pTRI = await this.pTRI.deploy(...pTRIConstructorArgs);
     await this.xTRI.approve(this.pTRI.address, "100");
@@ -39,7 +39,7 @@ describe("RevenueDistributionToken - Migrate", function () {
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal("100");
   });
 
-  it("should migrate, migrate again and claim initial", async function () {
+  it("should migrate, claim initial, migrate again and claim too", async function () {
     await this.rewardToken.transfer(this.pTRI.address, "100");
     await this.tri.mint(this.deployer.address, "100");
     await this.tri.approve(this.xTRI.address, "100");
@@ -55,13 +55,14 @@ describe("RevenueDistributionToken - Migrate", function () {
     expect(await this.tri.balanceOf(this.pTRI.address)).to.equal("100");
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal("100");
 
+    await this.rewardToken.transfer(this.pTRI.address, "100");
     await this.xTRI.approve(this.pTRI.address, "100");
     await this.pTRI.connect(this.deployer).migrate(this.xTRI.address, "100");
 
     expect(await this.tri.balanceOf(this.pTRI.address)).to.equal("200");
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal("200");
 
-    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal("100");
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal("200");
     expect(await this.rewardToken.balanceOf(this.pTRI.address)).to.equal("0");
   });
 
@@ -84,7 +85,7 @@ describe("RevenueDistributionToken - Migrate", function () {
   });
 
   it("should migrate but claim zero if user has not migrated before", async function () {
-    await this.rewardToken.transfer(this.pTRI.address, "100");
+    await this.rewardToken.transfer(this.pTRI.address, "200");
     await increaseTimeBySeconds(86400);
 
     expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("100");
