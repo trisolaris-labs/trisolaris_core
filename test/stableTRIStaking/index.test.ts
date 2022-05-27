@@ -477,7 +477,7 @@ describe("Stable TRI Staking", function () {
 
       expect(await this.pTRI.balanceOf(this.alice.address)).to.be.equal(0);
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(0);
-      expect(await this.tri.balanceOf(this.alice.address)).to.not.equal(0);
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal("961270000000000000000");
     });
 
     it("allows owner to update fee collector", async function () {
