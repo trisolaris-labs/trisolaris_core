@@ -58,14 +58,14 @@ contract StableTRIStaking is Ownable, ERC20 {
     /// @notice The deposit fee, scaled to `DEPOSIT_FEE_PERCENT_PRECISION`
     uint256 public depositFeePercent;
     /// @notice The precision of `depositFeePercent`
-    uint256 public immutable DEPOSIT_FEE_PERCENT_PRECISION;
+    uint256 public immutable DEPOSIT_FEE_PERCENT_PRECISION = 1e18;
     /// @notice The max deposit fee value, scaled to `DEPOSIT_FEE_PERCENT_PRECISION`
     uint256 public immutable MAX_DEPOSIT_FEE_PERCENT;
 
     /// @notice Accumulated `token` rewards per share, scaled to `ACC_REWARD_PER_SHARE_PRECISION`
     mapping(IERC20 => uint256) public accRewardPerShare;
     /// @notice The precision of `accRewardPerShare`
-    uint256 public immutable ACC_REWARD_PER_SHARE_PRECISION;
+    uint256 public immutable ACC_REWARD_PER_SHARE_PRECISION = 1e24;
 
     /// @dev Info of each user that stakes TRI
     mapping(address => UserInfo) private userInfo;
@@ -131,8 +131,6 @@ contract StableTRIStaking is Ownable, ERC20 {
         isRewardToken[_rewardToken] = true;
         rewardTokens.push(_rewardToken);
 
-        DEPOSIT_FEE_PERCENT_PRECISION = 1e18;
-        ACC_REWARD_PER_SHARE_PRECISION = 1e24;
         MAX_DEPOSIT_FEE_PERCENT = _tempMaxDepositFeePercent;
     }
 
