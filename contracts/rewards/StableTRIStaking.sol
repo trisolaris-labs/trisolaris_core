@@ -60,7 +60,7 @@ contract StableTRIStaking is Ownable, ERC20 {
     /// @notice The precision of `depositFeePercent`
     uint256 public immutable DEPOSIT_FEE_PERCENT_PRECISION;
     /// @notice The max deposit fee value, scaled to `DEPOSIT_FEE_PERCENT_PRECISION`
-    uint256 public MAX_DEPOSIT_FEE_PERCENT = 5e17;
+    uint256 public immutable MAX_DEPOSIT_FEE_PERCENT;
 
     /// @notice Accumulated `token` rewards per share, scaled to `ACC_REWARD_PER_SHARE_PRECISION`
     mapping(IERC20 => uint256) public accRewardPerShare;
@@ -114,11 +114,13 @@ contract StableTRIStaking is Ownable, ERC20 {
         address _feeCollector,
         uint256 _depositFeePercent
     ) ERC20(name_, symbol_) {
+        uint256 _tempMaxDepositFeePercent = 5e17;
+
         require(address(_rewardToken) != address(0), "StableTRIStaking: reward token can't be address(0)");
         require(address(_tri) != address(0), "StableTRIStaking: tri can't be address(0)");
         require(_feeCollector != address(0), "StableTRIStaking: fee collector can't be address(0)");
         require(
-            _depositFeePercent <= MAX_DEPOSIT_FEE_PERCENT,
+            _depositFeePercent <= _tempMaxDepositFeePercent,
             "StableTRIStaking: max deposit fee can't be greater than 50%"
         );
 
@@ -128,8 +130,10 @@ contract StableTRIStaking is Ownable, ERC20 {
 
         isRewardToken[_rewardToken] = true;
         rewardTokens.push(_rewardToken);
+
         DEPOSIT_FEE_PERCENT_PRECISION = 1e18;
         ACC_REWARD_PER_SHARE_PRECISION = 1e24;
+        MAX_DEPOSIT_FEE_PERCENT = _tempMaxDepositFeePercent;
     }
 
     /**
