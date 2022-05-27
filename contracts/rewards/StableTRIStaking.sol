@@ -134,43 +134,9 @@ contract StableTRIStaking is Ownable, ERC20 {
         MAX_DEPOSIT_FEE_PERCENT = _tempMaxDepositFeePercent;
     }
 
-    /**
-     * @notice Deposit TRI for reward token allocation
-     * @param _amount The amount of TRI to deposit
-     */
-    function deposit(uint256 _amount) external {
-        uint256 _fee = _amount.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
-        uint256 _amountMinusFee = _amount.sub(_fee);
-
-        _beforeReceive(_msgSender(), _amountMinusFee);
-
-        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
-        tri.safeTransferFrom(_msgSender(), feeCollector, _fee);
-        tri.safeTransferFrom(_msgSender(), address(this), _amountMinusFee);
-        _mint(_msgSender(), _amountMinusFee);
-        emit Deposit(_msgSender(), _amountMinusFee, _fee);
-    }
-
-    /**
-     * @notice Get user info
-     * @param _user The address of the user
-     * @param _rewardToken The address of the reward token
-     * @return The amount of TRI user has deposited
-     * @return The reward debt for the chosen token
-     */
-    function getUserInfo(address _user, IERC20 _rewardToken) external view returns (uint256, uint256) {
-        require(isRewardToken[_rewardToken], "StableTRIStaking: reward token is not a reward token");
-        UserInfo storage user = userInfo[_user];
-        return (user.amount, user.rewardDebt[_rewardToken]);
-    }
-
-    /**
-     * @notice Get the number of reward tokens
-     * @return The length of the array
-     */
-    function rewardTokensLength() external view returns (uint256) {
-        return rewardTokens.length;
-    }
+    /* 
+        * onlyOwner functions
+    */
 
     /**
      * @notice Add a reward token
@@ -230,6 +196,31 @@ contract StableTRIStaking is Ownable, ERC20 {
         emit DepositFeeChanged(_depositFeePercent, oldFee);
     }
 
+    /*
+        * View only functions
+    */
+
+    /**
+     * @notice Get user info
+     * @param _user The address of the user
+     * @param _rewardToken The address of the reward token
+     * @return The amount of TRI user has deposited
+     * @return The reward debt for the chosen token
+     */
+    function getUserInfo(address _user, IERC20 _rewardToken) external view returns (uint256, uint256) {
+        require(isRewardToken[_rewardToken], "StableTRIStaking: reward token is not a reward token");
+        UserInfo storage user = userInfo[_user];
+        return (user.amount, user.rewardDebt[_rewardToken]);
+    }
+
+    /**
+     * @notice Get the number of reward tokens
+     * @return The length of the array
+     */
+    function rewardTokensLength() external view returns (uint256) {
+        return rewardTokens.length;
+    }
+
     /**
      * @notice View function to see pending reward token on frontend
      * @param _user The address of the user
@@ -255,104 +246,9 @@ contract StableTRIStaking is Ownable, ERC20 {
             user.amount.mul(_accRewardTokenPerShare).div(ACC_REWARD_PER_SHARE_PRECISION).sub(user.rewardDebt[_token]);
     }
 
-    /**
-     * @notice Withdraw TRI and harvest the rewards
-     * @param _amount The amount of TRI to withdraw
-     */
-    function withdraw(uint256 _amount) external {
-        _beforeSend(_msgSender(), _amount);
-
-        internalTRIBalance = internalTRIBalance.sub(_amount);
-        tri.safeTransfer(_msgSender(), _amount);
-        _burn(_msgSender(), _amount);
-        emit Withdraw(_msgSender(), _amount);
-    }
-
-    /**
-     * @notice Withdraw without caring about rewards. EMERGENCY ONLY
-     */
-    function emergencyWithdraw() external {
-        UserInfo storage user = userInfo[_msgSender()];
-
-        uint256 _amount = user.amount;
-        user.amount = 0;
-        uint256 _len = rewardTokens.length;
-        for (uint256 i; i < _len; i++) {
-            IERC20 _token = rewardTokens[i];
-            user.rewardDebt[_token] = 0;
-        }
-        internalTRIBalance = internalTRIBalance.sub(_amount);
-        tri.safeTransfer(_msgSender(), _amount);
-        _burn(_msgSender(), _amount);
-        emit EmergencyWithdraw(_msgSender(), _amount);
-    }
-
-    /**
-     * @notice Update reward variables
-     * @param _token The address of the reward token
-     * @dev Needs to be called before any deposit or withdrawal
-     */
-    function updateReward(IERC20 _token) public {
-        require(isRewardToken[_token], "StableTRIStaking: wrong reward token");
-
-        uint256 _totalTRI = internalTRIBalance;
-
-        uint256 _currRewardBalance = _token.balanceOf(address(this));
-        uint256 _rewardBalance = _token == tri ? _currRewardBalance.sub(_totalTRI) : _currRewardBalance;
-
-        // Did StableTRIStaking receive any token
-        if (_rewardBalance == lastRewardBalance[_token] || _totalTRI == 0) {
-            return;
-        }
-
-        uint256 _accruedReward = _rewardBalance.sub(lastRewardBalance[_token]);
-
-        accRewardPerShare[_token] = accRewardPerShare[_token].add(
-            _accruedReward.mul(ACC_REWARD_PER_SHARE_PRECISION).div(_totalTRI)
-        );
-        lastRewardBalance[_token] = _rewardBalance;
-    }
-
-    /**
-     * @notice Safe token transfer function, just in case if rounding error
-     * causes pool to not have enough reward tokens
-     * @param _token The address of then token to transfer
-     * @param _to The address that will receive `_amount` `rewardToken`
-     * @param _amount The amount to send to `_to`
-     */
-    function safeTokenTransfer(
-        IERC20 _token,
-        address _to,
-        uint256 _amount
-    ) internal {
-        uint256 _currRewardBalance = _token.balanceOf(address(this));
-        uint256 _rewardBalance = _token == tri ? _currRewardBalance.sub(internalTRIBalance) : _currRewardBalance;
-
-        if (_amount > _rewardBalance) {
-            lastRewardBalance[_token] = lastRewardBalance[_token].sub(_rewardBalance);
-            _token.safeTransfer(_to, _rewardBalance);
-        } else {
-            lastRewardBalance[_token] = lastRewardBalance[_token].sub(_amount);
-            _token.safeTransfer(_to, _amount);
-        }
-    }
-
-    function migrate(address xTRI_, uint256 xTRIAmount_) external {
-        IERC20(xTRI_).safeTransferFrom(_msgSender(), address(this), xTRIAmount_);
-
-        uint256 triBalanceBefore_ = tri.balanceOf(address(this));
-        ITriBar(xTRI_).leave(xTRIAmount_);
-        uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)).sub(triBalanceBefore_);
-
-        uint256 _fee = triBalanceUnstaked_.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
-        uint256 _amountMinusFee = triBalanceUnstaked_.sub(_fee);
-
-        _beforeReceive(_msgSender(), _amountMinusFee);
-
-        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
-        _mint(_msgSender(), _amountMinusFee);
-        emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
-    }
+    /*
+        * Internal functions
+    */
 
     /**
      * @notice internal harvest function to claim only rewards till this block
@@ -418,6 +314,126 @@ contract StableTRIStaking is Ownable, ERC20 {
         userRecepient.amount = _newAmountRecepient;
         _harvest(_recipient, _previousAmountRecepient, _newAmountRecepient);
     }
+
+    /*
+        State changing functions
+    */
+
+    /**
+     * @notice Update reward variables
+     * @param _token The address of the reward token
+     * @dev Needs to be called before any deposit or withdrawal
+     */
+    function updateReward(IERC20 _token) public {
+        require(isRewardToken[_token], "StableTRIStaking: wrong reward token");
+
+        uint256 _totalTRI = internalTRIBalance;
+
+        uint256 _currRewardBalance = _token.balanceOf(address(this));
+        uint256 _rewardBalance = _token == tri ? _currRewardBalance.sub(_totalTRI) : _currRewardBalance;
+
+        // Did StableTRIStaking receive any token
+        if (_rewardBalance == lastRewardBalance[_token] || _totalTRI == 0) {
+            return;
+        }
+
+        uint256 _accruedReward = _rewardBalance.sub(lastRewardBalance[_token]);
+
+        accRewardPerShare[_token] = accRewardPerShare[_token].add(
+            _accruedReward.mul(ACC_REWARD_PER_SHARE_PRECISION).div(_totalTRI)
+        );
+        lastRewardBalance[_token] = _rewardBalance;
+    }
+
+    /**
+     * @notice Safe token transfer function, just in case if rounding error
+     * causes pool to not have enough reward tokens
+     * @param _token The address of then token to transfer
+     * @param _to The address that will receive `_amount` `rewardToken`
+     * @param _amount The amount to send to `_to`
+     */
+    function safeTokenTransfer(
+        IERC20 _token,
+        address _to,
+        uint256 _amount
+    ) internal {
+        uint256 _currRewardBalance = _token.balanceOf(address(this));
+        uint256 _rewardBalance = _token == tri ? _currRewardBalance.sub(internalTRIBalance) : _currRewardBalance;
+
+        if (_amount > _rewardBalance) {
+            lastRewardBalance[_token] = lastRewardBalance[_token].sub(_rewardBalance);
+            _token.safeTransfer(_to, _rewardBalance);
+        } else {
+            lastRewardBalance[_token] = lastRewardBalance[_token].sub(_amount);
+            _token.safeTransfer(_to, _amount);
+        }
+    }
+    
+    /**
+     * @notice Deposit TRI for reward token allocation
+     * @param _amount The amount of TRI to deposit
+     */
+    function deposit(uint256 _amount) external {
+        uint256 _fee = _amount.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
+        uint256 _amountMinusFee = _amount.sub(_fee);
+
+        _beforeReceive(_msgSender(), _amountMinusFee);
+
+        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
+        tri.safeTransferFrom(_msgSender(), feeCollector, _fee);
+        tri.safeTransferFrom(_msgSender(), address(this), _amountMinusFee);
+        _mint(_msgSender(), _amountMinusFee);
+        emit Deposit(_msgSender(), _amountMinusFee, _fee);
+    }
+
+    /**
+     * @notice Withdraw TRI and harvest the rewards
+     * @param _amount The amount of TRI to withdraw
+     */
+    function withdraw(uint256 _amount) external {
+        _beforeSend(_msgSender(), _amount);
+
+        internalTRIBalance = internalTRIBalance.sub(_amount);
+        tri.safeTransfer(_msgSender(), _amount);
+        _burn(_msgSender(), _amount);
+        emit Withdraw(_msgSender(), _amount);
+    }
+
+    /**
+     * @notice Withdraw without caring about rewards. EMERGENCY ONLY
+     */
+    function emergencyWithdraw() external {
+        UserInfo storage user = userInfo[_msgSender()];
+
+        uint256 _amount = user.amount;
+        user.amount = 0;
+        uint256 _len = rewardTokens.length;
+        for (uint256 i; i < _len; i++) {
+            IERC20 _token = rewardTokens[i];
+            user.rewardDebt[_token] = 0;
+        }
+        internalTRIBalance = internalTRIBalance.sub(_amount);
+        tri.safeTransfer(_msgSender(), _amount);
+        _burn(_msgSender(), _amount);
+        emit EmergencyWithdraw(_msgSender(), _amount);
+    }
+
+    function migrate(address xTRI_, uint256 xTRIAmount_) external {
+        IERC20(xTRI_).safeTransferFrom(_msgSender(), address(this), xTRIAmount_);
+
+        uint256 triBalanceBefore_ = tri.balanceOf(address(this));
+        ITriBar(xTRI_).leave(xTRIAmount_);
+        uint256 triBalanceUnstaked_ = tri.balanceOf(address(this)).sub(triBalanceBefore_);
+
+        uint256 _fee = triBalanceUnstaked_.mul(depositFeePercent).div(DEPOSIT_FEE_PERCENT_PRECISION);
+        uint256 _amountMinusFee = triBalanceUnstaked_.sub(_fee);
+
+        _beforeReceive(_msgSender(), _amountMinusFee);
+
+        internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
+        _mint(_msgSender(), _amountMinusFee);
+        emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
+    }    
 
     /**
      * @notice external harvest function to claim only rewards till this block
