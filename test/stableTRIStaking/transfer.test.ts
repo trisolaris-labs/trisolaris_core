@@ -14,6 +14,7 @@ describe("RevenueDistributionToken - Transfer", function () {
     this.deployer = deployer;
     this.user0 = user0;
     this.user1 = user1;
+    this.ZeroAddress = "0x0000000000000000000000000000000000000000"
 
     const triFactory = new Tri__factory(this.deployer);
     this.tri = await triFactory.deploy(this.deployer.address);
@@ -51,6 +52,28 @@ describe("RevenueDistributionToken - Transfer", function () {
     expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(depositAmount);
   });
 
+  it("pre-claim should revert if transfer reverts", async function () {
+    const depositAmount = 100;
+    await this.tri.mint(this.deployer.address, depositAmount);
+
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    await this.pTRI.connect(this.deployer).deposit(depositAmount);
+
+    expect(await this.tri.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+
+    await this.rewardToken.transfer(this.pTRI.address, depositAmount);
+
+    await expect(this.pTRI.connect(this.deployer).transfer(this.ZeroAddress, depositAmount)
+      ).to.be.revertedWith('ERC20: transfer to the zero address');;
+
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.rewardToken.balanceOf(this.user1.address)).to.equal(0);
+    expect(await this.rewardToken.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(0);
+  });
+
   it("should pre-claim before transferFrom", async function () {
     const depositAmount = 100;
     await this.tri.mint(this.deployer.address, depositAmount);
@@ -60,6 +83,8 @@ describe("RevenueDistributionToken - Transfer", function () {
 
     expect(await this.tri.balanceOf(this.pTRI.address)).to.equal(depositAmount);
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+
+    await this.rewardToken.transfer(this.pTRI.address, depositAmount);
 
     await this.pTRI.connect(this.deployer).approve(this.user1.address, depositAmount);
     let deployerpTRIAllowance = await this.pTRI
@@ -75,6 +100,37 @@ describe("RevenueDistributionToken - Transfer", function () {
     expect(await this.rewardToken.balanceOf(this.user1.address)).to.equal(0);
     expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(0);
     expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(depositAmount);
+  });
+
+  it("pre-claim should revert if transferFrom reverts", async function () {
+    const depositAmount = 100;
+    await this.tri.mint(this.deployer.address, depositAmount);
+
+    expect(await this.tri.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    await this.pTRI.connect(this.deployer).deposit(depositAmount);
+
+    expect(await this.tri.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+
+    await this.rewardToken.transfer(this.pTRI.address, depositAmount);
+
+    await this.pTRI.connect(this.deployer).approve(this.user1.address, depositAmount/2);
+    let deployerpTRIAllowance = await this.pTRI
+      .connect(this.deployer)
+      .allowance(this.deployer.address, this.user1.address);
+    expect(deployerpTRIAllowance).to.equal(depositAmount/2);
+
+    await expect(this.pTRI.connect(this.user1).transferFrom(
+      this.deployer.address, this.user1.address, depositAmount
+      )).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+    deployerpTRIAllowance = await this.pTRI.allowance(this.deployer.address, this.user1.address);
+    expect(deployerpTRIAllowance).to.equal(depositAmount/2);
+
+    expect(await this.rewardToken.balanceOf(this.deployer.address)).to.equal(0);
+    expect(await this.rewardToken.balanceOf(this.user1.address)).to.equal(0);
+    expect(await this.rewardToken.balanceOf(this.pTRI.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.deployer.address)).to.equal(depositAmount);
+    expect(await this.pTRI.balanceOf(this.user1.address)).to.equal(0);
   });
 
   it("should pre-claim zero before transfer if no claim", async function () {
