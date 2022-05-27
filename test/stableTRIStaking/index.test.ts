@@ -2,13 +2,13 @@ import { solidity } from "ethereum-waffle";
 import { ethers, network } from "hardhat";
 
 import chai from "chai";
-import { BigNumber } from "ethers";
 
 chai.use(solidity);
 const { expect } = chai;
 
 describe("Stable TRI Staking", function () {
   before(async function () {
+    await ethers.provider.send("hardhat_reset", []);
     this.signers = await ethers.getSigners();
     this.owner = this.signers[0];
     this.alice = this.signers[1];
@@ -62,7 +62,7 @@ describe("Stable TRI Staking", function () {
       expect(await this.tri.balanceOf(this.alice.address)).to.be.equal(ethers.utils.parseEther("900"));
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(ethers.utils.parseEther("97"));
       // 100 * 0.97 = 97
-      expect((await this.pTRI.getUserInfo(this.alice.address, this.tri.address))[0]).to.be.equal(
+      expect((await this.pTRI.getUserInfo(this.alice.address, this.rewardToken.address))[0]).to.be.equal(
         ethers.utils.parseEther("97"),
       );
 
@@ -72,7 +72,7 @@ describe("Stable TRI Staking", function () {
         // 97 + 200 * 0.97 = 291
       );
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(ethers.utils.parseEther("291"));
-      expect((await this.pTRI.getUserInfo(this.bob.address, this.tri.address))[0]).to.be.equal(
+      expect((await this.pTRI.getUserInfo(this.bob.address, this.rewardToken.address))[0]).to.be.equal(
         ethers.utils.parseEther("194"),
       );
 
@@ -80,19 +80,19 @@ describe("Stable TRI Staking", function () {
       expect(await this.tri.balanceOf(this.carol.address)).to.be.equal(ethers.utils.parseEther("700"));
       // 291 + 300 * 0.97
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(ethers.utils.parseEther("582"));
-      expect((await this.pTRI.getUserInfo(this.carol.address, this.tri.address))[0]).to.be.equal(
+      expect((await this.pTRI.getUserInfo(this.carol.address, this.rewardToken.address))[0]).to.be.equal(
         ethers.utils.parseEther("291"),
       );
 
       await this.pTRI.connect(this.alice).withdraw(ethers.utils.parseEther("97"));
       expect(await this.tri.balanceOf(this.alice.address)).to.be.equal(ethers.utils.parseEther("997"));
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(ethers.utils.parseEther("485"));
-      expect((await this.pTRI.getUserInfo(this.alice.address, this.tri.address))[0]).to.be.equal(0);
+      expect((await this.pTRI.getUserInfo(this.alice.address, this.rewardToken.address))[0]).to.be.equal(0);
 
       await this.pTRI.connect(this.carol).withdraw(ethers.utils.parseEther("100"));
       expect(await this.tri.balanceOf(this.carol.address)).to.be.equal(ethers.utils.parseEther("800"));
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(ethers.utils.parseEther("385"));
-      expect((await this.pTRI.getUserInfo(this.carol.address, this.tri.address))[0]).to.be.equal(
+      expect((await this.pTRI.getUserInfo(this.carol.address, this.rewardToken.address))[0]).to.be.equal(
         ethers.utils.parseEther("191"),
       );
 
@@ -101,7 +101,7 @@ describe("Stable TRI Staking", function () {
       expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(
         ethers.utils.parseEther("384.999999999999999999"),
       );
-      expect((await this.pTRI.getUserInfo(this.bob.address, this.tri.address))[0]).to.be.equal(
+      expect((await this.pTRI.getUserInfo(this.bob.address, this.rewardToken.address))[0]).to.be.equal(
         ethers.utils.parseEther("193.999999999999999999"),
       );
     });
@@ -426,6 +426,11 @@ describe("Stable TRI Staking", function () {
       await this.pTRI.connect(this.owner).removeRewardToken(token1.address);
       expect(await this.pTRI.isRewardToken(token1.address)).to.be.equal(false);
       expect(await this.pTRI.rewardTokensLength()).to.be.equal(1);
+
+      // only owner can remove a token
+      await expect(this.pTRI.connect(this.bob).removeRewardToken(token1.address)).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
     });
 
     it("should allow setting a new deposit fee, only by owner", async function () {
