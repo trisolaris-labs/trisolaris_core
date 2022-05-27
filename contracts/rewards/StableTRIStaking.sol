@@ -410,9 +410,9 @@ contract StableTRIStaking is Ownable, ERC20 {
     /**
      * @notice external harvest function to claim only rewards till this block
      */
-    function harvest() external {
-        UserInfo storage user = userInfo[_msgSender()];
-        _harvest(_msgSender(), user.amount, user.amount);
+    function harvest(address _receiver) external {
+        UserInfo storage user = userInfo[_receiver];
+        _harvest(_receiver, user.amount, user.amount);
     }
 
     /**
