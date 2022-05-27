@@ -469,6 +469,15 @@ describe("Stable TRI Staking", function () {
       const userInfo = await this.pTRI.getUserInfo(this.pTRI.address, this.rewardToken.address);
       expect(userInfo[0]).to.be.equal(0);
       expect(userInfo[1]).to.be.equal(0);
+      expect(await this.pTRI.balanceOf(this.alice.address)).to.be.equal(0);
+
+      // Deposit again
+      await this.pTRI.connect(this.alice).deposit(ethers.utils.parseEther("991"));
+      await this.pTRI.connect(this.alice).emergencyWithdraw();
+
+      expect(await this.pTRI.balanceOf(this.alice.address)).to.be.equal(0);
+      expect(await this.tri.balanceOf(this.pTRI.address)).to.be.equal(0);
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal("961270000000000000000");
     });
 
     it("allows owner to update fee collector", async function () {

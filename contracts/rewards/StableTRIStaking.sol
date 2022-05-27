@@ -272,6 +272,7 @@ contract StableTRIStaking is Ownable, ERC20 {
         }
         internalTRIBalance = internalTRIBalance.sub(_amount);
         tri.safeTransfer(_msgSender(), _amount);
+        _burn(_msgSender(), _amount);
         emit EmergencyWithdraw(_msgSender(), _amount);
     }
 
