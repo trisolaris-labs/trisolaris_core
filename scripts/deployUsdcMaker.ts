@@ -38,6 +38,7 @@ async function main(): Promise<DeployedContracts> {
 
   const usdcMakerConstructorArgs = [factoryAddress, stableLPMaker, usdcAddress, wethAddress];
   console.log(...usdcMakerConstructorArgs);
+
   const usdcMakerFactory = await UsdcMaker.connect(deployer);
   const usdcMaker = await usdcMakerFactory.deploy(
     usdcMakerConstructorArgs[0],
