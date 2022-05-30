@@ -535,6 +535,23 @@ describe("Stable TRI Staking", function () {
       // bob claims another ~0.5
       expect(await this.rewardToken.balanceOf(this.bob.address)).to.be.above(ethers.utils.parseEther("0.99"));
     });
+
+    it("Users should only be able to deposit TRI", async function () {
+      const tempUser = this.signers[6];
+      expect(await this.tri.balanceOf(tempUser.address)).to.equal(0);
+      expect(await this.rewardToken.balanceOf(tempUser.address)).to.equal(0);
+      expect(await this.pTRI.balanceOf(tempUser.address)).to.equal(0);
+      
+      await this.rewardToken.transfer(tempUser.address, ethers.utils.parseEther("1000"));
+      
+      expect(await this.rewardToken.balanceOf(tempUser.address)).to.equal(ethers.utils.parseEther("1000"));
+
+      await expect(this.pTRI.connect(tempUser).deposit(ethers.utils.parseEther("1000"))).to.be.revertedWith(
+        "ERC20: transfer amount exceeds balance",
+      );
+
+      expect(await this.pTRI.balanceOf(tempUser.address)).to.equal(0);
+    });
   });
 });
 
