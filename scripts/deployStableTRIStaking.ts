@@ -8,7 +8,10 @@ import { ethers, run } from "hardhat";
 const USD_TLP_ADDRESS = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 const TRI_ADDRESS = "0xfa94348467f64d5a457f75f8bc40495d33c65abb";
 
-async function main(): Promise<void> {
+type DeployedContracts = {
+  pTRI: string;
+};
+async function main(): Promise<DeployedContracts> {
   // Hardhat always runs the compile task when running scripts through it.
   // If this runs in a standalone fashion you may want to call compile manually
   // to make sure everything is compiled
@@ -22,7 +25,7 @@ async function main(): Promise<void> {
   console.log(`Account balance: ${balance.toString()}`);
 
   const pTRIFactory: StableTRIStaking__factory = await ethers.getContractFactory("StableTRIStaking");
-  const factory = await pTRIFactory.deploy(
+  const pTRI = await pTRIFactory.deploy(
     "pTRI",
     "pTRI",
     USD_TLP_ADDRESS,
@@ -30,12 +33,12 @@ async function main(): Promise<void> {
     deployer.address, // Should this be treasury??
     0, // Original: ethers.utils.parseEther("0.03"); Disable fee for now
   );
-  await factory.deployed();
+  await pTRI.deployed();
 
-  console.log(`pTRI address: ${factory.address}`);
+  console.log(`pTRI address: ${pTRI.address}`);
 
   await run("verify:verify", {
-    address: factory.address,
+    address: pTRI.address,
     constructorArguments: [
       "pTRI",
       "pTRI",
@@ -45,13 +48,12 @@ async function main(): Promise<void> {
       0, // Original: ethers.utils.parseEther("0.03"); Disable fee for now
     ],
   });
+
+  const deployedContracts: DeployedContracts = {
+    pTRI: pTRI.address,
+  };
+
+  return deployedContracts;
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch((error: Error) => {
-    console.error(error);
-    process.exit(1);
-  });
+export { main };

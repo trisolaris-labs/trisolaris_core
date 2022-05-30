@@ -9,7 +9,8 @@ export const triBarAddress = "0x802119e4e253D5C19aA06A5d567C5a41596D6803";
 export const triMakerAddress = "0xe793455c9728fc91A3E5a33FAfF9eB2F228aE151";
 export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7";
 export const multiSigAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
-export const stableLPMaker = "0x035B1c3d2b6D89906697F67bf6D56F6eEdb3120C" // TODO: Replace with real stableLpMaker
+// TODO: Replace with real stableLPMaker
+export const stableLPMaker = "0x035B1c3d2b6D89906697F67bf6D56F6eEdb3120C";
 
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
 export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
@@ -59,8 +60,6 @@ export const threePoolSwapUtilsAddress = "0x0564d68404608599e8c567A0bD74F90a942A
 export const threePoolSwapFlashLoanAddress = "0x458459E48dbAC0C8Ca83F8D0b7b29FEfE60c3970";
 export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 
-
-
 //TODO change this to deployed pTRI contract
-export const pTri = "0x04ED68E80a3c36A61E991a51B656FB733712cec8";
+export const pTRI = "0x04ED68E80a3c36A61E991a51B656FB733712cec8";
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
