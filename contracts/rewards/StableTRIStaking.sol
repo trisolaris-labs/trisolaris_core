@@ -26,18 +26,17 @@ contract StableTRIStaking is Ownable, ERC20 {
 
     /// @notice Info of each user
     struct UserInfo {
-        uint256 amount;
         mapping(IERC20 => uint256) rewardDebt;
         /**
          * @notice We do some fancy math here. Basically, any point in time, the amount of TRIs
          * entitled to a user but is pending to be distributed is:
          *
-         *   pending reward = (user.amount * accRewardPerShare) - user.rewardDebt[token]
+         *   pending reward = (balanceOf(user) * accRewardPerShare) - user.rewardDebt[token]
          *
          * Whenever a user deposits or withdraws TRI. Here's what happens:
          *   1. accRewardPerShare (and `lastRewardBalance`) gets updated
          *   2. User receives the pending reward sent to his/her address
-         *   3. User's `amount` gets updated
+         *   3. User's `balance` gets updated
          *   4. User's `rewardDebt[token]` gets updated
          */
     }
@@ -134,9 +133,9 @@ contract StableTRIStaking is Ownable, ERC20 {
         MAX_DEPOSIT_FEE_PERCENT = _tempMaxDepositFeePercent;
     }
 
-    /* 
-        * onlyOwner functions
-    */
+    /*
+     * onlyOwner functions
+     */
 
     /**
      * @notice Add a reward token
@@ -197,8 +196,8 @@ contract StableTRIStaking is Ownable, ERC20 {
     }
 
     /*
-        * View only functions
-    */
+     * View only functions
+     */
 
     /**
      * @notice Get user info
@@ -210,7 +209,7 @@ contract StableTRIStaking is Ownable, ERC20 {
     function getUserInfo(address _user, IERC20 _rewardToken) external view returns (uint256, uint256) {
         require(isRewardToken[_rewardToken], "StableTRIStaking: reward token is not a reward token");
         UserInfo storage user = userInfo[_user];
-        return (user.amount, user.rewardDebt[_rewardToken]);
+        return (balanceOf(_user), user.rewardDebt[_rewardToken]);
     }
 
     /**
@@ -243,18 +242,20 @@ contract StableTRIStaking is Ownable, ERC20 {
             );
         }
         return
-            user.amount.mul(_accRewardTokenPerShare).div(ACC_REWARD_PER_SHARE_PRECISION).sub(user.rewardDebt[_token]);
+            balanceOf(_user).mul(_accRewardTokenPerShare).div(ACC_REWARD_PER_SHARE_PRECISION).sub(
+                user.rewardDebt[_token]
+            );
     }
 
     /*
-        * Internal functions
-    */
+     * Internal functions
+     */
 
     /**
      * @notice internal harvest function to claim only rewards till this block
      * @param userAddress The address of the user which has to claim the rewards
-     * @param _previousAmount Previous amount of the user in userInfo
-     * @param _newAmount New amount of the user in userInfo
+     * @param _previousAmount Previous balance of the user
+     * @param _newAmount New balance of the user in
      */
     function _harvest(
         address userAddress,
@@ -292,11 +293,11 @@ contract StableTRIStaking is Ownable, ERC20 {
      */
     function _beforeSend(address _sender, uint256 _amount) internal {
         // Managing userInfo + pendingTokens of the sender
-        UserInfo storage userSender = userInfo[_sender];
-        uint256 _previousAmountSender = userSender.amount;
-        require(_amount <= _previousAmountSender, "StableTRIStaking: withdraw amount exceeds balance");
-        uint256 _newAmountSender = userSender.amount.sub(_amount);
-        userSender.amount = _newAmountSender;
+        uint256 _previousAmountSender = balanceOf(_sender);
+        uint256 _newAmountSender = _previousAmountSender.sub(
+            _amount,
+            "StableTRIStaking: withdraw amount exceeds balance"
+        );
         _harvest(_sender, _previousAmountSender, _newAmountSender);
     }
 
@@ -308,10 +309,8 @@ contract StableTRIStaking is Ownable, ERC20 {
      */
     function _beforeReceive(address _recipient, uint256 _amount) internal {
         // Managing userInfo + pendingTokens of the receiver
-        UserInfo storage userRecepient = userInfo[_recipient];
-        uint256 _previousAmountRecepient = userRecepient.amount;
-        uint256 _newAmountRecepient = userRecepient.amount.add(_amount);
-        userRecepient.amount = _newAmountRecepient;
+        uint256 _previousAmountRecepient = balanceOf(_recipient);
+        uint256 _newAmountRecepient = _previousAmountRecepient.add(_amount);
         _harvest(_recipient, _previousAmountRecepient, _newAmountRecepient);
     }
 
@@ -368,7 +367,7 @@ contract StableTRIStaking is Ownable, ERC20 {
             _token.safeTransfer(_to, _amount);
         }
     }
-    
+
     /**
      * @notice Deposit TRI for reward token allocation
      * @param _amount The amount of TRI to deposit
@@ -404,9 +403,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      */
     function emergencyWithdraw() external {
         UserInfo storage user = userInfo[_msgSender()];
-
-        uint256 _amount = user.amount;
-        user.amount = 0;
+        uint256 _amount = balanceOf(_msgSender());
         uint256 _len = rewardTokens.length;
         for (uint256 i; i < _len; i++) {
             IERC20 _token = rewardTokens[i];
@@ -433,14 +430,14 @@ contract StableTRIStaking is Ownable, ERC20 {
         internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
         _mint(_msgSender(), _amountMinusFee);
         emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
-    }    
+    }
 
     /**
      * @notice external harvest function to claim only rewards till this block
      */
     function harvest(address _receiver) external {
-        UserInfo storage user = userInfo[_receiver];
-        _harvest(_receiver, user.amount, user.amount);
+        uint256 _amount = balanceOf(_receiver);
+        _harvest(_receiver, _amount, _amount);
     }
 
     /**
@@ -449,7 +446,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      * Requirements:
      *
      * - `recipient` cannot be the zero address.
-     * - the caller must have a balance qnd userInfo.amount of at least `amount`.
+     * - the caller must have a balance of at least `amount`.
      */
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         // manage user info and pendingRewards
