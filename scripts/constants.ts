@@ -60,5 +60,4 @@ export const threePoolSwapUtilsAddress = "0x0564d68404608599e8c567A0bD74F90a942A
 export const threePoolSwapFlashLoanAddress = "0x458459E48dbAC0C8Ca83F8D0b7b29FEfE60c3970";
 export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 
-export const pTRI = "0x4F0284Fd38df527CC70d0c53bC0BE67DECCcAF25";
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
