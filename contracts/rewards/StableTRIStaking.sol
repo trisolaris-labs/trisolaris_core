@@ -255,7 +255,7 @@ contract StableTRIStaking is Ownable, ERC20 {
      * @notice internal harvest function to claim only rewards till this block
      * @param userAddress The address of the user which has to claim the rewards
      * @param _previousAmount Previous balance of the user
-     * @param _newAmount New balance of the user in
+     * @param _newAmount New balance of the user
      */
     function _harvest(
         address userAddress,
@@ -286,9 +286,10 @@ contract StableTRIStaking is Ownable, ERC20 {
     }
 
     /**
-     * @notice Internal function called before an address sends pTRI tokens
-     * function manages userInfo and distributes any outstanding rewards
-     * @param _sender The address of the user is sending pTRI tokens
+     * @notice Internal function called before an address sends pTRI tokens.
+     * Function manages the sender's userInfo and distributes any outstanding
+     * rewards prior to sending pTRI tokens.
+     * @param _sender The address of the user sending pTRI tokens
      * @param _amount The amount of the tokens being sent
      */
     function _beforeSend(address _sender, uint256 _amount) internal {
@@ -302,8 +303,9 @@ contract StableTRIStaking is Ownable, ERC20 {
     }
 
     /**
-     * @notice Internal function called before an address receives pTRI tokens
-     * function manages userInfo and distributes any outstanding rewards
+     * @notice Internal function called before an address receives pTRI tokens.
+     * Function manages the recipient's userInfo and distributes any outstanding
+     * rewards prior to reciving pTRI tokens.
      * @param _recipient The address of the user which is receiving pTRI tokens
      * @param _amount The amount of the tokens being received
      */
