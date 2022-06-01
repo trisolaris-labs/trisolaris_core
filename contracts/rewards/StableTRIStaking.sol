@@ -429,6 +429,9 @@ contract StableTRIStaking is Ownable, ERC20 {
 
         _beforeReceive(_msgSender(), _amountMinusFee);
 
+        if (depositFeePercent > 0) {
+            tri.safeTransferFrom(_msgSender(), feeCollector, _fee);
+        }
         internalTRIBalance = internalTRIBalance.add(_amountMinusFee);
         _mint(_msgSender(), _amountMinusFee);
         emit Migrated(_msgSender(), xTRI_, triBalanceUnstaked_, xTRIAmount_);
