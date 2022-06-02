@@ -17,17 +17,18 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const rewarderAddress = "0x78EdEeFdF8c3ad827228d07018578E89Cf159Df1"
+  const contractAddress = "0x3838956710bcc9D122Dd23863a0549ca8D5675D6" //Masterchef V2
+  const opsmultisig = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1"
 
-  const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  const rewarder = complexRewarder.attach(rewarderAddress);
-  console.log(`Complex Rewarder address: ${rewarder.address}`);
+  const mcv2 = await ethers.getContractFactory("MasterChefV2");
+  const chefv2 = mcv2.attach(contractAddress);
+  console.log(`MasterChef V2 address: ${chefv2.address}`);
 
-  const tx = await rewarder.connect(deployer).transferOwnership(donDeployerAddress);
+  const tx = await chefv2.connect(deployer).transferOwnership(opsmultisig);
   const receipt = await tx.wait()
   console.log(receipt)
   
-  const newOwner = await rewarder.owner();
+  const newOwner = await chefv2.owner();
   console.log("New owner", newOwner)
 }
 
