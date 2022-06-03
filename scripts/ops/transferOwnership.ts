@@ -18,13 +18,13 @@ async function main(): Promise<void> {
   console.log(`Account balance: ${balance.toString()}`);
 
   const contractAddress = "0x3838956710bcc9D122Dd23863a0549ca8D5675D6" //Masterchef V2
-  const opsmultisig = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1"
+  const chainAddress = "0xF5E2C6558d247651595f7EFa423010A2e533bea8"
 
   const mcv2 = await ethers.getContractFactory("MasterChefV2");
   const chefv2 = mcv2.attach(contractAddress);
   console.log(`MasterChef V2 address: ${chefv2.address}`);
 
-  const tx = await chefv2.connect(deployer).transferOwnership(opsmultisig);
+  const tx = await chefv2.connect(deployer).transferOwnership(chainAddress);
   const receipt = await tx.wait()
   console.log(receipt)
   
