@@ -8,7 +8,8 @@ export const chefV2Address = "0x3838956710bcc9D122Dd23863a0549ca8D5675D6";
 export const triBarAddress = "0x802119e4e253D5C19aA06A5d567C5a41596D6803";
 export const triMakerAddress = "0xe793455c9728fc91A3E5a33FAfF9eB2F228aE151";
 export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7";
-export const multiSigAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
+export const treasuryMultiSigAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
+export const opsMultisigAddress = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1"
 export const stableLPMaker = "0xcB251907382aEB3C2edAb766561D5F4E6c78E3FF";
 export const usdcMaker = "0x5EBd5e963A00500B6a1234c621811c52AF0aAade";
 
