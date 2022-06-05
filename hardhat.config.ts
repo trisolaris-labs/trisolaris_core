@@ -2,6 +2,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "hardhat-watcher";
 
 import "./tasks/accounts";
 import "./tasks/clean";
@@ -9,11 +10,9 @@ import "./tasks/clean";
 import { resolve } from "path";
 
 import { config as dotenvConfig } from "dotenv";
-import { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
-
 
 // Ensure that we have all the environment variables we need.
 const mnemonic: string | undefined = process.env.MNEMONIC;
@@ -36,7 +35,7 @@ if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
 }
 
-const config: HardhatUserConfig = {
+const config = {
   defaultNetwork: "hardhat",
   gasReporter: {
     currency: "USD",
@@ -84,7 +83,7 @@ const config: HardhatUserConfig = {
         path: "m/44'/60'/0'/0",
       },
       chainId: 1313161554,
-    }
+    },
   },
   paths: {
     artifacts: "./artifacts",
@@ -126,15 +125,46 @@ const config: HardhatUserConfig = {
           },
         },
       },
+      {
+        version: "0.7.6",
+        settings: {
+          metadata: {
+            // Not including the metadata hash
+            // https://github.com/paulrberg/solidity-template/issues/31
+            bytecodeHash: "none",
+          },
+          // Disable the optimizer when debugging
+          // https://hardhat.org/hardhat-network/#solidity-optimizer-support
+          optimizer: {
+            enabled: true,
+            runs: 800,
+          },
+        },
+      },
     ],
   },
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
   },
+  watcher: {
+    compilation: {
+      tasks: ["compile"],
+      files: ["./contracts"],
+      ignoredFiles: ["**/.vscode"],
+      verbose: true,
+    },
+
+    test: {
+      tasks: [{ command: "test", params: { testFiles: ["{path}"] } }],
+      files: ["./test/**/*"],
+      ignoredFiles: ["**/.vscode"],
+      verbose: true,
+    },
+  },
   etherscan: {
     apiKey: etherscanKey,
-  }
+  },
 };
 
 export default config;
