@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { usdcMaker } from "../constants";
+import { usdcMakerAddress } from "../constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -18,10 +18,10 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const UsdcMaker = await ethers.getContractFactory("UsdcMaker");
+  const UsdcMakerFactory = await ethers.getContractFactory("UsdcMaker");
 
-  const usdcMakerInstance = UsdcMaker.attach(usdcMaker);
-  console.log(`UsdcMaker attached at: ${usdcMakerInstance.address}`);
+  const usdcMaker = UsdcMakerFactory.attach(usdcMakerAddress);
+  console.log(`UsdcMaker attached at: ${usdcMaker.address}`);
 
   const bridges = [
     ["0xc42c30ac6cc15fac9bd938618bcaa1a1fae8501d", "0xb12bfca5a55806aaf64e99521918a4bf0fc40802"],
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
 
   async function execute() {
     for (const [token, bridge] of bridges) {
-      const tx = await usdcMakerInstance.connect(deployer).setBridge(token, bridge);
+      const tx = await usdcMaker.connect(deployer).setBridge(token, bridge);
       console.log(`Set bridge ${token} to ${bridge}`);
 
       await tx.wait(2);
