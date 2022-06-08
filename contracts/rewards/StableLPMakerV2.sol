@@ -15,7 +15,7 @@ contract StableLPMakerV2 is Ownable {
     // tlpToken is the trisolaris lp token address
     // dao is the dao address that receives funds
 
-    ISwap public stableSwap;
+    ISwap public threePoolStableSwap;
     address public pTri;
     address private immutable usn;
     address private immutable usdc;
@@ -39,7 +39,7 @@ contract StableLPMakerV2 is Ownable {
     event LogLpTokensSentToDao(uint256 daoAmount);
 
     constructor(
-        address _stableSwap,
+        address _threePoolStableSwap,
         address _pTri,
         address _usn,
         address _usdt,
@@ -47,7 +47,7 @@ contract StableLPMakerV2 is Ownable {
         address _tlpToken,
         address _dao
     ) public {
-        stableSwap = ISwap(_stableSwap);
+        threePoolStableSwap = ISwap(_threePoolStableSwap);
         pTri = _pTri;
         usn = _usn;
         usdt = _usdt;
@@ -57,9 +57,9 @@ contract StableLPMakerV2 is Ownable {
 
         // Max approve transferFrom the StableSwap contract
         uint256 maxIntType = type(uint256).max;
-        IERC20(_usn).approve(_stableSwap, maxIntType);
-        IERC20(_usdc).approve(_stableSwap, maxIntType);
-        IERC20(_usdt).approve(_stableSwap, maxIntType);
+        IERC20(_usn).approve(_threePoolStableSwap, maxIntType);
+        IERC20(_usdc).approve(_threePoolStableSwap, maxIntType);
+        IERC20(_usdt).approve(_threePoolStableSwap, maxIntType);
     }
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
@@ -88,13 +88,13 @@ contract StableLPMakerV2 is Ownable {
         emit LogSetdao(oldDao, dao);
     }
 
-    function setprotocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
+    function setProtocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
         require(_polPercent <= 100, "POL is too high");
-        uint256 oldpolPercent;
-        oldpolPercent = polPercent;
+        uint256 oldPolPercent;
+        oldPolPercent = polPercent;
         polPercent = _polPercent;
 
-        emit LogProtocolOwnedLiquidity(oldpolPercent, polPercent);
+        emit LogProtocolOwnedLiquidity(oldPolPercent, polPercent);
     }
 
     // Emergency Withdraw function
@@ -148,7 +148,7 @@ contract StableLPMakerV2 is Ownable {
         ma[0] = usdcAmount;
         ma[1] = usdtAmount;
         ma[2] = usnAmount;
-        stableSwap.addLiquidity(ma, 0, block.timestamp + 60);
+        threePoolStableSwap.addLiquidity(ma, 0, block.timestamp + 60);
 
         emit LogAddliquidityToStableSwap(usdcAmount, usdtAmount, usnAmount);
     }
@@ -193,7 +193,7 @@ contract StableLPMakerV2 is Ownable {
             withdrawStableTokenFees(stableSwaps[i]);
         }
 
-        // convert set of stable tokens to usdc, usdt or usdc
+        // convert set of stable tokens to usdc, usdt or usn
         for (uint256 i = 0; i < stableTokensFrom.length; i++) {
             swapStableTokens(swaps[i], stableTokensFrom[i], stableTokensTo[i]);
         }
