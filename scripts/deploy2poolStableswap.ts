@@ -2,13 +2,18 @@
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import {
-  ethers,
-  // , run
-} from "hardhat";
+import { ethers, run } from "hardhat";
 import { usdcAddress, usdtAddress } from "./constants";
 
-async function main(): Promise<void> {
+type DeployedContracts = {
+  lpTokenBaseAddress: string;
+  amplificationUtilsAddress: string;
+  swapUtilsAddress: string;
+  swapFlashLoanAddress: string;
+  lpTokenAddress: string;
+};
+
+async function main(): Promise<DeployedContracts> {
   // Hardhat always runs the compile task when running scripts through it.
   // If this runs in a standalone fashion you may want to call compile manually
   // to make sure everything is compiled
@@ -29,7 +34,6 @@ async function main(): Promise<void> {
   const LpTokenFactory = await ethers.getContractFactory("LPToken", deployer);
   const lpTokenBase = await LpTokenFactory.deploy();
   await lpTokenBase.deployed();
-  await lpTokenBase.initialize("Test Token", "TEST");
   console.log(`LPToken Base deployed at ${lpTokenBase.address}`);
 
   const AmpUtilsFactory = await ethers.getContractFactory("AmplificationUtils", deployer);
@@ -56,7 +60,7 @@ async function main(): Promise<void> {
   const TOKEN_ADDRESSES = [usdc.address, usdt.address];
   const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals];
   const LP_TOKEN_NAME = "Trisolaris USDC/USDT";
-  const LP_TOKEN_SYMBOL = "USD TLP";
+  const LP_TOKEN_SYMBOL = "USDC/USDT TLP";
   const INITIAL_A = 1000;
   const SWAP_FEE = 4e6; // 4bps
   const ADMIN_FEE = 10 * 10e8; // 100 %
@@ -78,37 +82,38 @@ async function main(): Promise<void> {
   console.log(`lpToken deployed at ${lpToken.address}`);
 
   // Verify contracts
+
   // await run("verify:verify", {
-  //   address: "0xB77190A4fD2528d2Bb778B409FB5224f7ffaCB24",
+  //   address: amplificationUtils.address,
   //   constructorArguments: [],
   // });
 
   // await run("verify:verify", {
-  //   address: "0x114ECaa70256aFAd393f733aA4B4bF61c8959fc2",
+  //   address: lpTokenBase.address,
   //   constructorArguments: [],
   // });
 
   // await run("verify:verify", {
-  //   address: "0x0564d68404608599e8c567A0bD74F90a942A69A0",
+  //   address: swapUtils.address,
   //   constructorArguments: [],
   // });
 
   // await run("verify:verify", {
-  //   address: "0x458459E48dbAC0C8Ca83F8D0b7b29FEfE60c3970",
+  //   address: swapFlashLoan.address,
   //   constructorArguments: [],
   // });
 
-  // await run("verify:verify", {
-  //   address: "0x87BCC091d0A7F9352728100268Ac8D25729113bB",
-  //   constructorArguments: [],
-  // });
+  // Can't verify lpToken because it's internally deployed via swapFlashLoan constructor
+
+  const deployedContracts: DeployedContracts = {
+    lpTokenBaseAddress: lpTokenBase.address,
+    amplificationUtilsAddress: amplificationUtils.address,
+    swapUtilsAddress: swapUtils.address,
+    swapFlashLoanAddress: swapFlashLoan.address,
+    lpTokenAddress: lpToken.address,
+  };
+
+  return deployedContracts;
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch((error: Error) => {
-    console.error(error);
-    process.exit(1);
-  });
+export { main };
