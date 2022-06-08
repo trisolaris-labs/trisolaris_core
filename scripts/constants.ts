@@ -31,6 +31,9 @@ export const stnearAddress = "0x07F9F7f963C5cD2BBFFd30CcfB964Be114332E30";
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 export const usnAddress = "0x5183e1b1091804bc2602586919e6880ac1cf2896";
 export const usdTLPAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
+export const padAddress = "0x34F291934b88c7870B7A17835B926B264fc13a81";
+export const metaAddress = "0xc21Ff01229e982d7c8b8691163B0A3Cb8F357453";
+export const brrrAddress = "0x0240aE04c9F47B91Cf47Ca2E7ef44c9De0D385Ac"
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
 export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
