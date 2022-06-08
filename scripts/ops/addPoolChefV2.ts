@@ -13,23 +13,24 @@ async function main(): Promise<void> {
   // await run("compile");
   // We get the contract to deploy
   const allocPoint = 0;
+
+  // THIS IS ONLT ITEM TO CHANGE
   const lpAddresses = [
-    "0x5eeC60F348cB1D661E4A5122CF4638c7DB7A886e",
-    "0xd1654a7713617d41A8C9530Fb9B948d00e162194",
+    "0x6a29e635BCaB8aBeE1491059728e3D6D11d6A114",//pad-near
+    "0x120e713AD36eCBff171FC8B7cf19FA8B6f6Ba50C",//stnear-tri
+    "0x71dBEB011EAC90C51b42854A77C45C1E53242698" //brrr-wnear
   ];
   const rewarderAddress = zeroAddress;
 
-  const [_, deployer] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[7]
   console.log(`Adding pools contracts with ${deployer.address}`);
 
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
   const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
-  const triToken = await ethers.getContractFactory("Tri"); // REPLACE THIS WITH REAL TRI
 
-  const tri = triToken.attach(triAddress);
-  console.log(`Tri address: ${tri.address}`);
   const chef = masterChefV2.attach(chefV2Address);
   console.log(`Chef address: ${chef.address}`);
 
