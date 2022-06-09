@@ -63,7 +63,7 @@ async function main(): Promise<DeployedContracts> {
   const LP_TOKEN_SYMBOL = "USDC/USDT TLP";
   const INITIAL_A = 1000;
   const SWAP_FEE = 4e6; // 4bps
-  const ADMIN_FEE = 10 * 10e8; // 100 %
+  const ADMIN_FEE = 99 * 10e7; // 99%, less than 100% lol
 
   await swapFlashLoan
     .connect(deployer)
