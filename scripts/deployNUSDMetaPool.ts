@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   // We get the contract to deploy
 
   // Constants
-  const [deployer] = await ethers.getSigners();
+  const [_, deployer] = await ethers.getSigners();
   console.log(`Deploying contracts with ${deployer.address}`);
 
   // Deploy usdc-usdt 2pool base stableswap
