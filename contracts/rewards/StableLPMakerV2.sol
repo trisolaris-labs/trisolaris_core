@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
+import "hardhat/console.sol";
+
 
 contract StableLPMakerV2 is Ownable {
     using SafeMath for uint256;
@@ -54,12 +56,6 @@ contract StableLPMakerV2 is Ownable {
         usdc = _usdc;
         tlpToken = _tlpToken;
         dao = _dao;
-
-        // Max approve transferFrom the StableSwap contract
-        uint256 maxIntType = type(uint256).max;
-        IERC20(_usn).approve(_threePoolStableSwap, maxIntType);
-        IERC20(_usdc).approve(_threePoolStableSwap, maxIntType);
-        IERC20(_usdt).approve(_threePoolStableSwap, maxIntType);
     }
 
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
@@ -139,16 +135,23 @@ contract StableLPMakerV2 is Ownable {
     }
 
     function addLiquidityToStableSwap() public onlyEOA {
-        uint256 usnAmount = IERC20(usn).balanceOf(address(this));
+        // get balances
         uint256 usdcAmount = IERC20(usdc).balanceOf(address(this));
         uint256 usdtAmount = IERC20(usdt).balanceOf(address(this));
+        uint256 usnAmount = IERC20(usn).balanceOf(address(this));
         require((usnAmount > 0 || usdcAmount > 0 || usdtAmount > 0), "StableLPMaker: no Usn to add liquidity");
 
-        uint256[] memory ma = new uint256[](3);
-        ma[0] = usdcAmount;
-        ma[1] = usdtAmount;
-        ma[2] = usnAmount;
-        threePoolStableSwap.addLiquidity(ma, 0, block.timestamp + 60);
+        // approve transferFrom
+        IERC20(usn).approve(address(threePoolStableSwap), usnAmount);
+        IERC20(usdc).approve(address(threePoolStableSwap), usdcAmount);
+        IERC20(usdt).approve(address(threePoolStableSwap), usdtAmount);
+
+        // add liquidity
+        uint256[] memory tokenAmounts = new uint256[](3);
+        tokenAmounts[threePoolStableSwap.getTokenIndex(usdc)] = usdcAmount;
+        tokenAmounts[threePoolStableSwap.getTokenIndex(usdt)] = usdtAmount;
+        tokenAmounts[threePoolStableSwap.getTokenIndex(usn)] = usnAmount;
+        threePoolStableSwap.addLiquidity(tokenAmounts, 0, block.timestamp + 60);
 
         emit LogAddliquidityToStableSwap(usdcAmount, usdtAmount, usnAmount);
     }
@@ -192,16 +195,20 @@ contract StableLPMakerV2 is Ownable {
         for (uint256 i = 0; i < stableSwaps.length; i++) {
             withdrawStableTokenFees(stableSwaps[i]);
         }
+        console.log("Withdrew fees");
 
         // convert set of stable tokens to usdc, usdt or usn
         for (uint256 i = 0; i < stableTokensFrom.length; i++) {
             swapStableTokens(swaps[i], stableTokensFrom[i], stableTokensTo[i]);
         }
+        console.log("swapped tokens");
 
-        // Add USN liquidity to the stable swap
+        // Add liquidity to the stable swap
         addLiquidityToStableSwap();
+        console.log("added liquidity");
 
-        // Converted stable tokens to usn get sent to LP Maker
+        // Converted stable tokens get sent to pTRI
         sendLpToken();
+        console.log("sent LP tokens");
     }
 }
