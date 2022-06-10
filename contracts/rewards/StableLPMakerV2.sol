@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
-import "hardhat/console.sol";
-
 
 contract StableLPMakerV2 is Ownable {
     using SafeMath for uint256;
@@ -117,21 +115,16 @@ contract StableLPMakerV2 is Ownable {
 
     function swapStableTokens(
         address _stableSwap,
-        address tokenFrom,
-        address tokenTo
+        uint8 _tokenIndexFrom,
+        uint8 _tokenIndexTo
     ) public onlyEOA {
-        uint256 stableTokenFromAmount = IERC20(tokenFrom).balanceOf(address(this));
-        IERC20(tokenFrom).approve(_stableSwap, stableTokenFromAmount);
+        IERC20 _tokenFrom = ISwap(_stableSwap).getToken(_tokenIndexFrom);
+        uint256 stableTokenFromAmount = _tokenFrom.balanceOf(address(this));
+        _tokenFrom.approve(_stableSwap, stableTokenFromAmount);
         uint256 minAmount = stableTokenFromAmount.mul(999).div(1005);
-        ISwap(_stableSwap).swap(
-            ISwap(_stableSwap).getTokenIndex(tokenFrom),
-            ISwap(_stableSwap).getTokenIndex(tokenTo),
-            stableTokenFromAmount,
-            minAmount,
-            block.timestamp + 60
-        );
+        ISwap(_stableSwap).swap(_tokenIndexFrom, _tokenIndexTo, stableTokenFromAmount, minAmount, block.timestamp + 60);
 
-        emit LogSwapStableToken(tokenFrom, stableTokenFromAmount);
+        emit LogSwapStableToken(address(_tokenFrom), stableTokenFromAmount);
     }
 
     function addLiquidityToStableSwap() public onlyEOA {
@@ -177,38 +170,30 @@ contract StableLPMakerV2 is Ownable {
     function convertStables(
         address[] calldata stableSwaps,
         address[] calldata swaps,
-        address[] calldata stableTokensFrom,
-        address[] calldata stableTokensTo
+        uint8[] calldata stableTokensIndexFrom,
+        uint8[] calldata stableTokensIndexTo
     ) external onlyEOA {
         // Checks
-        require(stableTokensFrom.length == stableTokensTo.length, "Length of tokens to and from are different");
-        require(stableTokensFrom.length == swaps.length, "Length of tokens to and swaps are different");
-        for (uint256 i = 0; i < stableTokensFrom.length; i++) {
-            require(
-                (stableTokensFrom[i] == address(usdc) ||
-                    stableTokensFrom[i] == address(usdt) ||
-                    stableTokensFrom[i] == address(usn)),
-                "Length of tokens to and swaps are different"
-            );
-        }
+        require(
+            stableTokensIndexFrom.length == stableTokensIndexTo.length,
+            "Length of tokens to and from are different"
+        );
+        require(stableTokensIndexFrom.length == swaps.length, "Length of tokens to and swaps are different");
+
         // Withdraw admin fees from the stableswap pools to stable tokens
         for (uint256 i = 0; i < stableSwaps.length; i++) {
             withdrawStableTokenFees(stableSwaps[i]);
         }
-        console.log("Withdrew fees");
 
         // convert set of stable tokens to usdc, usdt or usn
-        for (uint256 i = 0; i < stableTokensFrom.length; i++) {
-            swapStableTokens(swaps[i], stableTokensFrom[i], stableTokensTo[i]);
+        for (uint256 i = 0; i < stableTokensIndexFrom.length; i++) {
+            swapStableTokens(swaps[i], stableTokensIndexFrom[i], stableTokensIndexTo[i]);
         }
-        console.log("swapped tokens");
 
         // Add liquidity to the stable swap
         addLiquidityToStableSwap();
-        console.log("added liquidity");
 
         // Converted stable tokens get sent to pTRI
         sendLpToken();
-        console.log("sent LP tokens");
     }
 }

@@ -4,7 +4,7 @@
 // Runtime Environment's members available in the global scope.
 import { ethers, run } from "hardhat";
 import { usdcAddress, factoryAddress, wethAddress } from "./constants";
-import { main as deployStableLpMaker } from "./rewards/deployStableLPMaker";
+import { main as deployStableLpMakerV2 } from "./rewards/deployStableLPMakerV2";
 import { main as deployPTRI } from "./deployStableTRIStaking";
 
 type DeployedContracts = {
@@ -29,14 +29,14 @@ async function main(): Promise<DeployedContracts> {
   const { pTRI } = await deployPTRI();
 
   // Deploy StableLPMaker dependency
-  const { stableLPMaker } = await deployStableLpMaker({ pTRI });
+  const { stableLPMakerV2 } = await deployStableLpMakerV2({ pTRI });
 
   console.info("Deployed StableLPMaker via ./rewards/deployStableLPMaker.ts");
 
   // Deploy UsdcMaker
   const UsdcMaker = await ethers.getContractFactory("UsdcMaker");
 
-  const usdcMakerConstructorArgs = [factoryAddress, stableLPMaker, usdcAddress, wethAddress];
+  const usdcMakerConstructorArgs = [factoryAddress, stableLPMakerV2, usdcAddress, wethAddress];
   console.log(...usdcMakerConstructorArgs);
 
   const usdcMakerFactory = await UsdcMaker.connect(deployer);
@@ -55,7 +55,7 @@ async function main(): Promise<DeployedContracts> {
     constructorArguments: usdcMakerConstructorArgs,
   });
 
-  const deployedContracts: DeployedContracts = { stableLPMaker, usdcMaker: usdcMaker.address };
+  const deployedContracts: DeployedContracts = { stableLPMaker: stableLPMakerV2, usdcMaker: usdcMaker.address };
 
   return deployedContracts;
 }
