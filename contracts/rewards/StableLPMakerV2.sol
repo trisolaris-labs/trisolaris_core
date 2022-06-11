@@ -35,6 +35,9 @@ contract StableLPMakerV2 is Ownable {
 
     event LogWithdrawFees();
 
+    event LogAddStableSwap(address stableSwapAddress);
+    event LogRemoveStableSwap(address stableSwapAddress);
+
     event LogSwapStableToken(address stableTokenToConvert, uint256 stableTokenAmount);
     event LogAddliquidityToStableSwap(uint256 usdcAmount, uint256 usdtAmount, uint256 usnAmount);
 
@@ -96,10 +99,12 @@ contract StableLPMakerV2 is Ownable {
 
     function addStableSwap(address _stableSwap) public onlyOwner {
         whitelistedStableSwapAddresses[_stableSwap] = true;
+        LogAddStableSwap(_stableSwap);
     }
 
     function removeStableSwap(address _stableSwap) public onlyOwner {
         whitelistedStableSwapAddresses[_stableSwap] = false;
+        LogRemoveStableSwap(_stableSwap);
     }
 
     // Emergency Withdraw function
@@ -134,11 +139,20 @@ contract StableLPMakerV2 is Ownable {
         require(whitelistedStableSwapAddresses[_stableSwap], "StableLPMaker: Stableswap not whitelisted");
         IERC20 _tokenFrom = ISwap(_stableSwap).getToken(_tokenIndexFrom);
         uint256 stableTokenFromAmount = _tokenFrom.balanceOf(address(this));
-        _tokenFrom.approve(_stableSwap, stableTokenFromAmount);
-        uint256 minAmount = stableTokenFromAmount.mul(999).div(1005);
-        ISwap(_stableSwap).swap(_tokenIndexFrom, _tokenIndexTo, stableTokenFromAmount, minAmount, block.timestamp + 60);
+        // skip swap if no token amount
+        if (stableTokenFromAmount > 0) {
+            _tokenFrom.approve(_stableSwap, stableTokenFromAmount);
+            uint256 minAmount = stableTokenFromAmount.mul(999).div(1005);
+            ISwap(_stableSwap).swap(
+                _tokenIndexFrom,
+                _tokenIndexTo,
+                stableTokenFromAmount,
+                minAmount,
+                block.timestamp + 60
+            );
 
-        emit LogSwapStableToken(address(_tokenFrom), stableTokenFromAmount);
+            emit LogSwapStableToken(address(_tokenFrom), stableTokenFromAmount);
+        }
     }
 
     function addLiquidityToStableSwap() public onlyEOA {
