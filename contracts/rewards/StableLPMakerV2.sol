@@ -25,6 +25,9 @@ contract StableLPMakerV2 is Ownable {
 
     uint256 public polPercent;
 
+    // whitelist of stableSwapAddresses
+    mapping(address => bool) public whitelistedStableSwapAddresses;
+
     event LogSetpTri(address oldpTri, address newpTri);
     event LogSetdao(address oldDao, address newDao);
     event LogSetStableSwap(address oldStableSwap, address newStableSwap);
@@ -66,12 +69,12 @@ contract StableLPMakerV2 is Ownable {
     /*
         Only Owner functions
     */
-    function setpTri(address _pTri) public onlyOwner {
-        address oldpTri;
-        oldpTri = pTri;
+    function setPTri(address _pTri) public onlyOwner {
+        address oldPTri;
+        oldPTri = pTri;
         pTri = _pTri;
 
-        emit LogSetpTri(oldpTri, _pTri);
+        emit LogSetpTri(oldPTri, _pTri);
     }
 
     function setDaoAddress(address _dao) public onlyOwner {
@@ -83,12 +86,20 @@ contract StableLPMakerV2 is Ownable {
     }
 
     function setProtocolOwnerLiquidityPercent(uint256 _polPercent) public onlyOwner {
-        require(_polPercent <= 100, "POL is too high");
+        require(_polPercent <= 100, "StableLPMaker: POL is too high");
         uint256 oldPolPercent;
         oldPolPercent = polPercent;
         polPercent = _polPercent;
 
         emit LogProtocolOwnedLiquidity(oldPolPercent, polPercent);
+    }
+
+    function addStableSwap(address _stableSwap) public onlyOwner {
+        whitelistedStableSwapAddresses[_stableSwap] = true;
+    }
+
+    function removeStableSwap(address _stableSwap) public onlyOwner {
+        whitelistedStableSwapAddresses[_stableSwap] = false;
     }
 
     // Emergency Withdraw function
@@ -113,11 +124,14 @@ contract StableLPMakerV2 is Ownable {
         emit LogWithdrawFees();
     }
 
+    // Any attacker can create a fake stableSwap and swap stableCoins for fake stableCoins
+    // hence requiring a whitelist of stableSwap addresses
     function swapStableTokens(
         address _stableSwap,
         uint8 _tokenIndexFrom,
         uint8 _tokenIndexTo
     ) public onlyEOA {
+        require(whitelistedStableSwapAddresses[_stableSwap], "StableLPMaker: Stableswap not whitelisted");
         IERC20 _tokenFrom = ISwap(_stableSwap).getToken(_tokenIndexFrom);
         uint256 stableTokenFromAmount = _tokenFrom.balanceOf(address(this));
         _tokenFrom.approve(_stableSwap, stableTokenFromAmount);
