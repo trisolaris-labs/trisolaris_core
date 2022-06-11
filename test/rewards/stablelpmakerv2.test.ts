@@ -209,7 +209,7 @@ describe("StableLpMaker", function () {
       expect(await this.swapToken.balanceOf(this.pTRI.address)).to.be.closeTo("19993767888811", 10);
     });
 
-    it("should fail to send usn when not enough balance", async function () {
+    it("should fail to send tlp to pTRI when not enough balance", async function () {
       await expect(this.lpMakerV2.sendLpToken()).to.be.revertedWith("StableLpMaker: no TLP to send");
     })
 
