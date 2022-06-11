@@ -111,20 +111,40 @@ describe("StableLpMaker", function () {
       expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal("0");
       expect(await this.usdc.balanceOf(this.lpMakerV2.address)).to.equal(10019739358388);
       expect(await this.usdt.balanceOf(this.lpMakerV2.address)).to.equal(9980241397654);
+      // should revert for not whitelisted stableswaps
+      await expect(this.lpMakerV2.swapStableTokens(
+        this.swapFlashLoan.address,
+        0,
+        2,
+      )).to.be.revertedWith("StableLPMaker: Stableswap not whitelisted");
+      await this.lpMakerV2.connect(this.owner).addStableSwap(this.swapFlashLoan.address)
+      expect(await this.lpMakerV2.whitelistedStableSwapAddresses(this.swapFlashLoan.address)).to.equal(true);
+      
       // converting usdc to usn
       await this.lpMakerV2.swapStableTokens(
         this.swapFlashLoan.address,
-        this.usdc.address,
-        this.usn.address,
+        0,
+        2,
       );
       expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal(10009738698795);
       expect(await this.usdc.balanceOf(this.lpMakerV2.address)).to.equal(0);
       expect(await this.usdt.balanceOf(this.lpMakerV2.address)).to.equal(9980241397654);
+
+      // should revert if the stableswap is removed from whitelist
+      await this.lpMakerV2.connect(this.owner).removeStableSwap(this.swapFlashLoan.address)
+      expect(await this.lpMakerV2.whitelistedStableSwapAddresses(this.swapFlashLoan.address)).to.equal(false);
+      await expect(this.lpMakerV2.swapStableTokens(
+        this.swapFlashLoan.address,
+        0,
+        2,
+      )).to.be.revertedWith("StableLPMaker: Stableswap not whitelisted");
+      await this.lpMakerV2.connect(this.owner).addStableSwap(this.swapFlashLoan.address)
+      
       // converting usdt to usn
       await this.lpMakerV2.swapStableTokens(
         this.swapFlashLoan.address,
-        this.usdt.address,
-        this.usn.address,
+        1,
+        2,
       );
       expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal(19979939773100);
       expect(await this.usdc.balanceOf(this.lpMakerV2.address)).to.equal(0);
@@ -158,63 +178,95 @@ describe("StableLpMaker", function () {
         this.exploiter.convertStables(
           [this.swapFlashLoan.address],
           [this.swapFlashLoan.address],
-          [this.usdc.address],
-          [this.usn.address],
+          [0],
+          [2],
         )).to.be.revertedWith("StableLPMaker: must use EOA");
     });
 
-    it("only owner should be able to change addresses", async function () {
-      await expect(this.lpMakerV2.connect(this.user1).setpTri(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
-      await expect(this.lpMakerV2.connect(this.owner).setpTri(this.user1.address))
+  });
+
+  
+  describe("StableLPMakerV2: onlyOwner tests", function () {
+    it("only owner should be able to change pTRI addresses", async function () {
+      await expect(this.lpMakerV2.connect(this.user1).setPTri(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
+      await expect(this.lpMakerV2.connect(this.owner).setPTri(this.user1.address))
         .to.emit(this.lpMakerV2, "LogSetpTri")
         .withArgs(this.pTRI.address, this.user1.address);
       expect(await this.lpMakerV2.pTri()).to.equal(this.user1.address);
     });
-  });
 
-  describe("StableLPMakerV2 Dao Tests", function () {
-    it("should have correct address", async function () {
-      expect(await this.lpMakerV2.dao()).to.equal(this.dao.address);
-    })
-
-    it("Only admin can change dao address", async function () {
-      await expect(this.lpMakerV2.connect(this.user1).setDaoAddress(this.user1.address)).to.be.reverted
+    it("Only owner can change dao address", async function () {
+      await expect(this.lpMakerV2.connect(this.user1).setDaoAddress(this.user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
       await this.lpMakerV2.connect(this.owner).setDaoAddress(this.user1.address)
       expect(await this.lpMakerV2.dao()).to.equal(this.user1.address);
       await this.lpMakerV2.connect(this.owner).setDaoAddress(this.dao.address)
       expect(await this.lpMakerV2.dao()).to.equal(this.dao.address);
-    })
+    });
 
     it("should have correct pol percent", async function () {
       expect(await this.lpMakerV2.polPercent()).to.equal(0);
-      await expect(this.lpMakerV2.connect(this.owner).setProtocolOwnerLiquidityPercent(101)).to.be.revertedWith("POL is too high")
+      await expect(this.lpMakerV2.connect(this.user1).setProtocolOwnerLiquidityPercent(49)).to.be.revertedWith("Ownable: caller is not the owner")
+      await expect(this.lpMakerV2.connect(this.owner).setProtocolOwnerLiquidityPercent(101)).to.be.revertedWith("StableLPMaker: POL is too high");
       await this.lpMakerV2.connect(this.owner).setProtocolOwnerLiquidityPercent(50)
       expect(await this.lpMakerV2.polPercent()).to.equal(50);
+    });
+
+    it("should be able to add and remove from the whitelist", async function () {
+      // adding a stableswap
+      expect(await this.lpMakerV2.whitelistedStableSwapAddresses(this.swapFlashLoan.address)).to.equal(false);
+      await expect(this.lpMakerV2.connect(this.user1).addStableSwap(this.swapFlashLoan.address)).to.be.revertedWith("Ownable: caller is not the owner")
+      await this.lpMakerV2.connect(this.owner).addStableSwap(this.swapFlashLoan.address)
+      expect(await this.lpMakerV2.whitelistedStableSwapAddresses(this.swapFlashLoan.address)).to.equal(true);
+      
+      // removing stableswap
+      await expect(this.lpMakerV2.connect(this.user1).removeStableSwap(this.swapFlashLoan.address)).to.be.revertedWith("Ownable: caller is not the owner")
+      await this.lpMakerV2.connect(this.owner).removeStableSwap(this.swapFlashLoan.address)
+      expect(await this.lpMakerV2.whitelistedStableSwapAddresses(this.swapFlashLoan.address)).to.equal(false);
+    });
+  });
+  
+  describe("StableLPMakerV2: Dao Tests", function () {
+    it("should have correct dao address", async function () {
+      expect(await this.lpMakerV2.dao()).to.equal(this.dao.address);
     })
 
     it("should send 50% of fees to dao", async function () {
-      await this.swapFlashLoan.connect(this.user1).swap(0, 1, String(1e17), 0, this.MAX_UINT256);
-      await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256);
       expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal(0);
       expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
+      
       await this.lpMakerV2.withdrawStableTokenFees(this.swapFlashLoan.address);
-      // expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal(2499512096);
-      // expect(await this.usdc.balanceOf(this.lpMakerV2.address)).to.equal(249710331);
-      // expect(await this.usdt.balanceOf(this.lpMakerV2.address)).to.equal(249808873);
+      expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal(0);
+      expect(await this.usdc.balanceOf(this.lpMakerV2.address)).to.equal(10019739358388);
+      expect(await this.usdt.balanceOf(this.lpMakerV2.address)).to.equal(9980241397654);
       await this.lpMakerV2.addLiquidityToStableSwap();
+      await this.lpMakerV2.connect(this.owner).setProtocolOwnerLiquidityPercent(50)
       await this.lpMakerV2.sendLpToken();
-      expect(await this.swapToken.balanceOf(this.dao.address)).to.be.closeTo("1498864617", 10);
-      expect(await this.swapToken.balanceOf(this.user1.address)).to.be.closeTo("1498864617", 10);
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.be.closeTo("9996883944405", 10);
+      expect(await this.swapToken.balanceOf(this.pTRI.address)).to.be.closeTo("9996883944405", 10);
     })
   });
 
-  /*
-  it("should run all the steps together without converting assets", async function () {
-    expect(await this.usn.balanceOf(this.lpMakerV2.address)).to.equal(0);
-    expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
-    await this.lpMakerV2.convertStables([this.swapFlashLoan.address], [], [], []);
-    expect(await this.swapToken.balanceOf(this.dao.address)).to.be.closeTo("1498864617", 10);
-    expect(await this.swapToken.balanceOf(this.user1.address)).to.be.closeTo("1498864617", 10);
+  describe("StableLPMakerV2: All steps together", function () {
+    it("should run all the steps together without converting assets", async function () {
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
+      expect(await this.swapToken.balanceOf(this.pTRI.address)).to.equal(0);
+      await this.lpMakerV2.convertStables([this.swapFlashLoan.address], [], [], []);
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.be.closeTo("0", 10);
+      expect(await this.swapToken.balanceOf(this.pTRI.address)).to.be.closeTo("19993767888811", 10);
+    });
+
+    it("should convert usdc and usdt to usn, and perform all steps", async function () {
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
+      expect(await this.swapToken.balanceOf(this.pTRI.address)).to.equal(0);
+      await this.lpMakerV2.connect(this.owner).addStableSwap(this.swapFlashLoan.address)
+      await this.lpMakerV2.convertStables(
+        [this.swapFlashLoan.address], 
+        [this.swapFlashLoan.address, this.swapFlashLoan.address], 
+        [0, 1], 
+        [2, 2]);
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.be.closeTo("0", 10);
+      expect(await this.swapToken.balanceOf(this.pTRI.address)).to.be.closeTo("19968778622668", 10);
+    });
+  
   });
-  */
 });
