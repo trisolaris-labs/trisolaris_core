@@ -5,8 +5,11 @@
 import { ethers, run } from "hardhat";
 import {
   dao,
+  nusdPoolSwapDepositAddress,
+  pTRIAddress,
   threePoolLpTokenAddress,
   threePoolSwapFlashLoanAddress,
+  twoPoolSwapFlashLoanAddress,
   usdcAddress,
   usdtAddress,
   usnAddress,
@@ -18,7 +21,7 @@ type DeployedContracts = {
 type DeployConstructorDependencies = {
   pTRI: string;
 };
-async function main(deployConstructorDependencies: DeployConstructorDependencies): Promise<DeployedContracts> {
+async function main(deployConstructorDependencies?: DeployConstructorDependencies): Promise<DeployedContracts> {
   // Hardhat always runs the compile task when running scripts through it.
   // If this runs in a standalone fashion you may want to call compile manually
   // to make sure everything is compiled
@@ -31,7 +34,14 @@ async function main(deployConstructorDependencies: DeployConstructorDependencies
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const { pTRI } = deployConstructorDependencies;
+  let pTRI;
+  if (deployConstructorDependencies) {
+    console.log(`Using fresh deployed arg pTRI: ${deployConstructorDependencies.pTRI}`);
+    pTRI = deployConstructorDependencies.pTRI;
+  } else {
+    console.log(`Using already deployed arg pTRI: ${pTRIAddress}`);
+    pTRI = pTRIAddress;
+  }
   const StableLPMakerV2 = await ethers.getContractFactory("StableLPMakerV2");
 
   const stableLPMakerV2ConstructorArgs = [
@@ -57,6 +67,16 @@ async function main(deployConstructorDependencies: DeployConstructorDependencies
   await stableLPMakerV2.deployed();
   console.log(`StableLPMakerV2 deployed at: ${stableLPMakerV2.address}`);
 
+  // addStableSwap to whitelist pools
+  await (await stableLPMakerV2.addStableSwap(threePoolSwapFlashLoanAddress)).wait(1);
+  console.log(`StableLPMakerV2.addStableSwap(${threePoolSwapFlashLoanAddress}): threePoolSwapFlashLoanAddress`);
+
+  await (await stableLPMakerV2.addStableSwap(twoPoolSwapFlashLoanAddress)).wait(1);
+  console.log(`StableLPMakerV2.addStableSwap(${twoPoolSwapFlashLoanAddress}): twoPoolSwapFlashLoanAddress`);
+
+  await (await stableLPMakerV2.addStableSwap(nusdPoolSwapDepositAddress)).wait(1);
+  console.log(`StableLPMakerV2.addStableSwap(${nusdPoolSwapDepositAddress}): nusdPoolSwapDepositAddress`);
+
   // Verify StableLPMakerV2 deployment for aurorascan
   await run("verify:verify", {
     address: stableLPMakerV2.address,
@@ -67,3 +87,8 @@ async function main(deployConstructorDependencies: DeployConstructorDependencies
 }
 
 export { main };
+
+// main().catch(error => {
+//   console.error(error);
+//   process.exit(1);
+// });
