@@ -12,13 +12,15 @@ async function main(): Promise<void> {
     // to make sure everything is compiled
     // await run("compile");
     // We get the contract to deploy
-    const allocPoint = 71
-    const poolId = 1
-    const lpAddress = "0xd1654a7713617d41A8C9530Fb9B948d00e162194"
-    const rewarderAddress = zeroAddress
+    const allocPoint = 0
+    const poolId = 29
+    const lpAddress = "0x6a29e635BCaB8aBeE1491059728e3D6D11d6A114"
+    const rewarderAddress = "0xe4A4e38a30E9100a147e0C146a9AeAC74C28eD4f"
+    // const rewarderAddress = zeroAddress;
 
-
-    const [_, deployer] = await ethers.getSigners();
+    // const [_, deployer] = await ethers.getSigners();
+    const signers = await ethers.getSigners();
+    const deployer = signers[7]
     console.log(`Adding pools contracts with ${deployer.address}`);
 
     const balance = await deployer.getBalance();
@@ -34,7 +36,7 @@ async function main(): Promise<void> {
     console.log(poolInfo)
     if (poolLpToken == lpAddress) {
         console.log("reached here")
-        const tx = await chefv2.connect(deployer).set(poolId, allocPoint, rewarderAddress, false) 
+        const tx = await chefv2.connect(deployer).set(poolId, allocPoint, rewarderAddress, true)
         const receipt = await tx.wait()
         console.log(receipt)
     }
