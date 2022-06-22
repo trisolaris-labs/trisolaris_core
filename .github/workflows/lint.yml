@@ -1,9 +1,9 @@
-name: Test Package
+name: Lint Package
 
 on: [push]
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
