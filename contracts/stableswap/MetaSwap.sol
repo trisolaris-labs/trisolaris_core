@@ -51,13 +51,7 @@ contract MetaSwap is Swap {
      * @notice Get the virtual price, to help calculate profit
      * @return the virtual price, scaled to the POOL_PRECISION_DECIMALS
      */
-    function getVirtualPrice()
-        external
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function getVirtualPrice() external view virtual override returns (uint256) {
         return MetaSwapUtils.getVirtualPrice(swapStorage, metaSwapStorage);
     }
 
@@ -74,14 +68,7 @@ contract MetaSwap is Swap {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view virtual override returns (uint256) {
-        return
-            MetaSwapUtils.calculateSwap(
-                swapStorage,
-                metaSwapStorage,
-                tokenIndexFrom,
-                tokenIndexTo,
-                dx
-            );
+        return MetaSwapUtils.calculateSwap(swapStorage, metaSwapStorage, tokenIndexFrom, tokenIndexTo, dx);
     }
 
     /**
@@ -98,14 +85,7 @@ contract MetaSwap is Swap {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view virtual returns (uint256) {
-        return
-            MetaSwapUtils.calculateSwapUnderlying(
-                swapStorage,
-                metaSwapStorage,
-                tokenIndexFrom,
-                tokenIndexTo,
-                dx
-            );
+        return MetaSwapUtils.calculateSwapUnderlying(swapStorage, metaSwapStorage, tokenIndexFrom, tokenIndexTo, dx);
     }
 
     /**
@@ -130,13 +110,7 @@ contract MetaSwap is Swap {
         override
         returns (uint256)
     {
-        return
-            MetaSwapUtils.calculateTokenAmount(
-                swapStorage,
-                metaSwapStorage,
-                amounts,
-                deposit
-            );
+        return MetaSwapUtils.calculateTokenAmount(swapStorage, metaSwapStorage, amounts, deposit);
     }
 
     /**
@@ -147,17 +121,14 @@ contract MetaSwap is Swap {
      * @return availableTokenAmount calculated amount of underlying token
      * available to withdraw
      */
-    function calculateRemoveLiquidityOneToken(
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view virtual override returns (uint256) {
-        return
-            MetaSwapUtils.calculateWithdrawOneToken(
-                swapStorage,
-                metaSwapStorage,
-                tokenAmount,
-                tokenIndex
-            );
+    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex)
+        external
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return MetaSwapUtils.calculateWithdrawOneToken(swapStorage, metaSwapStorage, tokenAmount, tokenIndex);
     }
 
     /*** STATE MODIFYING FUNCTIONS ***/
@@ -223,16 +194,7 @@ contract MetaSwap is Swap {
         address lpTokenTargetAddress,
         ISwap baseSwap
     ) external virtual initializer {
-        Swap.initialize(
-            _pooledTokens,
-            decimals,
-            lpTokenName,
-            lpTokenSymbol,
-            _a,
-            _fee,
-            _adminFee,
-            lpTokenTargetAddress
-        );
+        Swap.initialize(_pooledTokens, decimals, lpTokenName, lpTokenSymbol, _a, _fee, _adminFee, lpTokenTargetAddress);
 
         // MetaSwap initializer
         metaSwapStorage.baseSwap = baseSwap;
@@ -255,10 +217,7 @@ contract MetaSwap is Swap {
 
         // Check the last element of _pooledTokens is owned by baseSwap
         IERC20 baseLPToken = _pooledTokens[_pooledTokens.length - 1];
-        require(
-            LPToken(address(baseLPToken)).owner() == address(baseSwap),
-            "baseLPToken is not owned by baseSwap"
-        );
+        require(LPToken(address(baseLPToken)).owner() == address(baseSwap), "baseLPToken is not owned by baseSwap");
 
         // Pre-approve the baseLPToken to be used by baseSwap
         baseLPToken.safeApprove(address(baseSwap), MAX_UINT256);
@@ -278,24 +237,8 @@ contract MetaSwap is Swap {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    )
-        external
-        virtual
-        override
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
-        return
-            MetaSwapUtils.swap(
-                swapStorage,
-                metaSwapStorage,
-                tokenIndexFrom,
-                tokenIndexTo,
-                dx,
-                minDy
-            );
+    ) external virtual override nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
+        return MetaSwapUtils.swap(swapStorage, metaSwapStorage, tokenIndexFrom, tokenIndexTo, dx, minDy);
     }
 
     /**
@@ -312,23 +255,8 @@ contract MetaSwap is Swap {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    )
-        external
-        virtual
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
-        return
-            MetaSwapUtils.swapUnderlying(
-                swapStorage,
-                metaSwapStorage,
-                tokenIndexFrom,
-                tokenIndexTo,
-                dx,
-                minDy
-            );
+    ) external virtual nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
+        return MetaSwapUtils.swapUnderlying(swapStorage, metaSwapStorage, tokenIndexFrom, tokenIndexTo, dx, minDy);
     }
 
     /**
@@ -343,22 +271,8 @@ contract MetaSwap is Swap {
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
-    )
-        external
-        virtual
-        override
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
-        return
-            MetaSwapUtils.addLiquidity(
-                swapStorage,
-                metaSwapStorage,
-                amounts,
-                minToMint
-            );
+    ) external virtual override nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
+        return MetaSwapUtils.addLiquidity(swapStorage, metaSwapStorage, amounts, minToMint);
     }
 
     /**
@@ -375,23 +289,8 @@ contract MetaSwap is Swap {
         uint8 tokenIndex,
         uint256 minAmount,
         uint256 deadline
-    )
-        external
-        virtual
-        override
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
-        return
-            MetaSwapUtils.removeLiquidityOneToken(
-                swapStorage,
-                metaSwapStorage,
-                tokenAmount,
-                tokenIndex,
-                minAmount
-            );
+    ) external virtual override nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
+        return MetaSwapUtils.removeLiquidityOneToken(swapStorage, metaSwapStorage, tokenAmount, tokenIndex, minAmount);
     }
 
     /**
@@ -408,21 +307,7 @@ contract MetaSwap is Swap {
         uint256[] calldata amounts,
         uint256 maxBurnAmount,
         uint256 deadline
-    )
-        external
-        virtual
-        override
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
-        return
-            MetaSwapUtils.removeLiquidityImbalance(
-                swapStorage,
-                metaSwapStorage,
-                amounts,
-                maxBurnAmount
-            );
+    ) external virtual override nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
+        return MetaSwapUtils.removeLiquidityImbalance(swapStorage, metaSwapStorage, amounts, maxBurnAmount);
     }
 }

@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IRewarder.sol";
 import "../interfaces/IMasterChefV2.sol";
 
-
 /**
  * This is a sample contract to be used in the MasterChef contract for partners to reward
  * stakers with their native token alongside TRI.
@@ -69,10 +68,9 @@ contract ComplexRewarder is IRewarder, Ownable {
         lpToken = _lpToken;
         tokenPerBlock = _tokenPerBlock;
         MCV2 = _mcv2;
-        poolInfo = PoolInfo({lastRewardBlock: block.number, accTokenPerShare: 0});
+        poolInfo = PoolInfo({ lastRewardBlock: block.number, accTokenPerShare: 0 });
     }
 
-    
     /// @notice Sets the distribution reward rate. This will also update the poolInfo.
     /// @param _tokenPerBlock The number of tokens to distribute per block
     function setRewardRate(uint256 _tokenPerBlock) external onlyOwner {
@@ -88,7 +86,11 @@ contract ComplexRewarder is IRewarder, Ownable {
     /// @param token Token to reclaim, use 0x00 for Ethereum
     /// @param amount Amount of tokens to reclaim
     /// @param to Receiver of the tokens
-    function reclaimTokens(address token, uint256 amount, address payable to) public onlyOwner {
+    function reclaimTokens(
+        address token,
+        uint256 amount,
+        address payable to
+    ) public onlyOwner {
         if (token == address(0)) {
             to.transfer(amount);
         } else {
@@ -115,17 +117,17 @@ contract ComplexRewarder is IRewarder, Ownable {
         }
     }
 
-    /// @notice Function called by MasterChef whenever staker claims TRI harvest. 
+    /// @notice Function called by MasterChef whenever staker claims TRI harvest.
     /// Allows staker to also receive a 2nd reward token.
     /// @param _user Address of user
     /// @param _lpAmount Number of LP tokens the user has
     function onTriReward(
-        uint256, 
-        address _user, 
-        address, 
-        uint256, 
+        uint256,
+        address _user,
+        address,
+        uint256,
         uint256 _lpAmount
-        ) external override onlyMCV2 {
+    ) external override onlyMCV2 {
         updatePool();
         PoolInfo memory pool = poolInfo;
         UserInfo storage user = userInfo[_user];
@@ -150,8 +152,8 @@ contract ComplexRewarder is IRewarder, Ownable {
     /// @notice View function to see pending tokens
     /// @param _user Address of user.
     function pendingTokens(
-        uint256, 
-        address _user, 
+        uint256,
+        address _user,
         uint256
     ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
         IERC20[] memory _rewardTokens = new IERC20[](1);
@@ -172,5 +174,5 @@ contract ComplexRewarder is IRewarder, Ownable {
 
         _rewardAmounts[0] = (user.amount.mul(accTokenPerShare) / ACC_TOKEN_PRECISION).sub(user.rewardDebt);
         return (_rewardTokens, _rewardAmounts);
-    } 
+    }
 }

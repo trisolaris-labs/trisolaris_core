@@ -125,13 +125,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
         uint256 deadline
     ) external nonReentrant returns (uint256) {
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-        uint256 tokenToAmount = metaSwap.swapUnderlying(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 tokenToAmount = metaSwap.swapUnderlying(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         tokens[tokenIndexTo].safeTransfer(msg.sender, tokenToAmount);
         return tokenToAmount;
     }
@@ -165,11 +159,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
                 IERC20 token = memBaseTokens[i];
                 uint256 depositAmount = amounts[baseLPTokenIndex + i];
                 if (depositAmount > 0) {
-                    token.safeTransferFrom(
-                        msg.sender,
-                        address(this),
-                        depositAmount
-                    );
+                    token.safeTransferFrom(msg.sender, address(this), depositAmount);
                     baseAmounts[i] = token.balanceOf(address(this)); // account for any fees on transfer
                     // if there are any base Swap level tokens, flag it for deposits
                     shouldDepositBaseTokens = true;
@@ -177,11 +167,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
             }
             if (shouldDepositBaseTokens) {
                 // Deposit any base Swap level tokens and receive baseLPToken
-                baseLPTokenAmount = baseSwap.addLiquidity(
-                    baseAmounts,
-                    0,
-                    deadline
-                );
+                baseLPTokenAmount = baseSwap.addLiquidity(baseAmounts, 0, deadline);
             }
         }
 
@@ -193,11 +179,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
                 IERC20 token = memMetaTokens[i];
                 uint256 depositAmount = amounts[i];
                 if (depositAmount > 0) {
-                    token.safeTransferFrom(
-                        msg.sender,
-                        address(this),
-                        depositAmount
-                    );
+                    token.safeTransferFrom(msg.sender, address(this), depositAmount);
                     metaAmounts[i] = token.balanceOf(address(this)); // account for any fees on transfer
                 }
             }
@@ -205,11 +187,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
             metaAmounts[baseLPTokenIndex] = baseLPTokenAmount;
 
             // Deposit the meta level tokens and the baseLPToken
-            metaLPTokenAmount = metaSwap.addLiquidity(
-                metaAmounts,
-                minToMint,
-                deadline
-            );
+            metaLPTokenAmount = metaSwap.addLiquidity(metaAmounts, minToMint, deadline);
         }
 
         // Transfer the meta lp token to the caller
@@ -238,9 +216,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
         uint256[] memory totalRemovedAmounts;
 
         {
-            uint256 numOfAllTokens = memBaseTokens.length +
-                memMetaTokens.length -
-                1;
+            uint256 numOfAllTokens = memBaseTokens.length + memMetaTokens.length - 1;
             require(minAmounts.length == numOfAllTokens, "out of range");
             totalRemovedAmounts = new uint256[](numOfAllTokens);
         }
@@ -254,17 +230,11 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
             uint256[] memory removedAmounts;
             uint256 baseLPTokenIndex = memMetaTokens.length - 1;
             {
-                uint256[] memory metaMinAmounts = new uint256[](
-                    memMetaTokens.length
-                );
+                uint256[] memory metaMinAmounts = new uint256[](memMetaTokens.length);
                 for (uint8 i = 0; i < baseLPTokenIndex; i++) {
                     metaMinAmounts[i] = minAmounts[i];
                 }
-                removedAmounts = metaSwap.removeLiquidity(
-                    amount,
-                    metaMinAmounts,
-                    deadline
-                );
+                removedAmounts = metaSwap.removeLiquidity(amount, metaMinAmounts, deadline);
             }
 
             // Send the meta level tokens to the caller
@@ -276,17 +246,11 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
 
             // Remove liquidity from the base Swap pool
             {
-                uint256[] memory baseMinAmounts = new uint256[](
-                    memBaseTokens.length
-                );
+                uint256[] memory baseMinAmounts = new uint256[](memBaseTokens.length);
                 for (uint8 i = 0; i < baseLPTokenIndex; i++) {
                     baseMinAmounts[i] = minAmounts[baseLPTokenIndex + i];
                 }
-                removedAmounts = baseSwap.removeLiquidity(
-                    baseLPTokenAmount,
-                    baseMinAmounts,
-                    deadline
-                );
+                removedAmounts = baseSwap.removeLiquidity(baseLPTokenAmount, baseMinAmounts, deadline);
             }
 
             // Send the base level tokens to the caller
@@ -323,12 +287,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
         IERC20 token;
         if (tokenIndex < baseLPTokenIndex) {
             // When the desired token is meta level token, we can just call `removeLiquidityOneToken` directly
-            metaSwap.removeLiquidityOneToken(
-                tokenAmount,
-                tokenIndex,
-                minAmount,
-                deadline
-            );
+            metaSwap.removeLiquidityOneToken(tokenAmount, tokenIndex, minAmount, deadline);
             token = metaTokens[tokenIndex];
         } else if (tokenIndex < baseLPTokenIndex + baseTokensLength) {
             // When the desired token is a base level token, we need to first withdraw via baseLPToken, then withdraw
@@ -376,10 +335,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
         uint256[] memory metaAmounts = new uint256[](memMetaTokens.length);
         uint256[] memory baseAmounts = new uint256[](memBaseTokens.length);
 
-        require(
-            amounts.length == memBaseTokens.length + memMetaTokens.length - 1,
-            "out of range"
-        );
+        require(amounts.length == memBaseTokens.length + memMetaTokens.length - 1, "out of range");
 
         RemoveLiquidityImbalanceInfo memory v = RemoveLiquidityImbalanceInfo(
             baseSwap,
@@ -403,45 +359,25 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
 
         // Calculate how much base LP token we need to get the desired amount of underlying tokens
         if (v.withdrawFromBase) {
-            metaAmounts[v.baseLPTokenIndex] = v
-                .baseSwap
-                .calculateTokenAmount(baseAmounts, false)
-                .mul(10005)
-                .div(10000);
+            metaAmounts[v.baseLPTokenIndex] = v.baseSwap.calculateTokenAmount(baseAmounts, false).mul(10005).div(10000);
         }
 
         // Transfer MetaSwap LP token from the caller to this contract
-        v.metaLPToken.safeTransferFrom(
-            msg.sender,
-            address(this),
-            maxBurnAmount
-        );
+        v.metaLPToken.safeTransferFrom(msg.sender, address(this), maxBurnAmount);
 
         // Withdraw the paired meta level tokens and the base LP token from the MetaSwap pool
-        uint256 burnedMetaLPTokenAmount = v.metaSwap.removeLiquidityImbalance(
-            metaAmounts,
-            maxBurnAmount,
-            deadline
-        );
-        v.leftoverMetaLPTokenAmount = maxBurnAmount.sub(
-            burnedMetaLPTokenAmount
-        );
+        uint256 burnedMetaLPTokenAmount = v.metaSwap.removeLiquidityImbalance(metaAmounts, maxBurnAmount, deadline);
+        v.leftoverMetaLPTokenAmount = maxBurnAmount.sub(burnedMetaLPTokenAmount);
 
         // If underlying tokens are desired, withdraw them from the base Swap pool
         if (v.withdrawFromBase) {
-            v.baseSwap.removeLiquidityImbalance(
-                baseAmounts,
-                metaAmounts[v.baseLPTokenIndex],
-                deadline
-            );
+            v.baseSwap.removeLiquidityImbalance(baseAmounts, metaAmounts[v.baseLPTokenIndex], deadline);
 
             // Base Swap may require LESS base LP token than the amount we have
             // In that case, deposit it to the MetaSwap pool.
             uint256[] memory leftovers = new uint256[](metaAmounts.length);
             IERC20 baseLPToken = memMetaTokens[v.baseLPTokenIndex];
-            uint256 leftoverBaseLPTokenAmount = baseLPToken.balanceOf(
-                address(this)
-            );
+            uint256 leftoverBaseLPTokenAmount = baseLPToken.balanceOf(address(this));
             if (leftoverBaseLPTokenAmount > 0) {
                 leftovers[v.baseLPTokenIndex] = leftoverBaseLPTokenAmount;
                 v.leftoverMetaLPTokenAmount = v.leftoverMetaLPTokenAmount.add(
@@ -489,11 +425,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
      * @param deposit whether this is a deposit or a withdrawal
      * @return token amount the user will receive
      */
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
-        external
-        view
-        returns (uint256)
-    {
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256) {
         uint256[] memory metaAmounts = new uint256[](metaTokens.length);
         uint256[] memory baseAmounts = new uint256[](baseTokens.length);
         uint256 baseLPTokenIndex = metaAmounts.length - 1;
@@ -506,10 +438,7 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
             baseAmounts[i] = amounts[baseLPTokenIndex + i];
         }
 
-        uint256 baseLPTokenAmount = baseSwap.calculateTokenAmount(
-            baseAmounts,
-            deposit
-        );
+        uint256 baseLPTokenAmount = baseSwap.calculateTokenAmount(baseAmounts, deposit);
         metaAmounts[baseLPTokenIndex] = baseLPTokenAmount;
 
         return metaSwap.calculateTokenAmount(metaAmounts, deposit);
@@ -521,22 +450,12 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
      * @param amount the amount of LP tokens that would be burned on withdrawal
      * @return array of token balances that the user will receive
      */
-    function calculateRemoveLiquidity(uint256 amount)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        uint256[] memory metaAmounts = metaSwap.calculateRemoveLiquidity(
-            amount
-        );
+    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory) {
+        uint256[] memory metaAmounts = metaSwap.calculateRemoveLiquidity(amount);
         uint8 baseLPTokenIndex = uint8(metaAmounts.length - 1);
-        uint256[] memory baseAmounts = baseSwap.calculateRemoveLiquidity(
-            metaAmounts[baseLPTokenIndex]
-        );
+        uint256[] memory baseAmounts = baseSwap.calculateRemoveLiquidity(metaAmounts[baseLPTokenIndex]);
 
-        uint256[] memory totalAmounts = new uint256[](
-            baseLPTokenIndex + baseAmounts.length
-        );
+        uint256[] memory totalAmounts = new uint256[](baseLPTokenIndex + baseAmounts.length);
         for (uint8 i = 0; i < baseLPTokenIndex; i++) {
             totalAmounts[i] = metaAmounts[i];
         }
@@ -555,29 +474,14 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
      * @return availableTokenAmount calculated amount of underlying token
      * available to withdraw
      */
-    function calculateRemoveLiquidityOneToken(
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view returns (uint256) {
+    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex) external view returns (uint256) {
         uint8 baseLPTokenIndex = uint8(metaTokens.length - 1);
 
         if (tokenIndex < baseLPTokenIndex) {
-            return
-                metaSwap.calculateRemoveLiquidityOneToken(
-                    tokenAmount,
-                    tokenIndex
-                );
+            return metaSwap.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
         } else {
-            uint256 baseLPTokenAmount = metaSwap
-                .calculateRemoveLiquidityOneToken(
-                    tokenAmount,
-                    baseLPTokenIndex
-                );
-            return
-                baseSwap.calculateRemoveLiquidityOneToken(
-                    baseLPTokenAmount,
-                    tokenIndex - baseLPTokenIndex
-                );
+            uint256 baseLPTokenAmount = metaSwap.calculateRemoveLiquidityOneToken(tokenAmount, baseLPTokenIndex);
+            return baseSwap.calculateRemoveLiquidityOneToken(baseLPTokenAmount, tokenIndex - baseLPTokenIndex);
         }
     }
 
@@ -605,7 +509,6 @@ contract MetaSwapDeposit is Initializable, ReentrancyGuardUpgradeable {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view returns (uint256) {
-        return
-            metaSwap.calculateSwapUnderlying(tokenIndexFrom, tokenIndexTo, dx);
+        return metaSwap.calculateSwapUnderlying(tokenIndexFrom, tokenIndexTo, dx);
     }
 }

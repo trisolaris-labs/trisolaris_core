@@ -26,7 +26,7 @@ describe("RevenueDistributionToken - Migrate", function () {
     const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.rewardToken = await ERC20Mock.deploy("rewardToken", "rewardToken", 18, "200");
-    
+
     this.pTRI = await this.pTRIContract.deploy(
       "pTRI",
       "pTRI",
@@ -36,7 +36,7 @@ describe("RevenueDistributionToken - Migrate", function () {
       0,
     );
     await this.xTRI.approve(this.pTRI.address, "100");
-    
+
     this.pTRIWithFees = await this.pTRIContract.deploy(
       "pTRI",
       "pTRI",
@@ -117,10 +117,10 @@ describe("RevenueDistributionToken - Migrate", function () {
   it("should migrate and capture fees", async function () {
     expect(await this.tri.balanceOf(this.deployer.address)).to.equal("0");
     expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("100");
-    
-    await this.xTRI.connect(this.deployer).approve(this.pTRIWithFees.address, "100")
+
+    await this.xTRI.connect(this.deployer).approve(this.pTRIWithFees.address, "100");
     await this.pTRIWithFees.connect(this.deployer).migrate(this.xTRI.address, "100");
-    
+
     expect(await this.tri.balanceOf(this.feeCollector.address)).to.equal("3");
     expect(await this.tri.balanceOf(this.deployer.address)).to.equal("0");
     expect(await this.xTRI.balanceOf(this.deployer.address)).to.equal("0");

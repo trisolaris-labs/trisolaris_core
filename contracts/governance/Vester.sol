@@ -4,25 +4,25 @@ pragma solidity =0.6.12;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract Vester {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     address public tri;
     address public recipient;
 
-    uint public vestingAmount;
-    uint public vestingBegin;
-    uint public vestingCliff;
-    uint public vestingEnd;
+    uint256 public vestingAmount;
+    uint256 public vestingBegin;
+    uint256 public vestingCliff;
+    uint256 public vestingEnd;
 
-    uint public lastUpdate;
+    uint256 public lastUpdate;
 
     constructor(
         address tri_,
         address recipient_,
-        uint vestingAmount_,
-        uint vestingBegin_,
-        uint vestingCliff_,
-        uint vestingEnd_
+        uint256 vestingAmount_,
+        uint256 vestingBegin_,
+        uint256 vestingCliff_,
+        uint256 vestingEnd_
     ) public {
         require(vestingBegin_ >= block.timestamp, "Vester::constructor: vesting begin too early");
         require(vestingCliff_ >= vestingBegin_, "Vester::constructor: cliff is too early");
@@ -46,7 +46,7 @@ contract Vester {
 
     function claim() public {
         require(block.timestamp >= vestingCliff, "Vester::claim: not time yet");
-        uint amount;
+        uint256 amount;
         if (block.timestamp >= vestingEnd) {
             amount = ITri(tri).balanceOf(address(this));
         } else {
@@ -58,6 +58,7 @@ contract Vester {
 }
 
 interface ITri {
-    function balanceOf(address account) external view returns (uint);
-    function transfer(address dst, uint rawAmount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address dst, uint256 rawAmount) external returns (bool);
 }

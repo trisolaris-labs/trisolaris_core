@@ -11,7 +11,7 @@ contract StableLPMaker is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    // pTri is the contract that disburses TLP tokens 
+    // pTri is the contract that disburses TLP tokens
     // tlpToken is the trisolaris lp token address
     // dao is the dao address that receives funds
 
@@ -23,7 +23,7 @@ contract StableLPMaker is Ownable {
     address private immutable tlpToken;
     address public dao;
 
-    uint256 public polPercent; 
+    uint256 public polPercent;
 
     event LogSetpTri(address oldpTri, address newpTri);
     event LogSetdao(address oldDao, address newDao);
@@ -43,7 +43,7 @@ contract StableLPMaker is Ownable {
         address _pTri,
         address _usn,
         address _usdt,
-        address _usdc ,
+        address _usdc,
         address _tlpToken,
         address _dao
     ) public {
@@ -97,18 +97,11 @@ contract StableLPMaker is Ownable {
         uint256 usnAmount = IERC20(usn).balanceOf(address(this));
         require(usnAmount > 0, "StableLPMaker: no Usn to add liquidity");
 
-        IERC20(usn).approve(
-            address(stableSwap),
-            usnAmount
-        );
+        IERC20(usn).approve(address(stableSwap), usnAmount);
 
-        uint256[] memory ma = new uint[](3);
+        uint256[] memory ma = new uint256[](3);
         ma[2] = usnAmount;
-        stableSwap.addLiquidity(
-            ma,
-            0,
-            block.timestamp + 60
-        );
+        stableSwap.addLiquidity(ma, 0, block.timestamp + 60);
 
         emit LogAddliquidityToStableSwap(usnAmount);
     }
@@ -128,7 +121,6 @@ contract StableLPMaker is Ownable {
             emit LogLpTokensSentTopTRI(tlpAmount);
             emit LogLpTokensSentToDao(daoAmount);
         }
-
     }
 
     // Only Owner Functions
@@ -158,7 +150,11 @@ contract StableLPMaker is Ownable {
     }
 
     // Emergency Withdraw function
-    function reclaimTokens(address token, uint256 amount, address payable to) public onlyOwner {
+    function reclaimTokens(
+        address token,
+        uint256 amount,
+        address payable to
+    ) public onlyOwner {
         if (token == address(0)) {
             to.transfer(amount);
         } else {

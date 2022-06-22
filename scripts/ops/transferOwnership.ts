@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { chefV2Address } from '../constants';
+import { chefV2Address } from "../constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -17,18 +17,18 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const chainAddress = "0xF5E2C6558d247651595f7EFa423010A2e533bea8"
+  const chainAddress = "0xF5E2C6558d247651595f7EFa423010A2e533bea8";
 
   const mcv2 = await ethers.getContractFactory("MasterChefV2");
   const chefv2 = mcv2.attach(chefV2Address);
   console.log(`MasterChef V2 address: ${chefv2.address}`);
 
   const tx = await chefv2.connect(deployer).transferOwnership(chainAddress);
-  const receipt = await tx.wait()
-  console.log(receipt)
-  
+  const receipt = await tx.wait();
+  console.log(receipt);
+
   const newOwner = await chefv2.owner();
-  console.log("New owner", newOwner)
+  console.log("New owner", newOwner);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
