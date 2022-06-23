@@ -7,7 +7,9 @@ import {
   nusdPoolSwapFlashLoanAddress,
   stableLPMakerV2Address,
   threePoolSwapFlashLoanAddress,
+  twoPoolAmplificationUtilsAddress,
   twoPoolSwapFlashLoanAddress,
+  twoPoolSwapUtilsAddress,
 } from "../constants";
 
 async function main(): Promise<void> {
@@ -25,7 +27,12 @@ async function main(): Promise<void> {
 
   const stableLPMakerV2 = { address: stableLPMakerV2Address };
 
-  const stableSwapPool = await ethers.getContractFactory("SwapFlashLoan");
+  const stableSwapPool = await ethers.getContractFactory("SwapFlashLoan", {
+    libraries: {
+      SwapUtils: twoPoolSwapUtilsAddress,
+      AmplificationUtils: twoPoolAmplificationUtilsAddress,
+    },
+  });
 
   await stableSwapPool.connect(deployer).attach(threePoolSwapFlashLoanAddress).setFeeAddress(stableLPMakerV2.address);
   console.log(
