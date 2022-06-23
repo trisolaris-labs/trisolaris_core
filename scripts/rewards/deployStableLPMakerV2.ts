@@ -7,7 +7,7 @@ import {
   dao,
   nusdPoolSwapDepositAddress,
   pTRIAddress,
-  stableLPMakerV2Address,
+  // stableLPMakerV2Address,
   threePoolLpTokenAddress,
   threePoolSwapFlashLoanAddress,
   twoPoolSwapFlashLoanAddress,
@@ -56,7 +56,16 @@ async function main(deployConstructorDependencies?: DeployConstructorDependencie
   ];
   console.log(...stableLPMakerV2ConstructorArgs);
 
-  const stableLPMakerV2 = await StableLPMakerV2.connect(deployer).attach(stableLPMakerV2Address);
+  // const stableLPMakerV2 = await StableLPMakerV2.connect(deployer).attach(stableLPMakerV2Address);
+  const stableLPMakerV2 = await StableLPMakerV2.connect(deployer).deploy(
+    stableLPMakerV2ConstructorArgs[0],
+    stableLPMakerV2ConstructorArgs[1],
+    stableLPMakerV2ConstructorArgs[2],
+    stableLPMakerV2ConstructorArgs[3],
+    stableLPMakerV2ConstructorArgs[4],
+    stableLPMakerV2ConstructorArgs[5],
+    stableLPMakerV2ConstructorArgs[6],
+  );
   await stableLPMakerV2.deployed();
   console.log(`StableLPMakerV2 deployed at: ${stableLPMakerV2.address}`);
 
