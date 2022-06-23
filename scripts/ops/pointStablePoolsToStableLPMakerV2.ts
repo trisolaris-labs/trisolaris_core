@@ -4,7 +4,6 @@
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
 import {
-  nusdPoolSwapDepositAddress,
   nusdPoolSwapFlashLoanAddress,
   stableLPMakerV2Address,
   threePoolSwapFlashLoanAddress,
@@ -40,7 +39,7 @@ async function main(): Promise<void> {
 
   await stableSwapPool.connect(deployer).attach(nusdPoolSwapFlashLoanAddress).setFeeAddress(stableLPMakerV2.address);
   console.log(
-    `stableSwapPool.connect(deployer).attach(${nusdPoolSwapDepositAddress}).setFeeAddress(${stableLPMakerV2.address})`,
+    `stableSwapPool.connect(deployer).attach(${nusdPoolSwapFlashLoanAddress}).setFeeAddress(${stableLPMakerV2.address})`,
   );
 }
 
