@@ -1,5 +1,8 @@
 name: Test Package
 
+permissions:
+  contents: write
+
 on:
   pull_request:
     branches: "rewarder/**"
@@ -13,6 +16,8 @@ jobs:
             commit_message: Added new rewarder config to rewarderConfigs.json
             file_pattern: rewarderConfigs.json
       - uses: actions/checkout@v2
+          with:
+            ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v2
         with:
           node-version: 12
