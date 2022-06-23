@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
+import { IERC20Uniswap } from "../amm/interfaces/IERC20.sol";
 
 contract StableLPMakerV2 is Ownable {
     using SafeMath for uint256;
@@ -138,11 +139,18 @@ contract StableLPMakerV2 is Ownable {
     ) public onlyEOA {
         require(whitelistedStableSwapAddresses[_stableSwap], "StableLPMaker: Stableswap not whitelisted");
         IERC20 _tokenFrom = ISwap(_stableSwap).getToken(_tokenIndexFrom);
+        IERC20 _tokenTo = ISwap(_stableSwap).getToken(_tokenIndexTo);
         uint256 stableTokenFromAmount = _tokenFrom.balanceOf(address(this));
         // skip swap if no token amount
         if (stableTokenFromAmount > 0) {
             _tokenFrom.approve(_stableSwap, stableTokenFromAmount);
             uint256 minAmount = stableTokenFromAmount.mul(999).div(1005);
+            uint8 _tokenFromDecimals = IERC20Uniswap(address(_tokenFrom)).decimals();
+            uint8 _tokenToDecimals = IERC20Uniswap(address(_tokenTo)).decimals();
+            if (_tokenFromDecimals > _tokenToDecimals) {
+                uint256 _decimalsDiff = (_tokenFromDecimals - _tokenToDecimals);
+                minAmount = minAmount.div(10**_decimalsDiff);
+            }
             ISwap(_stableSwap).swap(
                 _tokenIndexFrom,
                 _tokenIndexTo,
