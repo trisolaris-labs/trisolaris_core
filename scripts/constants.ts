@@ -42,6 +42,7 @@ export const dfRecepientAddress = "0x49D8B1389df580B1602Ae385D32b9c5A7Ceb2e25";
 export const kRecepientAddress = "0x464bCBD80Ab3Ec89A93F1667DafB682d14634A5e";
 export const donDeployerAddress = "0x25b9B32d875E4b1b0ec8b74ecF4f0A2aF8e96322";
 export const specialistAddress = "0x7d479275bCa2795394e42e07a2EE2d27c96F69Ca";
+export const safeAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 
 // Stableswap core contracts
 export const lPTokenBaseAddress = "0x08800d125088CfCd9b72432383397bAF680f7c3b";

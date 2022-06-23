@@ -1,16 +1,40 @@
-import { ethers, run } from "hardhat";
+import { writeFileSync, existsSync, readFileSync } from "fs";
+import { ethers } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
-import { Contract, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { auroraAddress, chefV2Address } from "../constants";
+import { chefV2Address, safeAddress } from "../constants";
 
-async function main() {
+type RewarderConfig = {
+  lpToken: string;
+  rewardToken: string;
+};
+const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderConfig) => {
+  try {
+    const rewarderConfigsJSONFile = readFileSync("./rewarderConfigs.json");
+    const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
+
+    rewarderConfigsJSON.push(newRewarderConfig);
+
+    writeFileSync("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
+    console.info("*** Added new rewarder config to rewarderConfigs.json");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const _proposeAddingNewRewarderToSafe = async (newRewarderConfig: RewarderConfig) => {
   const safeServiceURL = "https://safe-transaction.aurora.gnosis.io/";
-  const safeSignerPK = "0x";
-  const lpAddress = "0xd1654a7713617d41A8C9530Fb9B948d00e162194"; //wnear-ETH LP Address
-  const safeAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
+  const safeSignerPK = process.env.SAFE_SIGNER_PK;
+  if (!safeSignerPK) {
+    console.error(new Error("*** SAFE SIGNER PK NOT FOUND IN ENV ***"));
+    return;
+  }
+
+  const { rewardToken, lpToken } = newRewarderConfig;
+  const tokenPerBlock = "0";
 
   console.log("Setup provider");
   const provider = new JsonRpcProvider(process.env.JSON_RPC);
@@ -24,10 +48,38 @@ async function main() {
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  const rewarder = await complexRewarder.connect(safeSigner).deploy(auroraAddress, lpAddress, "0", chefV2Address);
+  const rewarder = await complexRewarder.connect(safeSigner).deploy(rewardToken, lpToken, tokenPerBlock, chefV2Address);
   await rewarder.deployed();
-  console.log("USER ACTION REQUIRED");
+  console.log("*** USER ACTION REQUIRED ***");
   console.log("Go to the Gnosis Safe Web App to confirm the transaction");
+  console.log(`*** Please verify the new rewarder contract post confirmation after at: ${rewarder.address}`);
+};
+
+async function main() {
+  console.info("*** Proposing adding new rewarder ***");
+
+  if (existsSync("./newRewarderConfig.json")) {
+    console.info("*** newRewarderConfig.json found ***");
+    try {
+      const newRewarderConfigJSONFile = readFileSync("./newRewarderConfig.json");
+      const newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
+      console.log(newRewarderConfig);
+
+      // TODO: 0xchain to add combined scripts here
+      // Add Rewarder to MCV2 etc.
+      // await proposeAddingNewRewarderToSafe(newRewarderConfig);
+      //
+
+      await addNewRewarderConfigToExistingJSON(newRewarderConfig);
+      process.exit(1);
+
+      //
+    } catch (err) {
+      console.error(err);
+    }
+  } else {
+    console.info("*** No newRewarderConfig.json found, not proposing to add a new one");
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
