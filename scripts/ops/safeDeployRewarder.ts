@@ -71,9 +71,6 @@ async function main() {
       //
 
       await addNewRewarderConfigToExistingJSON(newRewarderConfig);
-      process.exit(1);
-
-      //
     } catch (err) {
       console.error(err);
     }
