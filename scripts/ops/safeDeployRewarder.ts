@@ -5,7 +5,7 @@ import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { chefV2Address, safeAddress } from "../constants";
+import { auroraURL, chefV2Address, safeServiceURL } from "../constants";
 
 type RewarderConfig = {
   lpToken: string;
@@ -26,23 +26,25 @@ const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderCon
 };
 
 const _proposeAddingNewRewarderToSafe = async (newRewarderConfig: RewarderConfig) => {
-  const safeServiceURL = "https://safe-transaction.aurora.gnosis.io/";
+  const safeAddress = process.env.SAFE_ADDRESS;
   const safeSignerPK = process.env.SAFE_SIGNER_PK;
   if (!safeSignerPK) {
     console.error(new Error("*** SAFE SIGNER PK NOT FOUND IN ENV ***"));
+    return;
+  }
+  if (!safeAddress) {
+    console.error(new Error("*** SAFE ADDRESS NOT FOUND IN ENV ***"));
     return;
   }
 
   const { rewardToken, lpToken } = newRewarderConfig;
   const tokenPerBlock = "0";
 
-  console.log("Setup provider");
-  const provider = new JsonRpcProvider(process.env.JSON_RPC);
-  console.log("Setup SafeService");
+  const provider = new JsonRpcProvider(auroraURL);
   const service = new SafeService(safeServiceURL);
-  console.log("Setup Signer");
   const signer = new Wallet(safeSignerPK, provider);
   console.log("Setup SafeEthersSigner");
+
   const ethAdapter = new EthersAdapter({ ethers, signer });
   const safe = await Safe.create({ ethAdapter, safeAddress });
   const safeSigner = new SafeEthersSigner(safe, service, provider);

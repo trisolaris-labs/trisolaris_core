@@ -2,6 +2,8 @@ import { ethers } from "hardhat";
 
 export const decimals = ethers.BigNumber.from("1000000000000000000");
 export const totalSupply = ethers.BigNumber.from("1000000").mul(500).mul(decimals);
+export const safeServiceURL = "https://safe-transaction.aurora.gnosis.io/";
+export const auroraURL = "https://mainnet.aurora.dev/";
 export const triAddress = "0xFa94348467f64D5A457F75F8bc40495D33c65aBB";
 export const chefAddress = "0x1f1Ed214bef5E83D8f5d0eB5D7011EB965D0D79B";
 export const chefV2Address = "0x3838956710bcc9D122Dd23863a0549ca8D5675D6";
@@ -42,7 +44,6 @@ export const dfRecepientAddress = "0x49D8B1389df580B1602Ae385D32b9c5A7Ceb2e25";
 export const kRecepientAddress = "0x464bCBD80Ab3Ec89A93F1667DafB682d14634A5e";
 export const donDeployerAddress = "0x25b9B32d875E4b1b0ec8b74ecF4f0A2aF8e96322";
 export const specialistAddress = "0x7d479275bCa2795394e42e07a2EE2d27c96F69Ca";
-export const safeAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 
 // Stableswap core contracts
 export const lPTokenBaseAddress = "0x08800d125088CfCd9b72432383397bAF680f7c3b";

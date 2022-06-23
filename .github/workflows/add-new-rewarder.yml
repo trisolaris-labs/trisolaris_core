@@ -29,6 +29,7 @@ jobs:
       - name: Propose new rewarder
         - env:
           SAFE_SIGNER_PK: '${{ secrets.SAFE_SIGNER_PK }}'
+          SAFE_ADDRESS: '${{ secrets.SAFE_ADDRESS }}'
         - run: |
             yarn
             yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
