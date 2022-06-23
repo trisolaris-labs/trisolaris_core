@@ -117,3 +117,9 @@ npx hardhat verify --network aurora --constructor-args verify/argumentsNRewarder
 yarn prettier
 yarn lint
 ```
+
+## Adding new rewarder
+
+- Create new PR with rewarder/\*\* branch name
+- Create newRewarderConfig.json file, fill out value keys from newRewarderConfig.sample.json
+- Once proposed gnosis safe signatures are signed and contracts are verified, we will merge your PR!
