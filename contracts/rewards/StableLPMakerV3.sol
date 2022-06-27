@@ -28,6 +28,8 @@ contract StableLPMakerV2 is Ownable {
 
     // whitelist of stableSwapAddresses
     mapping(address => bool) public whitelistedStableSwapAddresses;
+    // whitelist of metaStableSwapAddresses
+    mapping(address => bool) public whitelistedMetaStableSwapAddresses;
 
     event LogSetpTri(address oldpTri, address newpTri);
     event LogSetdao(address oldDao, address newDao);
@@ -35,9 +37,12 @@ contract StableLPMakerV2 is Ownable {
     event LogProtocolOwnedLiquidity(uint256 oldpolPercent, uint256 newStableSwap);
 
     event LogWithdrawFees();
+    event LogWithdrawMetaStableSwapFees();
 
     event LogAddStableSwap(address stableSwapAddress);
     event LogRemoveStableSwap(address stableSwapAddress);
+    event LogAddMetaStableSwap(address metaStableSwapAddress);
+    event LogRemoveMetaStableSwap(address metaStableSwapAddress);
 
     event LogSwapStableToken(address stableTokenToConvert, uint256 stableTokenAmount);
     event LogAddliquidityToStableSwap(uint256 usdcAmount, uint256 usdtAmount, uint256 usnAmount);
@@ -108,6 +113,18 @@ contract StableLPMakerV2 is Ownable {
         LogRemoveStableSwap(_stableSwap);
     }
 
+    // Meta
+
+    function addMetaStableSwap(address _metaStableSwap) public onlyOwner {
+        whitelistedMetaStableSwapAddresses[_metaStableSwap] = true;
+        LogAddMetaStableSwap(_metaStableSwap);
+    }
+
+    function removeMetaStableSwap(address _metaStableSwap) public onlyOwner {
+        whitelistedMetaStableSwapAddresses[_metaStableSwap] = false;
+        LogRemoveMetaStableSwap(_metaStableSwap);
+    }
+
     // Emergency Withdraw function
     function reclaimTokens(
         address token,
@@ -124,10 +141,24 @@ contract StableLPMakerV2 is Ownable {
     /*
         Only EOA functions
     */
-    function withdrawStableTokenFees(address _stableSwap) public onlyEOA {
+    function withdrawStableTokenFees(address _stableSwap, bool _isMetaStableSwap) public onlyEOA {
         // Withdraw admin fees from the Stableswap Pool to stable tokens
         ISwap(_stableSwap).withdrawAdminFees();
         emit LogWithdrawFees();
+
+        if (_isMetaStableSwap) {
+            IERC20 _lpToken = ISwap(_stableSwap).getToken(1);
+            uint256 _amount = IERC20(address(_lpToken)).balanceOf(address(this));
+            uint256 _minAmount = _amount.div(2).mul(999).div(1005);
+            uint256[] memory _minAmounts;
+            _minAmounts[0] = _minAmount;
+            _minAmounts[1] = _minAmount;
+
+            // approve for remove lp to stable tokens
+            _lpToken.approve(_stableSwap, _minAmount);
+            ISwap(_stableSwap).removeLiquidity(_amount, _minAmounts, block.timestamp + 60);
+            LogWithdrawMetaStableSwapFees();
+        }
     }
 
     // Any attacker can create a fake stableSwap and swap stableCoins for fake stableCoins
@@ -205,6 +236,7 @@ contract StableLPMakerV2 is Ownable {
     // Run the whole contract
     function convertStables(
         address[] calldata stableSwaps,
+        address[] calldata metaStableSwaps,
         address[] calldata swaps,
         uint8[] calldata stableTokensIndexFrom,
         uint8[] calldata stableTokensIndexTo
@@ -218,7 +250,12 @@ contract StableLPMakerV2 is Ownable {
 
         // Withdraw admin fees from the stableswap pools to stable tokens
         for (uint256 i = 0; i < stableSwaps.length; i++) {
-            withdrawStableTokenFees(stableSwaps[i]);
+            withdrawStableTokenFees(stableSwaps[i], false);
+        }
+
+        // Withdraw admin fees from the meta stableswap pools to stable tokens
+        for (uint256 i = 0; i < stableSwaps.length; i++) {
+            withdrawStableTokenFees(metaStableSwaps[i], true);
         }
 
         // convert set of stable tokens to usdc, usdt or usn
