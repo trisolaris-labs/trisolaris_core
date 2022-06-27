@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./ISwap.sol";
+
+import "../stableswap/MetaSwapUtils.sol";
 
 interface IMetaSwap {
     // pool data view functions
@@ -19,6 +22,8 @@ interface IMetaSwap {
 
     function isGuarded() external view returns (bool);
 
+    function metaSwapStorage() external view returns (MetaSwapUtils.MetaSwap calldata);
+
     // min return calculation functions
     function calculateSwap(
         uint8 tokenIndexFrom,
@@ -32,20 +37,14 @@ interface IMetaSwap {
         uint256 dx
     ) external view returns (uint256);
 
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256);
+
+    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory);
+
+    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex)
         external
         view
-        returns (uint256);
-
-    function calculateRemoveLiquidity(uint256 amount)
-        external
-        view
-        returns (uint256[] memory);
-
-    function calculateRemoveLiquidityOneToken(
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view returns (uint256 availableTokenAmount);
+        returns (uint256 availableTokenAmount);
 
     // state modifying functions
     function initialize(
@@ -111,4 +110,6 @@ interface IMetaSwap {
         uint256 maxBurnAmount,
         uint256 deadline
     ) external returns (uint256);
+
+    function withdrawAdminFees() external;
 }

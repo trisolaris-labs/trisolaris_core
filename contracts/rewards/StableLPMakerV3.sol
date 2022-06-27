@@ -2,13 +2,16 @@
 // P1 - P3: OK
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
+
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/ISwap.sol";
+import "../interfaces/IMetaSwap.sol";
 import { IERC20Uniswap } from "../amm/interfaces/IERC20.sol";
 
-contract StableLPMakerV2 is Ownable {
+import "hardhat/console.sol";
+
+contract StableLPMakerV3 is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -28,8 +31,6 @@ contract StableLPMakerV2 is Ownable {
 
     // whitelist of stableSwapAddresses
     mapping(address => bool) public whitelistedStableSwapAddresses;
-    // whitelist of metaStableSwapAddresses
-    mapping(address => bool) public whitelistedMetaStableSwapAddresses;
 
     event LogSetpTri(address oldpTri, address newpTri);
     event LogSetdao(address oldDao, address newDao);
@@ -113,18 +114,6 @@ contract StableLPMakerV2 is Ownable {
         LogRemoveStableSwap(_stableSwap);
     }
 
-    // Meta
-
-    function addMetaStableSwap(address _metaStableSwap) public onlyOwner {
-        whitelistedMetaStableSwapAddresses[_metaStableSwap] = true;
-        LogAddMetaStableSwap(_metaStableSwap);
-    }
-
-    function removeMetaStableSwap(address _metaStableSwap) public onlyOwner {
-        whitelistedMetaStableSwapAddresses[_metaStableSwap] = false;
-        LogRemoveMetaStableSwap(_metaStableSwap);
-    }
-
     // Emergency Withdraw function
     function reclaimTokens(
         address token,
@@ -143,21 +132,26 @@ contract StableLPMakerV2 is Ownable {
     */
     function withdrawStableTokenFees(address _stableSwap, bool _isMetaStableSwap) public onlyEOA {
         // Withdraw admin fees from the Stableswap Pool to stable tokens
-        ISwap(_stableSwap).withdrawAdminFees();
+        IMetaSwap(_stableSwap).withdrawAdminFees();
         emit LogWithdrawFees();
 
         if (_isMetaStableSwap) {
-            IERC20 _lpToken = ISwap(_stableSwap).getToken(1);
+            // _stableSwap is actually a metaStableSwap pool
+            IERC20 _lpToken = IMetaSwap(_stableSwap).getToken(1);
             uint256 _amount = IERC20(address(_lpToken)).balanceOf(address(this));
-            uint256 _minAmount = _amount.div(2).mul(999).div(1005);
-            uint256[] memory _minAmounts;
-            _minAmounts[0] = _minAmount;
-            _minAmounts[1] = _minAmount;
 
-            // approve for remove lp to stable tokens
-            _lpToken.approve(_stableSwap, _minAmount);
-            ISwap(_stableSwap).removeLiquidity(_amount, _minAmounts, block.timestamp + 60);
-            LogWithdrawMetaStableSwapFees();
+            if (_amount > 0) {
+                uint256 _minAmount = _amount.div(2).mul(999).div(1005);
+                uint256[] memory _minAmounts = new uint256[](2);
+                _minAmounts[0] = _minAmount;
+                _minAmounts[1] = _minAmount;
+
+                // approve for remove lp to stable tokens
+                _lpToken.approve(_stableSwap, _minAmount);
+                address _factoryStableSwap = address(IMetaSwap(_stableSwap).metaSwapStorage().baseSwap);
+                IMetaSwap(_factoryStableSwap).removeLiquidity(_amount, _minAmounts, block.timestamp + 60);
+                LogWithdrawMetaStableSwapFees();
+            }
         }
     }
 
@@ -169,8 +163,8 @@ contract StableLPMakerV2 is Ownable {
         uint8 _tokenIndexTo
     ) public onlyEOA {
         require(whitelistedStableSwapAddresses[_stableSwap], "StableLPMaker: Stableswap not whitelisted");
-        IERC20 _tokenFrom = ISwap(_stableSwap).getToken(_tokenIndexFrom);
-        IERC20 _tokenTo = ISwap(_stableSwap).getToken(_tokenIndexTo);
+        IERC20 _tokenFrom = IMetaSwap(_stableSwap).getToken(_tokenIndexFrom);
+        IERC20 _tokenTo = IMetaSwap(_stableSwap).getToken(_tokenIndexTo);
         uint256 stableTokenFromAmount = _tokenFrom.balanceOf(address(this));
         // skip swap if no token amount
         if (stableTokenFromAmount > 0) {
@@ -182,7 +176,7 @@ contract StableLPMakerV2 is Ownable {
                 uint256 _decimalsDiff = (_tokenFromDecimals - _tokenToDecimals);
                 minAmount = minAmount.div(10**_decimalsDiff);
             }
-            ISwap(_stableSwap).swap(
+            IMetaSwap(_stableSwap).swap(
                 _tokenIndexFrom,
                 _tokenIndexTo,
                 stableTokenFromAmount,
@@ -248,10 +242,10 @@ contract StableLPMakerV2 is Ownable {
         );
         require(stableTokensIndexFrom.length == swaps.length, "Length of tokens to and swaps are different");
 
-        // Withdraw admin fees from the stableswap pools to stable tokens
-        for (uint256 i = 0; i < stableSwaps.length; i++) {
-            withdrawStableTokenFees(stableSwaps[i], false);
-        }
+        // // Withdraw admin fees from the stableswap pools to stable tokens
+        // for (uint256 i = 0; i < stableSwaps.length; i++) {
+        //     withdrawStableTokenFees(stableSwaps[i], false);
+        // }
 
         // Withdraw admin fees from the meta stableswap pools to stable tokens
         for (uint256 i = 0; i < stableSwaps.length; i++) {
