@@ -5,7 +5,7 @@ import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { auroraURL, chefV2Address, dao, safeServiceURL, triAddress } from "../constants";
+import { chefV2Address, dao, triAddress } from "../constants";
 import { ComplexRewarder } from "../../typechain";
 
 type RewarderConfig = {
@@ -16,16 +16,27 @@ type DeployedRewarder = {
   rewarder: ComplexRewarder;
 };
 
-const provider = new JsonRpcProvider(auroraURL);
-const { safeAddress = undefined, safeSignerPK = undefined } = process.env;
-if (!safeSignerPK) {
-  throw new Error("*** SAFE SIGNER PK NOT FOUND IN ENV ***");
+const {
+  SAFE_ADDRESS = undefined,
+  SAFE_SIGNER_PK = undefined,
+  AURORA_URL = undefined,
+  SAFE_SERVICE_URL = undefined,
+} = process.env;
+const provider = new JsonRpcProvider(AURORA_URL);
+if (!SAFE_SIGNER_PK) {
+  throw new Error("*** SAFE_SIGNER_PK NOT FOUND IN ENV ***");
 }
-if (!safeAddress) {
-  throw new Error("*** SAFE ADDRESS NOT FOUND IN ENV ***");
+if (!SAFE_ADDRESS) {
+  throw new Error("*** SAFE_ADDRESS NOT FOUND IN ENV ***");
+}
+if (!SAFE_SERVICE_URL) {
+  throw new Error("*** SAFE_SERVICE_URL NOT FOUND IN ENV ***");
+}
+if (!AURORA_URL) {
+  throw new Error("*** AURORA_URL NOT FOUND IN ENV ***");
 }
 
-const deployer = new Wallet(safeSignerPK).connect(provider);
+const deployer = new Wallet(SAFE_SIGNER_PK).connect(provider);
 
 const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderConfig) => {
   try {
@@ -62,11 +73,11 @@ const proposeAddPoolChefV2 = async (
   const { lpToken } = newRewarderConfig;
   const allocPoint = 0;
 
-  const service = new SafeService(safeServiceURL);
+  const service = new SafeService(SAFE_SERVICE_URL);
   const signer = deployer;
   console.log("Setup SafeEthersSigner");
   const ethAdapter = new EthersAdapter({ ethers, signer });
-  const safe = await Safe.create({ ethAdapter, safeAddress });
+  const safe = await Safe.create({ ethAdapter, safeAddress: SAFE_ADDRESS });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
   const masterChefV2 = await ethers.getContractFactory("MasterChefV2");

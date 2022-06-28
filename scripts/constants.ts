@@ -2,8 +2,6 @@ import { ethers } from "hardhat";
 
 export const decimals = ethers.BigNumber.from("1000000000000000000");
 export const totalSupply = ethers.BigNumber.from("1000000").mul(500).mul(decimals);
-export const safeServiceURL = "https://safe-transaction.aurora.gnosis.io/";
-export const auroraURL = "https://mainnet.aurora.dev/";
 export const triAddress = "0xFa94348467f64D5A457F75F8bc40495D33c65aBB";
 export const chefAddress = "0x1f1Ed214bef5E83D8f5d0eB5D7011EB965D0D79B";
 export const chefV2Address = "0x3838956710bcc9D122Dd23863a0549ca8D5675D6";
