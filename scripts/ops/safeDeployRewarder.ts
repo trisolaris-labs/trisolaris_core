@@ -20,6 +20,9 @@ const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderCon
 
     await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
     console.info("*** Added new rewarder config to rewarderConfigs.json");
+
+    await fs.rm("./newRewarderConfig.json");
+    console.info("*** Removed newRewarderConfig.json file, no longer needed");
   } catch (err) {
     console.error(err);
   }
