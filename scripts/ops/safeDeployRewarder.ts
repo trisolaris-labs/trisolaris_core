@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, readFileSync } from "fs";
+import { promises as fs } from "fs";
 import { ethers } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
@@ -13,12 +13,12 @@ type RewarderConfig = {
 };
 const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderConfig) => {
   try {
-    const rewarderConfigsJSONFile = readFileSync("./rewarderConfigs.json");
+    const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
     const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
 
     rewarderConfigsJSON.push(newRewarderConfig);
 
-    writeFileSync("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
+    await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
     console.info("*** Added new rewarder config to rewarderConfigs.json");
   } catch (err) {
     console.error(err);
@@ -60,10 +60,10 @@ const _proposeAddingNewRewarderToSafe = async (newRewarderConfig: RewarderConfig
 async function main() {
   console.info("*** Proposing adding new rewarder ***");
 
-  if (existsSync("./newRewarderConfig.json")) {
+  if (await fs.stat("./newRewarderConfig.json")) {
     console.info("*** newRewarderConfig.json found ***");
     try {
-      const newRewarderConfigJSONFile = readFileSync("./newRewarderConfig.json");
+      const newRewarderConfigJSONFile = await fs.readFile("./newRewarderConfig.json");
       const newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
       console.log(newRewarderConfig);
 
