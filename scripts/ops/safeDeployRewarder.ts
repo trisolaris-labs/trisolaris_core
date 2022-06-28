@@ -26,8 +26,7 @@ const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderCon
 };
 
 const _proposeAddingNewRewarderToSafe = async (newRewarderConfig: RewarderConfig) => {
-  const safeAddress = process.env.SAFE_ADDRESS;
-  const safeSignerPK = process.env.SAFE_SIGNER_PK;
+  const { safeAddress = undefined, safeSignerPK = undefined } = process.env;
   if (!safeSignerPK) {
     console.error(new Error("*** SAFE SIGNER PK NOT FOUND IN ENV ***"));
     return;
