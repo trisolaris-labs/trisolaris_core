@@ -11,6 +11,7 @@ import { ComplexRewarder } from "../../typechain";
 type RewarderConfig = {
   lpToken: string;
   rewardToken: string;
+  rewarder: string;
 };
 type DeployedRewarder = {
   rewarder: ComplexRewarder;
@@ -39,12 +40,15 @@ if (!AURORA_URL) {
 const deployer = new Wallet(SAFE_SIGNER_PK).connect(provider);
 const allocPoint = 0;
 
-const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderConfig) => {
+const addNewRewarderConfigToExistingJSON = async (
+  { rewarder }: DeployedRewarder,
+  newRewarderConfig: RewarderConfig,
+) => {
   try {
     const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
     const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
 
-    rewarderConfigsJSON.push(newRewarderConfig);
+    rewarderConfigsJSON.push({ ...newRewarderConfig, rewarder: rewarder.address });
 
     await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
     console.info("*** Added new rewarder config to rewarderConfigs.json");
@@ -134,7 +138,7 @@ async function main() {
       await transferRewarderOwnershipToDAO(rewarder);
       await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
-      await addNewRewarderConfigToExistingJSON(newRewarderConfig);
+      await addNewRewarderConfigToExistingJSON(rewarder, newRewarderConfig);
     } catch (err) {
       console.error(err);
     }
