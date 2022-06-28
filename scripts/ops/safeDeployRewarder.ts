@@ -104,6 +104,7 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
   const rewarder = await complexRewarder.connect(deployer).deploy(rewardToken, lpToken, tokenPerBlock, chefV2Address);
   await rewarder.deployed();
+  console.info(`*** Deployed new rewarder at: ${rewarder.address}`);
 
   return { rewarder };
 };
