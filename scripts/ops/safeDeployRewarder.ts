@@ -37,6 +37,7 @@ if (!AURORA_URL) {
 }
 
 const deployer = new Wallet(SAFE_SIGNER_PK).connect(provider);
+const allocPoint = 0;
 
 const addNewRewarderConfigToExistingJSON = async (newRewarderConfig: RewarderConfig) => {
   try {
@@ -71,7 +72,6 @@ const proposeAddPoolChefV2 = async (
 ): Promise<void> => {
   // Config
   const { lpToken } = newRewarderConfig;
-  const allocPoint = 0;
 
   const service = new SafeService(SAFE_SERVICE_URL);
   const signer = deployer;
