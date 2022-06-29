@@ -14,7 +14,7 @@ jobs:
             commit_message: Added new rewarder config to rewarderConfigs.json
             file_pattern: rewarderConfigs.json
       - uses: actions/checkout@v2
-          with:
+        with:
             ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v2
         with:
