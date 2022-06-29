@@ -5,7 +5,7 @@ import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { chefV2Address, dao, triAddress } from "../constants";
+import { chefV2Address, dao, ops, triAddress } from "../constants";
 import { ComplexRewarder } from "../../typechain";
 
 type RewarderConfig = {
@@ -19,26 +19,18 @@ type DeployedRewarder = {
 };
 
 const {
-  SAFE_ADDRESS = undefined,
-  SAFE_SIGNER_PK = undefined,
-  AURORA_URL = undefined,
-  SAFE_SERVICE_URL = undefined,
+  SAFE_SIGNER_MNEMONIC = undefined,
+  AURORA_URL = "https://mainnet.aurora.dev",
+  SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io",
 } = process.env;
 const provider = new JsonRpcProvider(AURORA_URL);
-if (!SAFE_SIGNER_PK) {
-  throw new Error("*** SAFE_SIGNER_PK NOT FOUND IN ENV ***");
+if (!SAFE_SIGNER_MNEMONIC) {
+  throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
 }
-if (!SAFE_ADDRESS) {
-  throw new Error("*** SAFE_ADDRESS NOT FOUND IN ENV ***");
-}
-if (!SAFE_SERVICE_URL) {
-  throw new Error("*** SAFE_SERVICE_URL NOT FOUND IN ENV ***");
-}
-if (!AURORA_URL) {
-  throw new Error("*** AURORA_URL NOT FOUND IN ENV ***");
-}
+console.info("*** Using AURORA_URL: ", AURORA_URL);
+console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
-const deployer = new Wallet(SAFE_SIGNER_PK).connect(provider);
+const deployer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
 const allocPoint = 0;
 
 const addNewRewarderConfigToExistingJSON = async (
@@ -83,7 +75,7 @@ const proposeAddPoolChefV2 = async (
   const signer = deployer;
   console.log("Setup SafeEthersSigner");
   const ethAdapter = new EthersAdapter({ ethers, signer });
-  const safe = await Safe.create({ ethAdapter, safeAddress: SAFE_ADDRESS });
+  const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
   const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
