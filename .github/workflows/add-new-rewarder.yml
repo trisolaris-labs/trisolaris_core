@@ -11,25 +11,25 @@ jobs:
     steps:
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
-            commit_message: Added new rewarder config to rewarderConfigs.json
-            file_pattern: rewarderConfigs.json
+          commit_message: Added new rewarder config to rewarderConfigs.json
+          file_pattern: rewarderConfigs.json
       - uses: actions/checkout@v2
         with:
-            ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v2
         with:
-            node-version: 12
+          node-version: 12
       - run: |
           echo MNEMONIC="test test test test test test test test test test test junk" > .env
           echo INFURA_API_KEY="test" >> .env
           echo ETHERSCAN_API_KEY="test" >> .env
           echo AURORA_API_KEY="test" >> .env
       - name: Propose new rewarder
-        - env:
-            SAFE_SIGNER_PK: '${{ secrets.SAFE_SIGNER_PK }}'
-            SAFE_ADDRESS: '${{ secrets.SAFE_ADDRESS }}'
-            SAFE_SERVICE_URL: '${{secrets.SAFE_SERVICE_URL}}'
-            AURORA_URL: '${{secrets.AURORA_URL}}'
-        - run: |
-            yarn
-            yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
+        env:
+          SAFE_SIGNER_PK: ${{ secrets.SAFE_SIGNER_PK }}
+          SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
+          SAFE_SERVICE_URL: ${{secrets.SAFE_SERVICE_URL}}
+          AURORA_URL: ${{secrets.AURORA_URL}}
+        run: |
+          yarn
+          yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
