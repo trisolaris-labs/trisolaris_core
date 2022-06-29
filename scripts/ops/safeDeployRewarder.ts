@@ -12,6 +12,7 @@ type RewarderConfig = {
   lpToken: string;
   rewardToken: string;
   rewarder: string;
+  poolId: number;
 };
 type DeployedRewarder = {
   rewarder: ComplexRewarder;
@@ -41,6 +42,7 @@ const deployer = new Wallet(SAFE_SIGNER_PK).connect(provider);
 const allocPoint = 0;
 
 const addNewRewarderConfigToExistingJSON = async (
+  poolId: number,
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
 ) => {
@@ -48,7 +50,7 @@ const addNewRewarderConfigToExistingJSON = async (
     const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
     const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
 
-    rewarderConfigsJSON.push({ ...newRewarderConfig, rewarder: rewarder.address });
+    rewarderConfigsJSON.push({ ...newRewarderConfig, rewarder: rewarder.address, poolId });
 
     await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
     console.info("*** Added new rewarder config to rewarderConfigs.json");
@@ -73,7 +75,7 @@ const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedRewarder) =>
 const proposeAddPoolChefV2 = async (
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
-): Promise<void> => {
+): Promise<{ poolId: number }> => {
   // Config
   const { lpToken } = newRewarderConfig;
 
@@ -93,11 +95,14 @@ const proposeAddPoolChefV2 = async (
 
   const poolLength = await chef.poolLength();
   let canAddPool = true;
+  let poolId = 0;
   for (let i = 0; i < poolLength.toNumber(); i++) {
     const lpTokenAddress = await chef.lpToken(i);
     if (lpTokenAddress === lpToken) {
       canAddPool = false;
     }
+
+    poolId = i;
   }
   if (canAddPool) {
     console.info("*** Propose adding new pool to MCV2:", lpToken);
@@ -107,6 +112,8 @@ const proposeAddPoolChefV2 = async (
     console.log("*** USER ACTION REQUIRED ***");
     console.log("Go to the Gnosis Safe Web App to confirm the transaction");
     console.log(`*** Please verify the proposed adding pool to MCV2 after at: ${rewarder.address}`);
+
+    return { poolId };
   } else {
     throw new Error(`*** lpToken address already added in MCV2 Pool: ${lpToken}`);
   }
@@ -136,9 +143,9 @@ async function main() {
       // TODO: 0xchain to verify whether this is correct process?
       const rewarder = await deployNewRewarder(newRewarderConfig);
       await transferRewarderOwnershipToDAO(rewarder);
-      await proposeAddPoolChefV2(rewarder, newRewarderConfig);
+      const { poolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
-      await addNewRewarderConfigToExistingJSON(rewarder, newRewarderConfig);
+      await addNewRewarderConfigToExistingJSON(poolId, rewarder, newRewarderConfig);
     } catch (err) {
       console.error(err);
     }

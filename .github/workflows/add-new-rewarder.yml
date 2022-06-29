@@ -3,12 +3,11 @@ name: Test Package
 permissions:
   contents: write
 
-on:
-  pull_request:
-    branches: "rewarder/**"
+on: [pull_request]
 
 jobs:
   test:
+    if: contains(github.event.pull_request.head.ref, 'rewarder')
     runs-on: ubuntu-latest
     steps:
       - uses: stefanzweifel/git-auto-commit-action@v4
