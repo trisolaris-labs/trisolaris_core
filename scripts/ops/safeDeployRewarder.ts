@@ -20,9 +20,12 @@ type DeployedRewarder = {
 
 const {
   SAFE_SIGNER_MNEMONIC = undefined,
-  AURORA_URL = "https://mainnet.aurora.dev",
-  SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io",
+  // TODO: Add to github secrets?
+  // AURORA_URL = "https://mainnet.aurora.dev/",
+  // SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/",
 } = process.env;
+const AURORA_URL = "https://mainnet.aurora.dev/";
+const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
 if (!SAFE_SIGNER_MNEMONIC) {
   throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
