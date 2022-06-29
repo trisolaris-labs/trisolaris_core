@@ -26,7 +26,7 @@ jobs:
           echo AURORA_API_KEY="test" >> .env
       - name: Propose new rewarder
         env:
-          SAFE_SIGNER_PK: ${{ secrets.SAFE_SIGNER_PK }}
+          SAFE_SIGNER_MNEMONIC: ${{ secrets.SAFE_SIGNER_MNEMONIC }}
           SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
           SAFE_SERVICE_URL: ${{secrets.SAFE_SERVICE_URL}}
           AURORA_URL: ${{secrets.AURORA_URL}}
