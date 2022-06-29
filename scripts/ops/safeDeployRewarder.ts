@@ -127,10 +127,9 @@ async function main() {
   console.info("*** Proposing adding new rewarder ***");
 
   try {
-    await fs.stat("./newRewarderConfig.json");
-    console.info("*** newRewarderConfig.json found ***");
     const newRewarderConfigJSONFile = await fs.readFile("./newRewarderConfig.json");
     const newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
+    console.info("*** newRewarderConfig.json found ***");
 
     // TODO: 0xchain to verify whether this is correct process?
     const rewarder = await deployNewRewarder(newRewarderConfig);
