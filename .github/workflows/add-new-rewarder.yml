@@ -18,7 +18,7 @@ jobs:
             ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v2
         with:
-          node-version: 12
+            node-version: 12
       - run: |
           echo MNEMONIC="test test test test test test test test test test test junk" > .env
           echo INFURA_API_KEY="test" >> .env
@@ -26,10 +26,10 @@ jobs:
           echo AURORA_API_KEY="test" >> .env
       - name: Propose new rewarder
         - env:
-          SAFE_SIGNER_PK: '${{ secrets.SAFE_SIGNER_PK }}'
-          SAFE_ADDRESS: '${{ secrets.SAFE_ADDRESS }}'
-          SAFE_SERVICE_URL: '${{secrets.SAFE_SERVICE_URL}}'
-          AURORA_URL: '${{secrets.AURORA_URL}}'
+            SAFE_SIGNER_PK: '${{ secrets.SAFE_SIGNER_PK }}'
+            SAFE_ADDRESS: '${{ secrets.SAFE_ADDRESS }}'
+            SAFE_SERVICE_URL: '${{secrets.SAFE_SERVICE_URL}}'
+            AURORA_URL: '${{secrets.AURORA_URL}}'
         - run: |
             yarn
             yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
