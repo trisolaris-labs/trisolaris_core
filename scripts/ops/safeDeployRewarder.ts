@@ -27,11 +27,12 @@ const provider = new JsonRpcProvider(AURORA_URL);
 if (!SAFE_SIGNER_MNEMONIC) {
   throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
 }
-console.info("*** Using AURORA_URL: ", AURORA_URL);
-console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
-
 const deployer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
 const allocPoint = 0;
+
+console.info("*** Using deployer address: ", deployer.address);
+console.info("*** Using AURORA_URL: ", AURORA_URL);
+console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 const addNewRewarderConfigToExistingJSON = async (
   poolId: number,
@@ -138,7 +139,7 @@ async function main() {
 
     await addNewRewarderConfigToExistingJSON(poolId, rewarder, newRewarderConfig);
   } catch (err) {
-    console.info("*** No newRewarderConfig.json found, not proposing to add a new one");
+    console.error(err);
   }
 }
 
