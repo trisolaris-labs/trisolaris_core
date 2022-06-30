@@ -112,10 +112,7 @@ const proposeAddPoolChefV2 = async (
     const chefAddArgs = [allocPoint, LPToken, rewarder.address];
     console.info(JSON.stringify(chefAddArgs));
 
-    const tx = await chef
-      .connect(safeSigner)
-      .add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString());
-    await tx.wait();
+    await chef.connect(safeSigner).add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString());
 
     console.info("*** USER ACTION REQUIRED ***");
     console.info("Go to the Gnosis Safe Web App to confirm the transaction");
