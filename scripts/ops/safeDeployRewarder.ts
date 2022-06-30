@@ -1,4 +1,4 @@
-import { promises as fs } from "fs";
+import { promises as fs, rmSync } from "fs";
 import { ethers, run } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
@@ -45,21 +45,18 @@ const addNewRewarderConfigToExistingJSON = async (
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
 ) => {
-  try {
-    const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
-    const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
+  const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
+  const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
 
-    const rewarderConfig: RewarderConfig = { ...newRewarderConfig, Rewarder: rewarder.address, PoolId: PoolId };
-    rewarderConfigsJSON.push(rewarderConfig);
+  const rewarderConfig: RewarderConfig = { ...newRewarderConfig, Rewarder: rewarder.address, PoolId: PoolId };
+  rewarderConfigsJSON.push(rewarderConfig);
 
-    await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
-    console.info("*** Added new rewarder config to rewarderConfigs.json");
+  await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
+  console.info("*** Added new rewarder config to rewarderConfigs.json");
 
-    await fs.rm("./newRewarderConfig.json");
-    console.info("*** Removed newRewarderConfig.json file, no longer needed");
-  } catch (err) {
-    console.error(err);
-  }
+  // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
+  await rmSync("./newRewarderConfig.json");
+  console.info("*** Removed newRewarderConfig.json file, no longer needed");
 };
 
 const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedRewarder) => {
