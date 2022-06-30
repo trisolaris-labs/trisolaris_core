@@ -40,6 +40,7 @@ const allocPoint = 0;
 
 console.info("*** Using deployer address: ", deployer.address);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
+console.info("*** Using AURORA_URL: ", AURORA_URL);
 
 const addNewRewarderConfigToExistingJSON = async (
   poolId: number,
