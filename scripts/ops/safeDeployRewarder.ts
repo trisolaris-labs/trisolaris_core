@@ -117,9 +117,9 @@ const proposeAddPoolChefV2 = async (
       .add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString());
     await tx.wait();
 
-    console.log("*** USER ACTION REQUIRED ***");
-    console.log("Go to the Gnosis Safe Web App to confirm the transaction");
-    console.log(`*** Please verify the proposed adding pool to MCV2 after at: ${rewarder.address}`);
+    console.info("*** USER ACTION REQUIRED ***");
+    console.info("Go to the Gnosis Safe Web App to confirm the transaction");
+    console.info(`*** Please verify the proposed adding pool to MCV2 after at: ${rewarder.address}`);
 
     return { PoolId };
   } else {
