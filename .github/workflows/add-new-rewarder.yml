@@ -19,6 +19,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 12
+      - run: |
+          echo MNEMONIC="test test test test test test test test test test test junk" > .env
+          echo INFURA_API_KEY="test" >> .env
+          echo ETHERSCAN_API_KEY="test" >> .env
+          echo AURORA_API_KEY="test" >> .env
       - name: Propose new rewarder
         env:
           SAFE_SIGNER_MNEMONIC: ${{ secrets.SAFE_SIGNER_MNEMONIC }}
