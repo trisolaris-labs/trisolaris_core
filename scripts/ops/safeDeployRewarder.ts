@@ -18,15 +18,16 @@ type DeployedRewarder = {
   rewarder: ComplexRewarder;
 };
 
-const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
-if (!auroraApiKey) {
-  throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
-}
+// const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
+// if (!auroraApiKey) {
+//   throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
+// }
 const {
   SAFE_SIGNER_MNEMONIC = undefined,
   // TODO: Add to github secrets?
 } = process.env;
-const AURORA_URL = "https://mainnet.aurora.dev/" + auroraApiKey;
+const AURORA_URL = "https://mainnet.aurora.dev/";
+//  + auroraApiKey
 const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
 
