@@ -21,16 +21,12 @@ type DeployedRewarder = {
   rewarder: ComplexRewarder;
 };
 
-// const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
-// if (!auroraApiKey) {
-//   throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
-// }
-const {
-  SAFE_SIGNER_MNEMONIC = undefined,
-  // TODO: Add to github secrets?
-} = process.env;
-const AURORA_URL = "https://mainnet.aurora.dev/";
-//  + auroraApiKey
+const { SAFE_SIGNER_MNEMONIC = undefined, AURORA_API_KEY } = process.env;
+if (!AURORA_API_KEY) {
+  throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
+}
+
+const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
 const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
 
@@ -43,7 +39,6 @@ const allocPoint = 0;
 
 console.info("*** Using deployer address: ", deployer.address);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
-console.info("*** Using AURORA_URL: ", AURORA_URL);
 
 const addNewRewarderConfigToExistingJSON = async (
   PoolId: number,
@@ -150,11 +145,11 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
   await rewarder.deployed();
   console.info(`*** Deployed new rewarder at: ${rewarder.address}`);
 
-  // console.info(`*** Verifying new rewarder `);
-  // await run("verify:verify", {
-  //   address: rewarder.address,
-  //   constructorArguments: rewarderConstructorArgs,
-  // });
+  console.info(`*** Verifying new rewarder `);
+  await run("verify:verify", {
+    address: rewarder.address,
+    constructorArguments: rewarderConstructorArgs,
+  });
 
   return { rewarder };
 };
