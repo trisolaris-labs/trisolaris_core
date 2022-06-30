@@ -9,10 +9,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Added new rewarder config to rewarderConfigs.json
-          file_pattern: rewarderConfigs.json
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.head_ref }}
@@ -32,3 +28,6 @@ jobs:
         run: |
           yarn
           yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Added new rewarder config to rewarderConfigs.json

@@ -163,12 +163,17 @@ async function main() {
   }
 
   if (newRewarderConfig) {
-    // TODO: 0xchain to verify whether this is correct process?
     const rewarder = await deployNewRewarder(newRewarderConfig);
     await transferRewarderOwnershipToDAO(rewarder);
-    const { PoolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
+    // TODO: Uncomment
+    // const { PoolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
-    await addNewRewarderConfigToExistingJSON(PoolId, rewarder, newRewarderConfig);
+    await addNewRewarderConfigToExistingJSON(
+      0,
+      // PoolId,
+      rewarder,
+      newRewarderConfig,
+    );
   }
 }
 
