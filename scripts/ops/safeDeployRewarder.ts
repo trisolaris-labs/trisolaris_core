@@ -9,10 +9,13 @@ import { chefV2Address, ops, triAddress } from "../constants";
 import { ComplexRewarder } from "../../typechain";
 
 type RewarderConfig = {
-  lpToken: string;
-  rewardToken: string;
-  rewarder: string;
-  poolId: number;
+  LPToken: string;
+  RewardToken: string;
+  Rewarder: string;
+  PoolId: number;
+  RewarderTokenDecimals: number;
+  CoingeckoRewarderTokenName?: string;
+  RewarderPriceLP?: string;
 };
 type DeployedRewarder = {
   rewarder: ComplexRewarder;
@@ -43,7 +46,7 @@ console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 console.info("*** Using AURORA_URL: ", AURORA_URL);
 
 const addNewRewarderConfigToExistingJSON = async (
-  poolId: number,
+  PoolId: number,
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
 ) => {
@@ -51,7 +54,8 @@ const addNewRewarderConfigToExistingJSON = async (
     const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
     const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
 
-    rewarderConfigsJSON.push({ ...newRewarderConfig, rewarder: rewarder.address, poolId });
+    const rewarderConfig: RewarderConfig = { ...newRewarderConfig, Rewarder: rewarder.address, PoolId: PoolId };
+    rewarderConfigsJSON.push(rewarderConfig);
 
     await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
     console.info("*** Added new rewarder config to rewarderConfigs.json");
@@ -74,9 +78,9 @@ const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedRewarder) =>
 const proposeAddPoolChefV2 = async (
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
-): Promise<{ poolId: number }> => {
+): Promise<{ PoolId: number }> => {
   // Config
-  const { lpToken } = newRewarderConfig;
+  const { LPToken } = newRewarderConfig;
 
   const service = new SafeService(SAFE_SERVICE_URL);
   const signer = deployer;
@@ -94,18 +98,18 @@ const proposeAddPoolChefV2 = async (
 
   const poolLength = await chef.poolLength();
   let canAddPool = true;
-  let poolId = 0;
+  let PoolId = 0;
   for (let i = 0; i < poolLength.toNumber(); i++) {
     const lpTokenAddress = await chef.lpToken(i);
-    if (lpTokenAddress === lpToken) {
+    if (lpTokenAddress === LPToken) {
       canAddPool = false;
     }
 
-    poolId = i;
+    PoolId = i;
   }
   if (canAddPool) {
-    console.info("*** Propose adding new pool to MCV2:", lpToken);
-    const chefAddArgs = [allocPoint, lpToken, rewarder.address];
+    console.info("*** Propose adding new pool to MCV2:", LPToken);
+    const chefAddArgs = [allocPoint, LPToken, rewarder.address];
     console.info(JSON.stringify(chefAddArgs));
 
     const tx = await chef
@@ -117,19 +121,26 @@ const proposeAddPoolChefV2 = async (
     console.log("Go to the Gnosis Safe Web App to confirm the transaction");
     console.log(`*** Please verify the proposed adding pool to MCV2 after at: ${rewarder.address}`);
 
-    return { poolId };
+    return { PoolId };
   } else {
-    throw new Error(`*** lpToken address already added in MCV2 Pool: ${lpToken}`);
+    throw new Error(`*** lpToken address already added in MCV2 Pool: ${LPToken}`);
   }
 };
 
 const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<DeployedRewarder> => {
-  const { rewardToken, lpToken } = newRewarderConfig;
+  const { RewardToken, LPToken } = newRewarderConfig;
   const tokenPerBlock = "0";
 
-  console.info(`*** Deploying new rewarder: ${JSON.stringify({ rewardToken, lpToken, tokenPerBlock, chefV2Address })}`);
+  console.info(
+    `*** Deploying new rewarder: ${JSON.stringify({
+      rewardToken: RewardToken,
+      lpToken: LPToken,
+      tokenPerBlock,
+      chefV2Address,
+    })}`,
+  );
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  const rewarderConstructorArgs = [rewardToken, lpToken, tokenPerBlock, chefV2Address];
+  const rewarderConstructorArgs = [RewardToken, LPToken, tokenPerBlock, chefV2Address];
 
   const rewarder = await complexRewarder
     .connect(deployer)
@@ -161,16 +172,16 @@ async function main() {
     console.info("*** newRewarderConfig.json found ***");
     console.info(JSON.stringify(newRewarderConfig));
   } catch (err) {
-    console.error("*** No newRewarderConfig.json found");
+    console.info("*** No newRewarderConfig.json found");
   }
 
   if (newRewarderConfig) {
     // TODO: 0xchain to verify whether this is correct process?
     const rewarder = await deployNewRewarder(newRewarderConfig);
     await transferRewarderOwnershipToDAO(rewarder);
-    const { poolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
+    const { PoolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
-    await addNewRewarderConfigToExistingJSON(poolId, rewarder, newRewarderConfig);
+    await addNewRewarderConfigToExistingJSON(PoolId, rewarder, newRewarderConfig);
   }
 }
 
