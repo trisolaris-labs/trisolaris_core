@@ -165,15 +165,9 @@ async function main() {
   if (newRewarderConfig) {
     const rewarder = await deployNewRewarder(newRewarderConfig);
     await transferRewarderOwnershipToDAO(rewarder);
-    // TODO: Uncomment
-    // const { PoolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
+    const { PoolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
-    await addNewRewarderConfigToExistingJSON(
-      0,
-      // PoolId,
-      rewarder,
-      newRewarderConfig,
-    );
+    await addNewRewarderConfigToExistingJSON(PoolId, rewarder, newRewarderConfig);
   }
 }
 
