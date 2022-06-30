@@ -1,11 +1,11 @@
 import { promises as fs } from "fs";
-import { ethers } from "hardhat";
+import { ethers, run } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { chefV2Address, dao, ops, triAddress } from "../constants";
+import { chefV2Address, ops, triAddress } from "../constants";
 import { ComplexRewarder } from "../../typechain";
 
 type RewarderConfig = {
@@ -18,23 +18,26 @@ type DeployedRewarder = {
   rewarder: ComplexRewarder;
 };
 
+const auroraApiKey: string | undefined = process.env.AURORA_API_KEY;
+if (!auroraApiKey) {
+  throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
+}
 const {
   SAFE_SIGNER_MNEMONIC = undefined,
   // TODO: Add to github secrets?
-  // AURORA_URL = "https://mainnet.aurora.dev/",
-  // SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/",
 } = process.env;
-const AURORA_URL = "https://mainnet.aurora.dev/";
+const AURORA_URL = "https://mainnet.aurora.dev/" + auroraApiKey;
 const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
+
 if (!SAFE_SIGNER_MNEMONIC) {
   throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
 }
+
 const deployer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
 const allocPoint = 0;
 
 console.info("*** Using deployer address: ", deployer.address);
-console.info("*** Using AURORA_URL: ", AURORA_URL);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 const addNewRewarderConfigToExistingJSON = async (
@@ -60,14 +63,12 @@ const addNewRewarderConfigToExistingJSON = async (
 
 const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedRewarder) => {
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  const tx = await complexRewarder.connect(deployer).attach(rewarder.address).transferOwnership(dao);
+  const tx = await complexRewarder.connect(deployer).attach(rewarder.address).transferOwnership(ops);
   await tx.wait();
 
-  console.info("*** Transferred Rewarder at: ", rewarder.address, " ownership to DAO: ", dao);
+  console.info("*** Transferred Rewarder at: ", rewarder.address, " ownership to ops: ", ops);
 };
 
-// TODO:
-// Do we need this as a proposed safe tx? Migrating MCV2 to DAO?
 const proposeAddPoolChefV2 = async (
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
@@ -119,10 +120,26 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
   const { rewardToken, lpToken } = newRewarderConfig;
   const tokenPerBlock = "0";
 
+  console.info(`*** Deploying new rewarder: ${JSON.stringify({ rewardToken, lpToken, tokenPerBlock, chefV2Address })}`);
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  const rewarder = await complexRewarder.connect(deployer).deploy(rewardToken, lpToken, tokenPerBlock, chefV2Address);
+  const rewarderConstructorArgs = [rewardToken, lpToken, tokenPerBlock, chefV2Address];
+
+  const rewarder = await complexRewarder
+    .connect(deployer)
+    .deploy(
+      rewarderConstructorArgs[0],
+      rewarderConstructorArgs[1],
+      rewarderConstructorArgs[2],
+      rewarderConstructorArgs[3],
+    );
   await rewarder.deployed();
   console.info(`*** Deployed new rewarder at: ${rewarder.address}`);
+
+  console.info(`*** Verifying new rewarder `);
+  await run("verify:verify", {
+    address: rewarder.address,
+    constructorArguments: rewarderConstructorArgs,
+  });
 
   return { rewarder };
 };
@@ -134,6 +151,7 @@ async function main() {
     const newRewarderConfigJSONFile = await fs.readFile("./newRewarderConfig.json");
     const newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
     console.info("*** newRewarderConfig.json found ***");
+    console.info(JSON.stringify(newRewarderConfig));
 
     // TODO: 0xchain to verify whether this is correct process?
     const rewarder = await deployNewRewarder(newRewarderConfig);
