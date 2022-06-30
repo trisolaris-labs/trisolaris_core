@@ -1,4 +1,4 @@
-import { promises as fs, rmSync } from "fs";
+import fs from "fs-extra";
 import { ethers, run } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
@@ -45,17 +45,16 @@ const addNewRewarderConfigToExistingJSON = async (
   { rewarder }: DeployedRewarder,
   newRewarderConfig: RewarderConfig,
 ) => {
-  const rewarderConfigsJSONFile = await fs.readFile("./rewarderConfigs.json");
-  const rewarderConfigsJSON: RewarderConfig[] = JSON.parse(rewarderConfigsJSONFile?.toString());
+  const rewarderConfigsJSON: RewarderConfig[] = await fs.readJSON("./rewarderConfigs.json");
 
   const rewarderConfig: RewarderConfig = { ...newRewarderConfig, Rewarder: rewarder.address, PoolId: PoolId };
   rewarderConfigsJSON.push(rewarderConfig);
 
-  await fs.writeFile("./rewarderConfigs.json", JSON.stringify(rewarderConfigsJSON));
+  await fs.writeJSON("./rewarderConfigs.json", rewarderConfigsJSON);
   console.info("*** Added new rewarder config to rewarderConfigs.json");
 
   // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
-  await rmSync("./newRewarderConfig.json");
+  await fs.remove("./newRewarderConfig.json");
   console.info("*** Removed newRewarderConfig.json file, no longer needed");
 };
 
@@ -156,8 +155,7 @@ async function main() {
 
   let newRewarderConfig;
   try {
-    const newRewarderConfigJSONFile = await fs.readFile("./newRewarderConfig.json");
-    newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
+    newRewarderConfig = await fs.readJSON("./newRewarderConfig.json");
     console.info("*** newRewarderConfig.json found ***");
     console.info(JSON.stringify(newRewarderConfig));
   } catch (err) {
