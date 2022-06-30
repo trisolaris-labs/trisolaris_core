@@ -105,7 +105,12 @@ const proposeAddPoolChefV2 = async (
   }
   if (canAddPool) {
     console.info("*** Propose adding new pool to MCV2:", lpToken);
-    const tx = await chef.connect(safeSigner).add(allocPoint, lpToken, rewarder.address);
+    const chefAddArgs = [allocPoint, lpToken, rewarder.address];
+    console.info(JSON.stringify(chefAddArgs));
+
+    const tx = await chef
+      .connect(safeSigner)
+      .add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString());
     await tx.wait();
 
     console.log("*** USER ACTION REQUIRED ***");
@@ -137,11 +142,11 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
   await rewarder.deployed();
   console.info(`*** Deployed new rewarder at: ${rewarder.address}`);
 
-  console.info(`*** Verifying new rewarder `);
-  await run("verify:verify", {
-    address: rewarder.address,
-    constructorArguments: rewarderConstructorArgs,
-  });
+  // console.info(`*** Verifying new rewarder `);
+  // await run("verify:verify", {
+  //   address: rewarder.address,
+  //   constructorArguments: rewarderConstructorArgs,
+  // });
 
   return { rewarder };
 };
