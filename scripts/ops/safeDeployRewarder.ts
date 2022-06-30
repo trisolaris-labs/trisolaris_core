@@ -154,20 +154,23 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
 async function main() {
   console.info("*** Proposing adding new rewarder ***");
 
+  let newRewarderConfig;
   try {
     const newRewarderConfigJSONFile = await fs.readFile("./newRewarderConfig.json");
-    const newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
+    newRewarderConfig = JSON.parse(newRewarderConfigJSONFile?.toString());
     console.info("*** newRewarderConfig.json found ***");
     console.info(JSON.stringify(newRewarderConfig));
+  } catch (err) {
+    console.error("*** No newRewarderConfig.json found");
+  }
 
+  if (newRewarderConfig) {
     // TODO: 0xchain to verify whether this is correct process?
     const rewarder = await deployNewRewarder(newRewarderConfig);
     await transferRewarderOwnershipToDAO(rewarder);
     const { poolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
     await addNewRewarderConfigToExistingJSON(poolId, rewarder, newRewarderConfig);
-  } catch (err) {
-    console.error(err);
   }
 }
 
