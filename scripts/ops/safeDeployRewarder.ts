@@ -13,7 +13,7 @@ type RewarderConfig = {
   RewardToken: string;
   Rewarder: string;
   PoolId: number;
-  RewarderTokenDecimals: number;
+  RewardTokenDecimals: number;
   CoingeckoRewarderTokenName?: string;
   RewarderPriceLP?: string;
 };
@@ -43,11 +43,17 @@ console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 const addNewRewarderConfigToExistingJSON = async (
   PoolId: number,
   { rewarder }: DeployedRewarder,
+  RewardTokenDecimals: number,
   newRewarderConfig: RewarderConfig,
 ) => {
   const rewarderConfigsJSON: RewarderConfig[] = await fs.readJSON("./rewarderConfigs.json");
 
-  const rewarderConfig: RewarderConfig = { ...newRewarderConfig, Rewarder: rewarder.address, PoolId: PoolId };
+  const rewarderConfig: RewarderConfig = {
+    ...newRewarderConfig,
+    Rewarder: rewarder.address,
+    PoolId: PoolId,
+    RewardTokenDecimals,
+  };
   rewarderConfigsJSON.push(rewarderConfig);
 
   await fs.writeJSON("./rewarderConfigs.json", rewarderConfigsJSON);
@@ -56,6 +62,17 @@ const addNewRewarderConfigToExistingJSON = async (
   // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
   await fs.remove("./newRewarderConfig.json");
   console.info("*** Removed newRewarderConfig.json file, no longer needed");
+};
+
+const getRewarderERC20Decimals = async (
+  newRewarderConfig: RewarderConfig,
+): Promise<{ RewardTokenDecimals: number }> => {
+  const rewardToken = await ethers.getContractFactory("ERC20");
+  const RewardTokenDecimals = await rewardToken.connect(deployer).attach(newRewarderConfig.RewardToken).decimals();
+
+  console.info("*** RewardTokenDecimals found as: ", RewardTokenDecimals);
+
+  return { RewardTokenDecimals };
 };
 
 const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedRewarder) => {
@@ -167,7 +184,8 @@ async function main() {
     await transferRewarderOwnershipToDAO(rewarder);
     const { PoolId } = await proposeAddPoolChefV2(rewarder, newRewarderConfig);
 
-    await addNewRewarderConfigToExistingJSON(PoolId, rewarder, newRewarderConfig);
+    const { RewardTokenDecimals } = await getRewarderERC20Decimals(newRewarderConfig);
+    await addNewRewarderConfigToExistingJSON(PoolId, rewarder, RewardTokenDecimals, newRewarderConfig);
   }
 }
 
