@@ -314,7 +314,7 @@ describe("StableLpMaker - V3", function () {
 
   it("should revert if caller is not EOA", async function () {
     await expect(
-      this.exploiter.convertStables([this.swapFlashLoan.address], [this.swapFlashLoan.address], [0], [2]),
+      this.exploiter.convertStables([this.swapFlashLoan.address], [this.metaSwap.address], [this.swapFlashLoan.address], [0], [2]),
     ).to.be.revertedWith("StableLPMaker: must use EOA");
   });
 
@@ -331,14 +331,17 @@ describe("StableLpMaker - V3", function () {
     expect(await this.swapLPToken.balanceOf(this.dao.address)).to.equal(0);
     expect(await this.swapLPToken.balanceOf(this.pTRI.address)).to.equal(0);
     await this.lpMakerV3.connect(this.owner).addStableSwap(this.swapFlashLoan.address);
+    await this.lpMakerV3.connect(this.owner).addStableSwap(this.metaSwap.address);
+    await this.lpMakerV3.connect(this.owner).addStableSwap(this.metaSwapDeposit.address);
     await this.lpMakerV3.convertStables(
-      [this.swapFlashLoan.address],
-      [this.swapFlashLoan.address],
-      [0],
-      [2],
+      [this.swapFlashLoan.address, this.metaSwap.address],
+      [this.metaSwap.address],
+      [this.swapFlashLoan.address, this.metaSwapDeposit.address],
+      [0, 0],
+      [2, 3],
     );
     expect(await this.swapLPToken.balanceOf(this.dao.address)).to.be.closeTo("0", 10);
-    expect(await this.swapLPToken.balanceOf(this.pTRI.address)).to.be.closeTo("999849996011", 10);
+    expect(await this.swapLPToken.balanceOf(this.pTRI.address)).to.be.closeTo("20988885828069", 10);
   });
 
   describe("StableLPMakerV3: Dao Tests", function () {

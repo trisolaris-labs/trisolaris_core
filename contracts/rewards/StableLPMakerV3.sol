@@ -219,9 +219,9 @@ contract StableLPMakerV3 is Ownable {
     }
 
     // Run the whole contract
-    // TODO: add the new convert LPs function in the whole script
     function convertStables(
         address[] calldata stableSwaps,
+        address[] calldata removeLiquiditySwaps,
         address[] calldata swaps,
         uint8[] calldata stableTokensIndexFrom,
         uint8[] calldata stableTokensIndexTo
@@ -236,6 +236,11 @@ contract StableLPMakerV3 is Ownable {
         // Withdraw admin fees from the stableswap pools to stable tokens
         for (uint256 i = 0; i < stableSwaps.length; i++) {
             withdrawStableTokenFees(stableSwaps[i]);
+        }
+
+        // Convert LP tokens into base LP tokens
+        for (uint256 i = 0; i < removeLiquiditySwaps.length; i++) {
+            removeLiquidity(removeLiquiditySwaps[i]);
         }
 
         // convert set of stable tokens to usdc, usdt or usn
