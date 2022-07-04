@@ -1,7 +1,6 @@
 import { expect } from "chai";
-import { keccak } from "ethereumjs-util";
 import { ethers } from "hardhat";
-import { getBigNumber, setupStableSwap, asyncForEach, setupMetaSwap } from "../utils";
+import { getBigNumber, asyncForEach } from "../utils";
 
 describe("StableLpMaker - V3", function () {
   before(async function () {
