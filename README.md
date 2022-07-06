@@ -110,8 +110,9 @@ npx hardhat verify --network aurora --constructor-args verify/argumentsNRewarder
 
 ### Passing the lint Github actions
 
-* Forked contracts have been ignored from being linted, these include `amm`, `stableswap`, `multicall` and `weth` folders.
-Run the following commands on your local to lint the files 
+- Forked contracts have been ignored from being linted, these include `amm`, `stableswap`, `multicall` and `weth` folders.
+  Run the following commands on your local to lint the files
+
 ```
 yarn prettier
 yarn lint
