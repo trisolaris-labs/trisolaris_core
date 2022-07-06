@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { ethers } from "hardhat";
 import { BigNumber, Signer } from "ethers";
 import { ERC20 } from "../typechain";
@@ -174,7 +175,7 @@ export async function setTimestamp(timestamp: number): Promise<any> {
   return forceAdvanceOneBlock(timestamp);
 }
 
-export const increaseTimeBySeconds = async (seconds: number) => {
+export const increaseTimeBySeconds = async (seconds: number): Promise<void> => {
   await ethers.provider.send("evm_increaseTime", [seconds]);
   await ethers.provider.send("evm_mine", []);
 };

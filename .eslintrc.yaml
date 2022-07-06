@@ -9,6 +9,8 @@ parserOptions:
 plugins:
   - "@typescript-eslint"
 root: true
+env:
+  node: true
 rules:
   "@typescript-eslint/no-floating-promises":
     - error
