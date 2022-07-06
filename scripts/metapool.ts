@@ -3,12 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import {
-  lPTokenBaseAddress,
-  amplificationUtilsAddress,
-  swapUtilsAddress,
-  swapFlashLoanAddress,
-} from "./constants";
+import { lPTokenBaseAddress, amplificationUtilsAddress, swapUtilsAddress, swapFlashLoanAddress } from "./constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.

@@ -107,3 +107,12 @@ Where of course `v0.8.4+commit.c7e474f2` can be replaced with any other version.
 ```
 npx hardhat verify --network aurora --constructor-args verify/argumentsNRewarder.js 0x9E5c2dC717cCAc1eB0e8d267E43538E03531503d
 ```
+
+### Passing the lint Github actions
+
+* Forked contracts have been ignored from being linted, these include `amm`, `stableswap`, `multicall` and `weth` folders.
+Run the following commands on your local to lint the files 
+```
+yarn prettier
+yarn lint
+```

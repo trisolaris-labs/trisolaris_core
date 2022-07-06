@@ -14,5 +14,12 @@
   },
   "exclude": ["node_modules"],
   "files": ["./hardhat.config.ts"],
-  "include": ["tasks/**/*.ts", "test/**/*.ts", "typechain/**/*.d.ts", "typechain/**/*.ts", "./scripts", "verify/**/*.js"]
+  "include": [
+    "tasks/**/*.ts",
+    "test/**/*.ts",
+    "typechain/**/*.d.ts",
+    "typechain/**/*.ts",
+    "./scripts",
+    "verify/**/*.js"
+  ]
 }

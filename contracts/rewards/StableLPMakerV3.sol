@@ -67,6 +67,7 @@ contract StableLPMakerV3 is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
+        // solhint-disable-next-line avoid-tx-origin
         require(msg.sender == tx.origin, "StableLPMaker: must use EOA");
         _;
     }
@@ -134,7 +135,7 @@ contract StableLPMakerV3 is Ownable {
     // We convert any LPs we have received from metaswaps into their respective stables
     function removeLiquidity(address _stableSwap) public onlyEOA {
         require(whitelistedStableSwapAddresses[_stableSwap], "StableLPMaker: Stableswap not whitelisted");
-        (,,,,,,address _lpToken) = ISwap(_stableSwap).swapStorage();
+        (, , , , , , address _lpToken) = ISwap(_stableSwap).swapStorage();
         uint256 _amount = IERC20(_lpToken).balanceOf(address(this));
 
         if (_amount > 0) {

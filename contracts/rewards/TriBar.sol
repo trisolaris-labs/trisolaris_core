@@ -6,7 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-// TriBar is the coolest bar in town. You come in with some Tri, and leave with more! The longer you stay, the more Tri you get.
+// TriBar is the coolest bar in town. You come in with some Tri, and leave with more!
+// The longer you stay, the more Tri you get.
 //
 // This contract handles swapping to and from xTri, TriSwap's staking token.
 contract TriBar is ERC20("TriBar", "xTRI") {
@@ -29,7 +30,9 @@ contract TriBar is ERC20("TriBar", "xTRI") {
         if (totalShares == 0 || totalTri == 0) {
             _mint(msg.sender, _triAmount);
         }
-        // Calculate and mint the amount of xTri the Tri is worth. The ratio will change overtime, as xTri is burned/minted and Tri deposited + gained from fees / withdrawn.
+        // Calculate and mint the amount of xTri the Tri is worth.
+        // The ratio will change overtime, as xTri is burned/minted and
+        // Tri deposited + gained from fees / withdrawn.
         else {
             uint256 xTriAmount = _triAmount.mul(totalShares).div(totalTri);
             _mint(msg.sender, xTriAmount);
