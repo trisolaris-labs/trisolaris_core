@@ -8,6 +8,11 @@ dist/
 lib/
 node_modules/
 typechain/
+contracts/amm/
+contracts/libraries/
+contracts/multicall/
+contracts/stableswap/
+contracts/weth/
 
 # files
 *.env

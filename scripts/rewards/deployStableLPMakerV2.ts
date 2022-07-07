@@ -7,7 +7,6 @@ import {
   dao,
   nusdPoolSwapDepositAddress,
   pTRIAddress,
-  stableLPMakerV2Address,
   threePoolLpTokenAddress,
   threePoolSwapFlashLoanAddress,
   twoPoolSwapFlashLoanAddress,

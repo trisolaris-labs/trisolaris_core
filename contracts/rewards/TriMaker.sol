@@ -9,7 +9,6 @@ import "../amm/interfaces/IUniswapV2ERC20.sol";
 import "../amm/interfaces/IUniswapV2Pair.sol";
 import "../amm/interfaces/IUniswapV2Factory.sol";
 
-
 // TriMaker is MasterChef's left hand and kinda a wizard. He can cook up Tri from pretty much anything!
 // This contract handles "serving up" rewards for xTri holders by trading tokens collected from fees for Tri.
 
@@ -63,10 +62,7 @@ contract TriMaker is Ownable {
     // C1 - C24: OK
     function setBridge(address token, address bridge) external onlyOwner {
         // Checks
-        require(
-            token != tri && token != weth && token != bridge,
-            "TriMaker: Invalid bridge"
-        );
+        require(token != tri && token != weth && token != bridge, "TriMaker: Invalid bridge");
 
         // Effects
         _bridges[token] = bridge;
@@ -78,6 +74,7 @@ contract TriMaker is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
+        // solhint-disable-next-line avoid-tx-origin
         require(msg.sender == tx.origin, "TriMaker: must use EOA");
         _;
     }
@@ -88,17 +85,14 @@ contract TriMaker is Ownable {
     //     As the size of the TriBar has grown, this requires large amounts of funds and isn't super profitable anymore
     //     The onlyEOA modifier prevents this being done with a flash loan.
     // C1 - C24: OK
-    function convert(address token0, address token1) external onlyEOA() {
+    function convert(address token0, address token1) external onlyEOA {
         _convert(token0, token1);
     }
 
     // F1 - F10: OK, see convert
     // C1 - C24: OK
     // C3: Loop is under control of the caller
-    function convertMultiple(
-        address[] calldata token0,
-        address[] calldata token1
-    ) external onlyEOA() {
+    function convertMultiple(address[] calldata token0, address[] calldata token1) external onlyEOA {
         // TODO: This can be optimized a fair bit, but this is safer and simpler for now
         uint256 len = token0.length;
         for (uint256 i = 0; i < len; i++) {
@@ -115,23 +109,13 @@ contract TriMaker is Ownable {
         require(address(pair) != address(0), "TriMaker: Invalid pair");
         // balanceOf: S1 - S4: OK
         // transfer: X1 - X5: OK
-        IERC20(address(pair)).safeTransfer(
-            address(pair),
-            pair.balanceOf(address(this))
-        );
+        IERC20(address(pair)).safeTransfer(address(pair), pair.balanceOf(address(this)));
         // X1 - X5: OK
         (uint256 amount0, uint256 amount1) = pair.burn(address(this));
         if (token0 != pair.token0()) {
             (amount0, amount1) = (amount1, amount0);
         }
-        emit LogConvert(
-            msg.sender,
-            token0,
-            token1,
-            amount0,
-            amount1,
-            _convertStep(token0, token1, amount0, amount1)
-        );
+        emit LogConvert(msg.sender, token0, token1, amount0, amount1, _convertStep(token0, token1, amount0, amount1));
     }
 
     // F1 - F10: OK
@@ -166,36 +150,20 @@ contract TriMaker is Ownable {
             triOut = _toTRI(token0, amount0).add(amount1);
         } else if (token0 == weth) {
             // eg. ETH - USDC
-            triOut = _toTRI(
-                weth,
-                _swap(token1, weth, amount1, address(this)).add(amount0)
-            );
+            triOut = _toTRI(weth, _swap(token1, weth, amount1, address(this)).add(amount0));
         } else if (token1 == weth) {
             // eg. USDT - ETH
-            triOut = _toTRI(
-                weth,
-                _swap(token0, weth, amount0, address(this)).add(amount1)
-            );
+            triOut = _toTRI(weth, _swap(token0, weth, amount0, address(this)).add(amount1));
         } else {
             // eg. MIC - USDT
             address bridge0 = bridgeFor(token0);
             address bridge1 = bridgeFor(token1);
             if (bridge0 == token1) {
                 // eg. MIC - USDT - and bridgeFor(MIC) = USDT
-                triOut = _convertStep(
-                    bridge0,
-                    token1,
-                    _swap(token0, bridge0, amount0, address(this)),
-                    amount1
-                );
+                triOut = _convertStep(bridge0, token1, _swap(token0, bridge0, amount0, address(this)), amount1);
             } else if (bridge1 == token0) {
                 // eg. WBTC - DSD - and bridgeFor(DSD) = WBTC
-                triOut = _convertStep(
-                    token0,
-                    bridge1,
-                    amount0,
-                    _swap(token1, bridge1, amount1, address(this))
-                );
+                triOut = _convertStep(token0, bridge1, amount0, _swap(token1, bridge1, amount1, address(this)));
             } else {
                 triOut = _convertStep(
                     bridge0,
@@ -218,8 +186,7 @@ contract TriMaker is Ownable {
     ) internal returns (uint256 amountOut) {
         // Checks
         // X1 - X5: OK
-        IUniswapV2Pair pair =
-            IUniswapV2Pair(factory.getPair(fromToken, toToken));
+        IUniswapV2Pair pair = IUniswapV2Pair(factory.getPair(fromToken, toToken));
         require(address(pair) != address(0), "TriMaker: Cannot convert");
 
         // Interactions
@@ -227,16 +194,12 @@ contract TriMaker is Ownable {
         (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
         uint256 amountInWithFee = amountIn.mul(997);
         if (fromToken == pair.token0()) {
-            amountOut =
-                amountInWithFee.mul(reserve1) /
-                reserve0.mul(1000).add(amountInWithFee);
+            amountOut = amountInWithFee.mul(reserve1) / reserve0.mul(1000).add(amountInWithFee);
             IERC20(fromToken).safeTransfer(address(pair), amountIn);
             pair.swap(0, amountOut, to, new bytes(0));
             // TODO: Add maximum slippage?
         } else {
-            amountOut =
-                amountInWithFee.mul(reserve0) /
-                reserve1.mul(1000).add(amountInWithFee);
+            amountOut = amountInWithFee.mul(reserve0) / reserve1.mul(1000).add(amountInWithFee);
             IERC20(fromToken).safeTransfer(address(pair), amountIn);
             pair.swap(amountOut, 0, to, new bytes(0));
             // TODO: Add maximum slippage?
@@ -245,10 +208,7 @@ contract TriMaker is Ownable {
 
     // F1 - F10: OK
     // C1 - C24: OK
-    function _toTRI(address token, uint256 amountIn)
-        internal
-        returns (uint256 amountOut)
-    {
+    function _toTRI(address token, uint256 amountIn) internal returns (uint256 amountOut) {
         // X1 - X5: OK
         amountOut = _swap(token, tri, amountIn, bar);
     }

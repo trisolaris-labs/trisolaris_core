@@ -76,6 +76,7 @@ contract UsdcMaker is Ownable {
     // C6: It's not a fool proof solution, but it prevents flash loans, so here it's ok to use tx.origin
     modifier onlyEOA() {
         // Try to make flash-loan exploit harder to do by only allowing externally owned addresses.
+        // solhint-disable-next-line avoid-tx-origin
         require(msg.sender == tx.origin, "UsdcMaker: must use EOA");
         _;
     }

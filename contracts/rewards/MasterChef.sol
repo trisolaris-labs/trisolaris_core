@@ -60,29 +60,10 @@ contract MasterChef is Ownable {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event EmergencyWithdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount
-    );
-    event LogPoolAddition(
-        uint256 indexed pid, 
-        uint256 allocPoint, 
-        IERC20 indexed lpToken, 
-        IRewarder indexed rewarder
-    );
-    event LogSetPool(
-        uint256 indexed pid, 
-        uint256 allocPoint, 
-        IRewarder indexed rewarder, 
-        bool overwrite
-    );
-    event LogUpdatePool(
-        uint256 indexed pid, 
-        uint256 lastRewardBlock, 
-        uint256 lpSupply, 
-        uint256 accSushiPerShare
-    );
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken, IRewarder indexed rewarder);
+    event LogSetPool(uint256 indexed pid, uint256 allocPoint, IRewarder indexed rewarder, bool overwrite);
+    event LogUpdatePool(uint256 indexed pid, uint256 lastRewardBlock, uint256 lpSupply, uint256 accSushiPerShare);
 
     constructor(
         Tri _tri,
@@ -99,9 +80,7 @@ contract MasterChef is Ownable {
     }
 
     // updateTriPerBlock, can update the tri per block only onwer can update this field
-    function updateTriPerBlock(
-        uint256 _triPerBlock
-    ) public onlyOwner {
+    function updateTriPerBlock(uint256 _triPerBlock) public onlyOwner {
         massUpdatePools();
         triPerBlock = _triPerBlock;
     }
@@ -117,8 +96,7 @@ contract MasterChef is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock =
-            block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(
             PoolInfo({
@@ -143,43 +121,29 @@ contract MasterChef is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
-            _allocPoint
-        );
+        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         poolInfo[_pid].allocPoint = _allocPoint;
-        if (overwrite) { rewarder[_pid] = _rewarder; }
+        if (overwrite) {
+            rewarder[_pid] = _rewarder;
+        }
         emit LogSetPool(_pid, _allocPoint, overwrite ? _rewarder : rewarder[_pid], overwrite);
     }
 
     // Return reward multiplier over the given _from to _to block.
-    function getMultiplier(uint256 _from, uint256 _to)
-        public
-        pure
-        returns (uint256)
-    {
+    function getMultiplier(uint256 _from, uint256 _to) public pure returns (uint256) {
         return _to.sub(_from);
     }
 
     // View function to see pending TRIs on frontend.
-    function pendingTri(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256)
-    {
+    function pendingTri(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accTriPerShare = pool.accTriPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 multiplier =
-                getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 triReward =
-                multiplier.mul(triPerBlock).mul(pool.allocPoint).div(
-                    totalAllocPoint
-                );
-            accTriPerShare = accTriPerShare.add(
-                triReward.mul(1e12).div(lpSupply)
-            );
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 triReward = multiplier.mul(triPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+            accTriPerShare = accTriPerShare.add(triReward.mul(1e12).div(lpSupply));
         }
         return user.amount.mul(accTriPerShare).div(1e12).sub(user.rewardDebt);
     }
@@ -204,36 +168,28 @@ contract MasterChef is Ownable {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 triReward =
-            multiplier.mul(triPerBlock).mul(pool.allocPoint).div(
-                totalAllocPoint
-            );
+        uint256 triReward = multiplier.mul(triPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
         tri.mint(address(this), triReward);
-        pool.accTriPerShare = pool.accTriPerShare.add(
-            triReward.mul(1e12).div(lpSupply)
-        );
+        pool.accTriPerShare = pool.accTriPerShare.add(triReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
         emit LogUpdatePool(_pid, pool.lastRewardBlock, lpSupply, pool.accTriPerShare);
     }
 
     // Internal deposit function to deposit LP tokens to MasterChef for TRI allocation.
-    function _deposit(uint256 _pid, uint256 _amount, address userAddress) internal {
+    function _deposit(
+        uint256 _pid,
+        uint256 _amount,
+        address userAddress
+    ) internal {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][userAddress];
         updatePool(_pid);
         uint256 pending = 0;
         if (user.amount > 0) {
-            pending =
-                user.amount.mul(pool.accTriPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
+            pending = user.amount.mul(pool.accTriPerShare).div(1e12).sub(user.rewardDebt);
             safeTriTransfer(userAddress, pending);
-        } 
-        pool.lpToken.safeTransferFrom(
-            address(userAddress),
-            address(this),
-            _amount
-        );
+        }
+        pool.lpToken.safeTransferFrom(address(userAddress), address(this), _amount);
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(pool.accTriPerShare).div(1e12);
         // Rewarder
@@ -260,10 +216,7 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
-        uint256 pending =
-            user.amount.mul(pool.accTriPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
+        uint256 pending = user.amount.mul(pool.accTriPerShare).div(1e12).sub(user.rewardDebt);
         safeTriTransfer(msg.sender, pending);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accTriPerShare).div(1e12);
@@ -286,8 +239,7 @@ contract MasterChef is Ownable {
         user.rewardDebt = 0;
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
 
-        // resolve double reward vulnerability: 
-        // https://traderjoe-xyz.medium.com/security-announcement-double-rewards-removed-due-to-vulnerability-8c4401f225fb
+        // resolve double reward vulnerability from traderJoe:
         IRewarder _rewarder = rewarder[_pid];
         if (address(_rewarder) != address(0)) {
             _rewarder.onTriReward(_pid, msg.sender, msg.sender, 0, 0);

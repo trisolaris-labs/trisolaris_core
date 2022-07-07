@@ -3,8 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { triAddress, chefAddress, zeroAddress } from './constants';
-
+import { triAddress, chefAddress, zeroAddress } from "./constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -13,7 +12,7 @@ async function main(): Promise<void> {
   // await run("compile");
   // We get the contract to deploy
   const [_, deployer] = await ethers.getSigners();
-  console.log(deployer.address)
+  console.log(deployer.address);
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 

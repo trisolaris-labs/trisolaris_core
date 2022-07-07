@@ -34,10 +34,10 @@ describe("StableLpMaker - V3", function () {
     await this.swapUtils.deployed();
 
     const SwapFlashLoanFactory = await ethers.getContractFactory("SwapFlashLoan", {
-        libraries: {
+      libraries: {
         SwapUtils: this.swapUtils.address,
         AmplificationUtils: this.amplificationUtils.address,
-        },
+      },
     });
     this.swapFlashLoan = await SwapFlashLoanFactory.connect(this.owner).deploy();
     await this.swapFlashLoan.deployed();
@@ -63,8 +63,8 @@ describe("StableLpMaker - V3", function () {
     this.ADMIN_FEE = 0;
 
     await this.swapFlashLoan
-        .connect(this.owner)
-        .initialize(
+      .connect(this.owner)
+      .initialize(
         TOKEN_ADDRESSES,
         TOKEN_DECIMALS,
         this.LP_TOKEN_NAME,
@@ -73,20 +73,20 @@ describe("StableLpMaker - V3", function () {
         this.SWAP_FEE,
         this.ADMIN_FEE,
         this.lpTokenBase.address,
-        );
+      );
     const swapStorage = await this.swapFlashLoan.swapStorage();
     this.swapLPToken = LpTokenFactory.attach(swapStorage.lpToken);
 
     await asyncForEach([this.owner, this.user1, this.user2], async signer => {
-        await this.usn.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
-        await this.usdt.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
-        await this.usdc.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
-        await this.ust.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
-        await this.swapLPToken.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
-        await this.usn.transfer(signer.address, getBigNumber("300"));
-        await this.usdt.transfer(signer.address, getBigNumber("300"));
-        await this.usdc.transfer(signer.address, getBigNumber("300"));
-        await this.ust.transfer(signer.address, getBigNumber("300"));
+      await this.usn.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
+      await this.usdt.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
+      await this.usdc.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
+      await this.ust.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
+      await this.swapLPToken.connect(signer).approve(this.swapFlashLoan.address, this.MAX_UINT256);
+      await this.usn.transfer(signer.address, getBigNumber("300"));
+      await this.usdt.transfer(signer.address, getBigNumber("300"));
+      await this.usdc.transfer(signer.address, getBigNumber("300"));
+      await this.ust.transfer(signer.address, getBigNumber("300"));
     });
 
     const MetaSwapUtilsFactory = await ethers.getContractFactory("MetaSwapUtils", this.owner);
@@ -94,25 +94,25 @@ describe("StableLpMaker - V3", function () {
     await this.metaSwapUtils.deployed();
 
     const MetaSwapFactory = await ethers.getContractFactory("MetaSwap", {
-        libraries: {
+      libraries: {
         SwapUtils: this.swapUtils.address,
         AmplificationUtils: this.amplificationUtils.address,
         MetaSwapUtils: this.metaSwapUtils.address,
-        },
+      },
     });
     this.metaSwap = await MetaSwapFactory.connect(this.owner).deploy();
     await this.metaSwap.deployed();
 
     // Set approvals
     await asyncForEach([this.owner, this.user1, this.user2], async signer => {
-        await this.usn.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
-        await this.usdt.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
-        await this.usdc.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
-        await this.ust.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
-        await this.swapLPToken.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
+      await this.usn.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
+      await this.usdt.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
+      await this.usdc.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
+      await this.ust.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
+      await this.swapLPToken.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
 
-        // Add some liquidity to the base pool
-        await this.swapFlashLoan
+      // Add some liquidity to the base pool
+      await this.swapFlashLoan
         .connect(signer)
         .addLiquidity([String(1e20), String(1e20), String(1e20)], 0, this.MAX_UINT256);
     });
@@ -140,15 +140,15 @@ describe("StableLpMaker - V3", function () {
     const metaLpTokenFactory = await ethers.getContractFactory("LPToken", this.owner);
     this.metaSwapLPToken = metaLpTokenFactory.attach(metaSwapStorage.lpToken);
 
-    const MetaSwapDepositFactory = await ethers.getContractFactory("MetaSwapDeposit", this.owner)
-    this.metaSwapDeposit = await MetaSwapDepositFactory.deploy()
+    const MetaSwapDepositFactory = await ethers.getContractFactory("MetaSwapDeposit", this.owner);
+    this.metaSwapDeposit = await MetaSwapDepositFactory.deploy();
 
     // Initialize MetaSwapDeposit
     await this.metaSwapDeposit.initialize(
       this.swapFlashLoan.address,
       this.metaSwap.address,
       this.metaSwapLPToken.address,
-    )
+    );
 
     // Add liquidity to the meta swap pool
     await this.metaSwap.addLiquidity([String(1e18), String(1e18)], 0, this.MAX_UINT256);
@@ -169,7 +169,7 @@ describe("StableLpMaker - V3", function () {
     this.exploiter = await this.LPMakerV3ExploitMock.connect(this.owner).deploy(this.lpMakerV3.address);
     await this.exploiter.deployed();
     await this.swapFlashLoan.connect(this.owner).setFeeAddress(this.lpMakerV3.address);
-    
+
     await this.swapFlashLoan.setAdminFee(getBigNumber(10, 8));
     await this.swapFlashLoan.connect(this.user1).swap(1, 0, String(1e17), 0, this.MAX_UINT256);
     expect(await this.swapFlashLoan.feeAddress()).to.eq(this.lpMakerV3.address);
@@ -227,11 +227,11 @@ describe("StableLpMaker - V3", function () {
     expect(await this.usdt.balanceOf(this.lpMakerV3.address)).to.equal(0);
     // should revert for not whitelisted stableswaps
     await expect(this.lpMakerV3.removeLiquidity(this.swapFlashLoan.address)).to.be.revertedWith(
-        "StableLPMaker: Stableswap not whitelisted",
-      );
+      "StableLPMaker: Stableswap not whitelisted",
+    );
     await this.lpMakerV3.connect(this.owner).addStableSwap(this.swapFlashLoan.address);
     expect(await this.lpMakerV3.whitelistedStableSwapAddresses(this.swapFlashLoan.address)).to.equal(true);
-  
+
     await this.lpMakerV3.removeLiquidity(this.swapFlashLoan.address);
     // swapLPToken is converted into base tokens
     expect(await this.ust.balanceOf(this.lpMakerV3.address)).to.equal(10019739648609);
@@ -286,7 +286,6 @@ describe("StableLpMaker - V3", function () {
     expect(await this.usn.balanceOf(this.lpMakerV3.address)).to.equal(3326747132551);
     expect(await this.usdt.balanceOf(this.lpMakerV3.address)).to.equal(3327856048262);
     expect(await this.usdc.balanceOf(this.lpMakerV3.address)).to.equal(13334867809052);
-
   });
 
   it("should add liquidity to stableswap", async function () {
@@ -314,7 +313,13 @@ describe("StableLpMaker - V3", function () {
 
   it("should revert if caller is not EOA", async function () {
     await expect(
-      this.exploiter.convertStables([this.swapFlashLoan.address], [this.metaSwap.address], [this.swapFlashLoan.address], [0], [2]),
+      this.exploiter.convertStables(
+        [this.swapFlashLoan.address],
+        [this.metaSwap.address],
+        [this.swapFlashLoan.address],
+        [0],
+        [2],
+      ),
     ).to.be.revertedWith("StableLPMaker: must use EOA");
   });
 
