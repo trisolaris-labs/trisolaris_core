@@ -139,7 +139,7 @@ const proposeAddPoolChefV2 = async (
       canAddPool = false;
     }
 
-    PoolId = i;
+    PoolId = i + 1; // NOTE - iteration started from zero so we add one
   }
   if (canAddPool) {
     console.info("*** Propose adding new pool to MCV2:", LPToken);
