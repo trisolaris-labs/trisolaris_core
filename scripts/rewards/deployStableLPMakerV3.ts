@@ -75,11 +75,11 @@ async function main(deployConstructorDependencies?: DeployConstructorDependencie
 
   await (await stableLPMakerV3.addStableSwap(twoPoolSwapFlashLoanAddress)).wait(1);
   console.log(`StableLPMakerV3.addStableSwap(${twoPoolSwapFlashLoanAddress}): twoPoolSwapFlashLoanAddress`);
-  
-  // added metapool deposit address 
+
+  // added metapool deposit address
   await (await stableLPMakerV3.addStableSwap(nusdPoolSwapDepositAddress)).wait(1);
   console.log(`StableLPMakerV3.addStableSwap(${nusdPoolSwapDepositAddress}): nusdPoolSwapDepositAddress`);
-  
+
   // added metapool flashloan address
   await (await stableLPMakerV3.addStableSwap(nusdPoolSwapFlashLoanAddress)).wait(1);
   console.log(`StableLPMakerV3.addStableSwap(${nusdPoolSwapFlashLoanAddress}): nusdPoolSwapFlashLoanAddress`);
@@ -88,7 +88,6 @@ async function main(deployConstructorDependencies?: DeployConstructorDependencie
   await (await stableLPMakerV3.setProtocolOwnerLiquidityPercent(20)).wait(1);
   console.log(`StableLPMakerV3.setProtocolOwnerLiquidityPercent(20): 20% protocol owner liquidity percent`);
 
-    
   // Verify StableLPMakerV3 deployment for aurorascan
   await run("verify:verify", {
     address: stableLPMakerV3.address,
