@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { auroraAddress, chefV2Address } from '../constants';
+import { chefV2Address } from "../constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const poolId = 0
+  const poolId = 0;
   const rewarderAddress = "0x94669d7a170bfe62FAc297061663e0B48C63B9B5";
 
   const chefV2Contract = await ethers.getContractFactory("MasterChefV2");
@@ -27,10 +27,9 @@ async function main(): Promise<void> {
 
   const poolLpToken = await chefv2.lpToken(poolId);
   const rewarderLpToken = await rewarder.lpToken();
-  const poolInfo = await chefv2.poolInfo(poolId);
-  
+
   if (poolLpToken === rewarderLpToken) {
-    console.log("Reached here")
+    console.log("Reached here");
     /*
     const rewarderSetTx = await chefv2.connect(deployer).set(poolId, poolInfo.allocPoint, rewarderAddress, true);
     const rewarderSetReceipt = await rewarderSetTx.wait();

@@ -541,9 +541,9 @@ describe("Stable TRI Staking", function () {
       expect(await this.tri.balanceOf(tempUser.address)).to.equal(0);
       expect(await this.rewardToken.balanceOf(tempUser.address)).to.equal(0);
       expect(await this.pTRI.balanceOf(tempUser.address)).to.equal(0);
-      
+
       await this.rewardToken.transfer(tempUser.address, ethers.utils.parseEther("1000"));
-      
+
       expect(await this.rewardToken.balanceOf(tempUser.address)).to.equal(ethers.utils.parseEther("1000"));
 
       await expect(this.pTRI.connect(tempUser).deposit(ethers.utils.parseEther("1000"))).to.be.revertedWith(

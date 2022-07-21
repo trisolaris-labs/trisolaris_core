@@ -4,37 +4,37 @@ import { getBigNumber, setupStableSwap, asyncForEach } from "../utils";
 
 describe("StableLpMaker", function () {
   before(async function () {
-    this.signers = await ethers.getSigners()
-    this.owner = this.signers[0]
-    this.user1 = this.signers[1]
-    this.user2 = this.signers[2]
-    this.pTRI = this.signers[3]
-    this.dao = this.signers[4]
-        
+    this.signers = await ethers.getSigners();
+    this.owner = this.signers[0];
+    this.user1 = this.signers[1];
+    this.user2 = this.signers[2];
+    this.pTRI = this.signers[3];
+    this.dao = this.signers[4];
+
     this.MAX_UINT256 = ethers.constants.MaxUint256;
     this.ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-    await setupStableSwap(this, this.owner)
+    await setupStableSwap(this, this.owner);
 
     this.UsnMaker = await ethers.getContractFactory("StableLPMaker");
     this.UsnMakerExploitMock = await ethers.getContractFactory("StableLpMakerExploitMock");
     this.ZeroAddress = "0x0000000000000000000000000000000000000000";
 
     // deploying mock tokens
-    const ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.owner)
-    this.usdc = await ERC20Mock.connect(this.owner).deploy("USDC", "USDC",  18, getBigNumber("300"))
-    await this.usdc.deployed()
-    this.usdt = await ERC20Mock.connect(this.owner).deploy("USDT", "USDT",  18, getBigNumber("300"))
-    await this.usdt.deployed()
-    this.usn = await ERC20Mock.connect(this.owner).deploy("USN", "USN",  18, getBigNumber("300"))
-    await this.usn.deployed()
+    const ERC20Mock = await ethers.getContractFactory("ERC20Mock", this.owner);
+    this.usdc = await ERC20Mock.connect(this.owner).deploy("USDC", "USDC", 18, getBigNumber("300"));
+    await this.usdc.deployed();
+    this.usdt = await ERC20Mock.connect(this.owner).deploy("USDT", "USDT", 18, getBigNumber("300"));
+    await this.usdt.deployed();
+    this.usn = await ERC20Mock.connect(this.owner).deploy("USN", "USN", 18, getBigNumber("300"));
+    await this.usn.deployed();
 
     // transferring to users
-    await this.usdc.transfer(this.user1.address, getBigNumber("100"))
-    await this.usdc.transfer(this.user2.address, getBigNumber("100"))
-    await this.usdt.transfer(this.user1.address, getBigNumber("100"))
-    await this.usdt.transfer(this.user2.address, getBigNumber("100"))
-    await this.usn.transfer(this.user1.address, getBigNumber("100"))
-    await this.usn.transfer(this.user2.address, getBigNumber("100"))
+    await this.usdc.transfer(this.user1.address, getBigNumber("100"));
+    await this.usdc.transfer(this.user2.address, getBigNumber("100"));
+    await this.usdt.transfer(this.user1.address, getBigNumber("100"));
+    await this.usdt.transfer(this.user2.address, getBigNumber("100"));
+    await this.usn.transfer(this.user1.address, getBigNumber("100"));
+    await this.usn.transfer(this.user2.address, getBigNumber("100"));
 
     const TOKEN_ADDRESSES = [this.usdc.address, this.usdt.address, this.usn.address];
     const TOKEN_DECIMALS = [18, 18, 18];
@@ -70,10 +70,18 @@ describe("StableLpMaker", function () {
       3,
     );
 
-    this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(this.swapFlashLoan.address,this.pTRI.address,this.usn.address,this.usdc.address, this.usdt.address, this.swapToken.address, this.dao.address)
-    await this.usnMaker.deployed()
-    this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address)
-    await this.exploiter.deployed()
+    this.usnMaker = await this.UsnMaker.connect(this.owner).deploy(
+      this.swapFlashLoan.address,
+      this.pTRI.address,
+      this.usn.address,
+      this.usdc.address,
+      this.usdt.address,
+      this.swapToken.address,
+      this.dao.address,
+    );
+    await this.usnMaker.deployed();
+    this.exploiter = await this.UsnMakerExploitMock.connect(this.owner).deploy(this.usnMaker.address);
+    await this.exploiter.deployed();
 
     await this.usdc.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
     await this.usdt.connect(this.owner).transfer(this.testSwapReturnValues.address, getBigNumber("10"));
@@ -138,15 +146,18 @@ describe("StableLpMaker", function () {
 
     it("should fail to send usn when not enough balance", async function () {
       await expect(this.usnMaker.sendLpToken()).to.be.revertedWith("StableLpMaker: no TLP to send");
-    })
+    });
 
     it("should revert if caller is not EOA", async function () {
-      await expect(
-        this.exploiter.convertStables(this.swapFlashLoan.address)).to.be.revertedWith("StableLPMaker: must use EOA");
+      await expect(this.exploiter.convertStables(this.swapFlashLoan.address)).to.be.revertedWith(
+        "StableLPMaker: must use EOA",
+      );
     });
 
     it("only owner should be able to change addresses", async function () {
-      await expect(this.usnMaker.connect(this.user1).setpTri(this.usdt.address)).to.be.revertedWith("Ownable: caller is not the owner");
+      await expect(this.usnMaker.connect(this.user1).setpTri(this.usdt.address)).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
       await expect(this.usnMaker.connect(this.owner).setpTri(this.user1.address))
         .to.emit(this.usnMaker, "LogSetpTri")
         .withArgs(this.pTRI.address, this.user1.address);
@@ -157,26 +168,28 @@ describe("StableLpMaker", function () {
   describe("StableUsnMaker Dao Tests", function () {
     it("should have correct address", async function () {
       expect(await this.usnMaker.dao()).to.equal(this.dao.address);
-    })
+    });
 
     it("Only admin can change dao address", async function () {
-      await expect(this.usnMaker.connect(this.user1).setDaoAddress(this.user1.address)).to.be.reverted
-      await this.usnMaker.connect(this.owner).setDaoAddress(this.user1.address)
+      await expect(this.usnMaker.connect(this.user1).setDaoAddress(this.user1.address)).to.be.reverted;
+      await this.usnMaker.connect(this.owner).setDaoAddress(this.user1.address);
       expect(await this.usnMaker.dao()).to.equal(this.user1.address);
-      await this.usnMaker.connect(this.owner).setDaoAddress(this.dao.address)
+      await this.usnMaker.connect(this.owner).setDaoAddress(this.dao.address);
       expect(await this.usnMaker.dao()).to.equal(this.dao.address);
-    })
+    });
 
     it("should have correct address", async function () {
       expect(await this.usnMaker.polPercent()).to.equal(0);
-      await expect(this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(101)).to.be.revertedWith("POL is too high")
-      await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(50)
+      await expect(this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(101)).to.be.revertedWith(
+        "POL is too high",
+      );
+      await this.usnMaker.connect(this.owner).setprotocolOwnerLiquidityPercent(50);
       expect(await this.usnMaker.polPercent()).to.equal(50);
-    })
+    });
 
     it("should send 50% of fees to dao", async function () {
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(0);
-       expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
+      expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(0);
       await this.usnMaker.withdrawStableTokenFees();
       expect(await this.usn.balanceOf(this.usnMaker.address)).to.equal(2499512096);
       expect(await this.usdc.balanceOf(this.usnMaker.address)).to.equal(249710331);
@@ -187,6 +200,6 @@ describe("StableLpMaker", function () {
       expect(await this.swapToken.balanceOf(this.dao.address)).to.equal(1498427689);
       expect(await this.swapToken.balanceOf(this.user1.address)).to.equal(1498427689);
       // the ptri address was changed in old test
-    })
+    });
   });
 });

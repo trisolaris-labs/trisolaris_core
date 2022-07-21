@@ -1,3 +1,9 @@
 # directories
 artifacts/
 node_modules/
+contracts/amm/
+contracts/libraries/
+contracts/multicall/
+contracts/stableswap/
+contracts/weth/
+contracts/mocks/TestSwapReturnValues.sol

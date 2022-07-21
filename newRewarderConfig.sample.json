@@ -1,0 +1,6 @@
+{
+  "LPToken": "address",
+  "RewardToken": "delete if no additional reward token or address",
+  "CoingeckoRewarderTokenName": "delete if using RewarderPriceLP or string: https://www.coingecko.com/en/coins/trisolaris -> CMD+F for `API id",
+  "RewarderPriceLP": "delete if using CoingeckoRewarderTokenName or address"
+}

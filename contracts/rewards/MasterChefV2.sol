@@ -14,7 +14,8 @@ import "../interfaces/IMasterChef.sol";
 /// It is the only address with minting rights for TRI.
 /// The idea for this MasterChef V2 (MCV2) contract is therefore to be the owner of a dummy token
 /// that is deposited into the MasterChef V1 (MCV1) contract.
-/// The allocation point for this pool on MCV1 is the total allocation point for all pools that receive double incentives.
+/// The allocation point for this pool on MCV1 is the total allocation point for
+/// all pools that receive double incentives.
 contract MasterChefV2 is Ownable {
     using BoringMath for uint256;
     using BoringMath128 for uint128;
@@ -38,6 +39,7 @@ contract MasterChefV2 is Ownable {
         uint64 allocPoint;
     }
 
+    /* solhint-disable var-name-mixedcase */
     /// @notice Address of MCV1 contract.
     IMasterChef public immutable MASTER_CHEF;
     /// @notice Address of TRI contract.
@@ -50,6 +52,7 @@ contract MasterChefV2 is Ownable {
     IERC20[] public lpToken;
     /// @notice Address of each `IRewarder` contract in MCV2.
     IRewarder[] public rewarder;
+    /* solhint-enable */
 
     /// @notice Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
@@ -80,9 +83,11 @@ contract MasterChefV2 is Ownable {
         MASTER_PID = _MASTER_PID;
     }
 
-    /// @notice Deposits a dummy token to `MASTER_CHEF` MCV1. This is required because MCV1 holds the minting rights for TRI.
+    /// @notice Deposits a dummy token to `MASTER_CHEF` MCV1.
+    /// This is required because MCV1 holds the minting rights for TRI.
     /// Any balance of transaction sender in `dummyToken` is transferred.
-    /// The allocation point for the pool on MCV1 is the total allocation point for all pools that receive double incentives.
+    /// The allocation point for the pool on MCV1 is the total allocation point for
+    /// all pools that receive double incentives.
     /// @param dummyToken The address of the ERC-20 token to deposit into MCV1.
     function init(IERC20 dummyToken) external {
         uint256 balance = dummyToken.balanceOf(msg.sender);

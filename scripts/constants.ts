@@ -9,7 +9,9 @@ export const triBarAddress = "0x802119e4e253D5C19aA06A5d567C5a41596D6803";
 export const triMakerAddress = "0xe793455c9728fc91A3E5a33FAfF9eB2F228aE151";
 export const factoryAddress = "0xc66F594268041dB60507F00703b152492fb176E7";
 export const multiSigAddress = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
+export const opsMultiSigAddress = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
 export const stableLPMaker = "0xcB251907382aEB3C2edAb766561D5F4E6c78E3FF";
+export const stableLPMakerV2Address = "0x2DF95Be842cd68062Ecdb7a30cA8dD400a8ab86B";
 export const usdcMakerAddress = "0x5EBd5e963A00500B6a1234c621811c52AF0aAade";
 
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
@@ -34,6 +36,8 @@ export const usdTLPAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 export const padAddress = "0x34F291934b88c7870B7A17835B926B264fc13a81";
 export const metaAddress = "0xc21Ff01229e982d7c8b8691163B0A3Cb8F357453";
 export const brrrAddress = "0x0240aE04c9F47B91Cf47Ca2E7ef44c9De0D385Ac"
+export const pTRIAddress = "0xe559092D2e80d9B1d91a641CE25bACC3cFdCF689";
+export const nusdAddress = "0x07379565cD8B0CaE7c60Dc78e7f601b34AF2A21c";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
 export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
@@ -58,10 +62,25 @@ export const fivePoolSwapFlashLoanAddress = "0xdd407884589b23d2155923b8178bAA0c5
 export const fivePoolLpTokenAddress = "0x467171053355Da79409bf2F931D21ab1f24Fe0A6";
 
 // 3Pool Stableswap core contracts
-export const threePoolLPTokenBaseAddress = "00xB77190A4fD2528d2Bb778B409FB5224f7ffaCB24";
+export const threePoolLPTokenBaseAddress = "0xB77190A4fD2528d2Bb778B409FB5224f7ffaCB24";
 export const threePoolAmplificationUtilsAddress = "0x114ECaa70256aFAd393f733aA4B4bF61c8959fc2";
 export const threePoolSwapUtilsAddress = "0x0564d68404608599e8c567A0bD74F90a942A69A0";
 export const threePoolSwapFlashLoanAddress = "0x458459E48dbAC0C8Ca83F8D0b7b29FEfE60c3970";
 export const threePoolLpTokenAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 
+// 2Pool Stableswap core contracts
+export const twoPoolLPTokenBaseAddress = "0xcDDc83E58F9C1d6E9916b6Cfa7143B35D125FF74";
+export const twoPoolAmplificationUtilsAddress = "0xA5782838b39cD618584236614E36F9c9a1b8E50e";
+export const twoPoolSwapUtilsAddress = "0x931E03d5A01dB8Cb0C68B3118E502AD1B3163066";
+export const twoPoolSwapFlashLoanAddress = "0x51d96EF6960cC7b4C884E1215564f926011A4064";
+export const twoPoolLpTokenAddress = "0x3fADE6094373f7A91A91D4607b226791fB3BCEAf";
+
+// nUSD Metapool Stableswap core contracts
+export const nusdPoolLPTokenBaseAddress = "0xffb69779f14E851A8c550Bf5bB1933c44BBDE129";
+export const nusdPoolAmplificationUtilsAddress = "0xA5782838b39cD618584236614E36F9c9a1b8E50e";
+export const nusdPoolSwapUtilsAddress = "0xedbc9d412854585F71c3765697167b462e51B9C6";
+export const nusdPoolSwapDepositAddress = "0xCCd87854f58773fe75CdDa542457aC48E46c2D65";
+export const nusdPoolSwapFlashLoanAddress = "0x3CE7AAD78B9eb47Fd2b487c463A17AAeD038B7EC";
+
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
+export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";

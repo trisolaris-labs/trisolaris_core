@@ -194,7 +194,10 @@ describe("UsdcMaker", function () {
     it("should allow to convert multiple", async function () {
       await this.daiEth.connect(this.minter).transfer(this.usdcMaker.address, getBigNumber(1));
       await this.triEth.connect(this.minter).transfer(this.usdcMaker.address, getBigNumber(1));
-      await this.usdcMaker.convertMultiple([this.dai.address, this.tri.address], [this.weth.address, this.weth.address]);
+      await this.usdcMaker.convertMultiple(
+        [this.dai.address, this.tri.address],
+        [this.weth.address, this.weth.address],
+      );
       expect(await this.usdc.balanceOf(this.usdcMaker.address)).to.equal(0);
       expect(await this.daiEth.balanceOf(this.usdcMaker.address)).to.equal(0);
       expect(await this.usdc.balanceOf(this.bar.address)).to.equal("2744605420302774516");

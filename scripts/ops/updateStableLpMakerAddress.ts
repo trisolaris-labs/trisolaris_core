@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { pTri } from '.././constants';
+import { pTri } from ".././constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -15,18 +15,17 @@ async function main(): Promise<void> {
   console.log(`Address: ${deployer.address}`);
 
   //Change this oce prod is fixed
-  const stableLpMakerAddress = "0xc0FDE5dFF36CeC82a9f79e68bBdeF0F8981e64f6"
+  const stableLpMakerAddress = "0xc0FDE5dFF36CeC82a9f79e68bBdeF0F8981e64f6";
 
   const StableLpMaker = await ethers.getContractFactory("StableLPMaker");
   const lpMaker = StableLpMaker.attach(stableLpMakerAddress);
   console.log(`StbaleLpMaker address: ${lpMaker.address}`);
 
   const tx = await lpMaker.connect(deployer).setpTri(pTri);
-  const receipt = await tx.wait()
-  console.log(receipt)
-  
-  const newOwner = await lpMaker.pTri();
-  console.log("New pTri", pTri)
+  const receipt = await tx.wait();
+  console.log(receipt);
+
+  console.log("New pTri", pTri);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

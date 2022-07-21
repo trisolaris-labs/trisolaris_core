@@ -3,8 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { triAddress, chefV2Address, zeroAddress } from '../constants';
-
+import { triAddress, chefV2Address, zeroAddress } from "../constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -14,10 +13,12 @@ async function main(): Promise<void> {
   // We get the contract to deploy
   const allocPoint = 0;
 
-  // THIS IS ONLT ITEM TO CHANGE
-  const lpAddresses = [
-    "0xffb69779f14E851A8c550Bf5bB1933c44BBDE129",//pad-near
-  ];
+//   // THIS IS ONLT ITEM TO CHANGE
+//   const lpAddresses = [
+//     "0xffb69779f14E851A8c550Bf5bB1933c44BBDE129",//pad-near
+//   ];
+  const lpAddresses = ["0x5eeC60F348cB1D661E4A5122CF4638c7DB7A886e", "0xd1654a7713617d41A8C9530Fb9B948d00e162194"];
+
   const rewarderAddress = zeroAddress;
 
   const signers = await ethers.getSigners();
@@ -44,9 +45,7 @@ async function main(): Promise<void> {
     }
     if (canAddPool) {
       console.log("adding pool", lpAddress);
-      const tx = await chef
-        .connect(deployer)
-        .add(allocPoint, lpAddress, rewarderAddress);
+      const tx = await chef.connect(deployer).add(allocPoint, lpAddress, rewarderAddress);
       console.log(tx);
       const receipt = await tx.wait();
       console.log(receipt.logs);

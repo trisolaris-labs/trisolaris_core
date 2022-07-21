@@ -8,6 +8,11 @@ dist/
 lib/
 node_modules/
 typechain/
+contracts/amm/
+contracts/libraries/
+contracts/multicall/
+contracts/stableswap/
+contracts/weth/
 
 # files
 *.env
@@ -18,3 +23,6 @@ coverage.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+newRewarderConfig.json
+rewarderConfigs.json
+newRewarderConfig.sample.json

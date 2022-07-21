@@ -21,6 +21,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
 
     IERC20[] public rewardToken;
     IERC20 public immutable lpToken;
+    // solhint-disable-next-line var-name-mixedcase
     IMasterChefV2 public immutable MCV2;
     uint256 public immutable numRewardTokens;
 

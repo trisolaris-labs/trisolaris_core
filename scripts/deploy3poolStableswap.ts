@@ -2,10 +2,7 @@
 // but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import {
-  ethers,
-  // , run
-} from "hardhat";
+import { ethers } from "hardhat";
 import { usdcAddress, usdtAddress, usnAddress } from "./constants";
 
 async function main(): Promise<void> {

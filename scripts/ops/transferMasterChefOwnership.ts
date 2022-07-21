@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { multiSigAddress, chefAddress } from '../constants';
+import { multiSigAddress, chefAddress } from "../constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -21,15 +21,14 @@ async function main(): Promise<void> {
   const masterChef = masterChefFactory.attach(chefAddress);
   console.log(`Master Chef address: ${masterChef.address}`);
 
-  console.log(multiSigAddress)
-  
+  console.log(multiSigAddress);
+
   const tx = await masterChef.connect(deployer).transferOwnership(multiSigAddress);
-  const receipt = await tx.wait()
-  console.log(receipt)
-  
+  const receipt = await tx.wait();
+  console.log(receipt);
+
   const newOwner = await masterChef.owner();
-  console.log("New owner", newOwner)
-  
+  console.log("New owner", newOwner);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
