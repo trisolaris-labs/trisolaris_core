@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   console.log(`Account balance: ${balance.toString()}`);
 
   const rewarderAddress = "0xD59c44fb39638209ec4ADD6DcD7A230a286055ee";//META
-  const tokensPerBlock = "200000000000000000000000";
+  const tokensPerBlock = "600000000000000000000000";
 
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
   const rewarder = complexRewarder.attach(rewarderAddress);

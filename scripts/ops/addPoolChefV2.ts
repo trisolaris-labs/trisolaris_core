@@ -16,9 +16,7 @@ async function main(): Promise<void> {
 
   // THIS IS ONLT ITEM TO CHANGE
   const lpAddresses = [
-    "0x6a29e635BCaB8aBeE1491059728e3D6D11d6A114",//pad-near
-    "0x120e713AD36eCBff171FC8B7cf19FA8B6f6Ba50C",//stnear-tri
-    "0x71dBEB011EAC90C51b42854A77C45C1E53242698" //brrr-wnear
+    "0xffb69779f14E851A8c550Bf5bB1933c44BBDE129",//pad-near
   ];
   const rewarderAddress = zeroAddress;
 
