@@ -10,22 +10,22 @@ async function main(): Promise<void> {
   // to make sure everything is compiled
   // await run("compile");
   // We get the contract to deploy
-  const deployers = await ethers.getSigners();
-  console.log(deployers)
-  // console.log(`Address: ${deployer.address}`);
+  const signers = await ethers.getSigners();
+  const deployer = signers[7]
+  console.log(`Address: ${deployer.address}`);
 
-  // const balance = await deployer.getBalance();
-  // console.log(`Account balance: ${balance.toString()}`);
+  const balance = await deployer.getBalance();
+  console.log(`Account balance: ${balance.toString()}`);
 
-  // const rewarderAddress = "0xD59c44fb39638209ec4ADD6DcD7A230a286055ee";
-  // const tokensPerBlock = "300000000000000000000000";
+  const rewarderAddress = "0xD59c44fb39638209ec4ADD6DcD7A230a286055ee";
+  const tokensPerBlock = "300000000000000000000000";
 
-  // const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
-  // const rewarder = complexRewarder.attach(rewarderAddress);
+  const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
+  const rewarder = complexRewarder.attach(rewarderAddress);
 
-  // const rewardSetterTx = await rewarder.connect(deployer).setRewardRate(tokensPerBlock);
-  // const rewardSetterReceipt = await rewardSetterTx.wait();
-  // console.log(rewardSetterReceipt.logs);
+  const rewardSetterTx = await rewarder.connect(deployer).setRewardRate(tokensPerBlock);
+  const rewardSetterReceipt = await rewardSetterTx.wait();
+  console.log(rewardSetterReceipt.logs);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
