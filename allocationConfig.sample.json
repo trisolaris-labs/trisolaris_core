@@ -1,0 +1,6 @@
+{
+  "PoolId": "number",
+  "Allocation": "number",
+  "Rewarder": "address",
+  "LpToken": "address"
+}
