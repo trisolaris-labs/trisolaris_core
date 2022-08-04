@@ -17,23 +17,28 @@ if (!AURORA_API_KEY) {
   throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
 }
 
-const masterChefV2Abi = [
+const complexRewarderAbi = [
   {
     "inputs": [
       {
-        "internalType": "contract IMasterChef",
-        "name": "_MASTER_CHEF",
+        "internalType": "contract IERC20",
+        "name": "_rewardToken",
         "type": "address"
       },
       {
         "internalType": "contract IERC20",
-        "name": "_tri",
+        "name": "_lpToken",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_MASTER_PID",
+        "name": "_tokenPerBlock",
         "type": "uint256"
+      },
+      {
+        "internalType": "contract IMasterChefV2",
+        "name": "_mcv2",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -43,31 +48,19 @@ const masterChefV2Abi = [
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
-        "name": "pid",
+        "name": "oldAllocPoint",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "newAllocPoint",
         "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
       }
     ],
-    "name": "Deposit",
+    "name": "AllocPointUpdated",
     "type": "event"
   },
   {
@@ -80,149 +73,13 @@ const masterChefV2Abi = [
         "type": "address"
       },
       {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "EmergencyWithdraw",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
         "indexed": false,
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
       }
     ],
-    "name": "Harvest",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [],
-    "name": "LogInit",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "allocPoint",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "contract IERC20",
-        "name": "lpToken",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "contract IRewarder",
-        "name": "rewarder",
-        "type": "address"
-      }
-    ],
-    "name": "LogPoolAddition",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "allocPoint",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "contract IRewarder",
-        "name": "rewarder",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "overwrite",
-        "type": "bool"
-      }
-    ],
-    "name": "LogSetPool",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint64",
-        "name": "lastRewardBlock",
-        "type": "uint64"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "lpSupply",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "accTriPerShare",
-        "type": "uint256"
-      }
-    ],
-    "name": "LogUpdatePool",
+    "name": "OnReward",
     "type": "event"
   },
   {
@@ -248,39 +105,27 @@ const masterChefV2Abi = [
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
-        "name": "pid",
+        "name": "oldRate",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "newRate",
         "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
       }
     ],
-    "name": "Withdraw",
+    "name": "RewardRateUpdated",
     "type": "event"
   },
   {
     "inputs": [],
-    "name": "MASTER_CHEF",
+    "name": "MCV2",
     "outputs": [
       {
-        "internalType": "contract IMasterChef",
+        "internalType": "contract IMasterChefV2",
         "name": "",
         "type": "address"
       }
@@ -290,140 +135,6 @@ const masterChefV2Abi = [
   },
   {
     "inputs": [],
-    "name": "MASTER_PID",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "TRI",
-    "outputs": [
-      {
-        "internalType": "contract IERC20",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "allocPoint",
-        "type": "uint256"
-      },
-      {
-        "internalType": "contract IERC20",
-        "name": "_lpToken",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IRewarder",
-        "name": "_rewarder",
-        "type": "address"
-      }
-    ],
-    "name": "add",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "deposit",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "emergencyWithdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "harvest",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "harvestFromMasterChef",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "contract IERC20",
-        "name": "dummyToken",
-        "type": "address"
-      }
-    ],
-    "name": "init",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
     "name": "lpToken",
     "outputs": [
       {
@@ -438,12 +149,32 @@ const masterChefV2Abi = [
   {
     "inputs": [
       {
-        "internalType": "uint256[]",
-        "name": "pids",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_lpAmount",
+        "type": "uint256"
       }
     ],
-    "name": "massUpdatePools",
+    "name": "onTriReward",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -465,20 +196,48 @@ const masterChefV2Abi = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_pid",
+        "name": "",
         "type": "uint256"
       },
       {
         "internalType": "address",
         "name": "_user",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
-    "name": "pendingTri",
+    "name": "pendingTokens",
+    "outputs": [
+      {
+        "internalType": "contract IERC20[]",
+        "name": "rewardTokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "rewardAmounts",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "poolInfo",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "pending",
+        "name": "accTokenPerShare",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lastRewardBlock",
         "type": "uint256"
       }
     ],
@@ -488,43 +247,24 @@ const masterChefV2Abi = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolInfo",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "accTriPerShare",
-        "type": "uint128"
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
       },
       {
-        "internalType": "uint64",
-        "name": "lastRewardBlock",
-        "type": "uint64"
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       },
       {
-        "internalType": "uint64",
-        "name": "allocPoint",
-        "type": "uint64"
+        "internalType": "address payable",
+        "name": "to",
+        "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "poolLength",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "pools",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "reclaimTokens",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -535,17 +275,11 @@ const masterChefV2Abi = [
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "rewarder",
+    "inputs": [],
+    "name": "rewardToken",
     "outputs": [
       {
-        "internalType": "contract IRewarder",
+        "internalType": "contract IERC20",
         "name": "",
         "type": "address"
       }
@@ -557,33 +291,18 @@ const masterChefV2Abi = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_pid",
+        "name": "_tokenPerBlock",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_allocPoint",
-        "type": "uint256"
-      },
-      {
-        "internalType": "contract IRewarder",
-        "name": "_rewarder",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "overwrite",
-        "type": "bool"
       }
     ],
-    "name": "set",
+    "name": "setRewardRate",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "totalAllocPoint",
+    "name": "tokenPerBlock",
     "outputs": [
       {
         "internalType": "uint256",
@@ -609,46 +328,22 @@ const masterChefV2Abi = [
   },
   {
     "inputs": [],
-    "name": "triPerBlock",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      }
-    ],
     "name": "updatePool",
     "outputs": [
       {
         "components": [
           {
-            "internalType": "uint128",
-            "name": "accTriPerShare",
-            "type": "uint128"
+            "internalType": "uint256",
+            "name": "accTokenPerShare",
+            "type": "uint256"
           },
           {
-            "internalType": "uint64",
+            "internalType": "uint256",
             "name": "lastRewardBlock",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "allocPoint",
-            "type": "uint64"
+            "type": "uint256"
           }
         ],
-        "internalType": "struct MasterChefV2.PoolInfo",
+        "internalType": "struct ComplexRewarder.PoolInfo",
         "name": "pool",
         "type": "tuple"
       }
@@ -658,11 +353,6 @@ const masterChefV2Abi = [
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
       {
         "internalType": "address",
         "name": "",
@@ -677,61 +367,15 @@ const masterChefV2Abi = [
         "type": "uint256"
       },
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "rewardDebt",
-        "type": "int256"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
     "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "withdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "withdrawAndHarvest",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   }
-];
+]
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -757,15 +401,17 @@ async function main(): Promise<void> {
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
-  const allocPoint = 0;
-  const poolId = 22;
-  const lpAddress = "0xbceA13f9125b0E3B66e979FedBCbf7A4AfBa6fd1";
-  const rewarderAddress = "0x0000000000000000000000000000000000000000";
+  // const allocPoint = 0;
+  // const poolId = 22;
+  // const lpAddress = "0xbceA13f9125b0E3B66e979FedBCbf7A4AfBa6fd1";
+  // const rewarderAddress = "0x0000000000000000000000000000000000000000";
 
-  const updater = new ethers.Contract("0x3838956710bcc9D122Dd23863a0549ca8D5675D6", masterChefV2Abi, safeSigner);
+  const rewarderAddress = "0x4e0152b260319e5131f853AeCB92c8f992AA0c97";
+  const tokensPerBlock = 0;
+  const updater = new ethers.Contract(rewarderAddress, complexRewarderAbi, safeSigner);
 
-  console.log("Calling pool setter");
-  const tx = await updater.set(poolId, allocPoint, rewarderAddress, false);
+  console.log("setting rewarder allocation");
+  const tx = await updater.setRewardRate(tokensPerBlock);
   await tx.wait();
 }
 
