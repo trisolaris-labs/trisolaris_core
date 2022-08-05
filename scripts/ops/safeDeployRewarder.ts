@@ -198,11 +198,11 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
   await rewarder.deployed();
   console.info(`*** Deployed new rewarder at: ${rewarder.address}`);
 
-  console.info(`*** Verifying new rewarder `);
-  await run("verify:verify", {
-    address: rewarder.address,
-    constructorArguments: rewarderConstructorArgs,
-  });
+  // console.info(`*** Verifying new rewarder `);
+  // await run("verify:verify", {
+  //   address: rewarder.address,
+  //   constructorArguments: rewarderConstructorArgs,
+  // });
 
   return { rewarder };
 };
