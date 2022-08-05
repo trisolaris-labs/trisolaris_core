@@ -57,9 +57,7 @@ async function main() {
 
       const chefv2 = masterChefV2.attach(chefV2Address);
 
-      const poolId = allocationConfig.PoolId;
-      const lpTokenAddress = allocationConfig.LpToken;
-      const rewarder = allocationConfig.Rewarder;
+      const { LpToken: lpTokenAddress, PoolId: poolID, Rewarder: rewarder } = allocationConfig;
 
       const poolInfo = await chefv2.poolInfo(poolId);
       const poolLpToken = await chefv2.lpToken(poolId);
