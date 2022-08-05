@@ -59,8 +59,7 @@ async function main() {
 
       const { LpToken: lpTokenAddress, PoolId: poolID, Rewarder: rewarder } = allocationConfig;
 
-      const poolInfo = await chefv2.poolInfo(poolId);
-      const poolLpToken = await chefv2.lpToken(poolId);
+      const [poolInfo, poolLpToken] = await Promise.all([chefv2.poolInfo(poolId), chefv2.lpToken(poolId)])
 
       console.log(`Chef v2 address: ${chefv2.address}`);
       console.log("poolId: " + poolId);
