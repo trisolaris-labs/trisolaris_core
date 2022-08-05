@@ -52,8 +52,7 @@ async function main() {
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
-  if (allocationConfig) {
-    if (typeof allocationConfig?.Rewarder === "string") {
+  if (allocationConfig && typeof allocationConfig?.Rewarder === "string") {
       const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
 
       const chefv2 = masterChefV2.attach(chefV2Address);
