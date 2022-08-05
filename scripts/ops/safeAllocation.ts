@@ -19,13 +19,13 @@ if (!AURORA_API_KEY) {
   throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
 }
 
-const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
-const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
-const provider = new JsonRpcProvider(AURORA_URL);
-
 if (!SAFE_SIGNER_MNEMONIC) {
   throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
 }
+
+const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
+const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
+const provider = new JsonRpcProvider(AURORA_URL);
 
 const deployer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
 const allocPoint = 0;
