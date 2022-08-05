@@ -123,8 +123,10 @@ yarn lint
 - Create new PR with rewarder/\*\* branch name
 - Create newRewarderConfig.json file, fill out value keys from newRewarderConfig.sample.json
 - Once proposed gnosis safe signatures are signed and contracts are verified, we will merge your PR!
+- [Example PR](https://github.com/trisolaris-labs/trisolaris_core/pull/94)
 
 ## Update Pool allocation
 
 - Create new PR with allocation/\*\* branch name
 - Create allocationConfig.json file, fill out value keys from allocationConfig.sample.json
+- [Example PR](https://github.com/trisolaris-labs/trisolaris_core/pull/95)
