@@ -27,13 +27,20 @@ const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
 const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
 
-const deployer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
+const signer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
+const service = new SafeService(SAFE_SERVICE_URL);
+console.info("Setup SafeEthersSigner");
+const ethAdapter = new EthersAdapter({ ethers, signer });
+
 const allocPoint = 0;
 
-console.info("*** Using deployer address: ", deployer.address);
+console.info("*** Using signer address: ", signer.address);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 async function main() {
+  const safe = await Safe.create({ ethAdapter, safeAddress: ops });
+  const safeSigner = new SafeEthersSigner(safe, service, provider);
+
   console.info("*** Proposing updating pool allocation ***");
 
   let allocationConfig: AllocationConfig | undefined;
@@ -45,40 +52,33 @@ async function main() {
     console.info("*** No allocationConfig.json found");
   }
 
-  const service = new SafeService(SAFE_SERVICE_URL);
-  const signer = deployer;
-  console.log("Setup SafeEthersSigner");
-  const ethAdapter = new EthersAdapter({ ethers, signer });
-  const safe = await Safe.create({ ethAdapter, safeAddress: ops });
-  const safeSigner = new SafeEthersSigner(safe, service, provider);
-
   if (allocationConfig && typeof allocationConfig?.Rewarder === "string") {
-      const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
+    const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
 
-      const chefv2 = masterChefV2.attach(chefV2Address);
+    const chefv2 = masterChefV2.attach(chefV2Address);
 
-      const { LpToken: lpTokenAddress, PoolId: poolID, Rewarder: rewarder } = allocationConfig;
+    const { LpToken: lpTokenAddress, PoolId: poolId, Rewarder: rewarder } = allocationConfig;
 
-      const [poolInfo, poolLpToken] = await Promise.all([chefv2.poolInfo(poolId), chefv2.lpToken(poolId)])
+    const [poolInfo, poolLpToken] = await Promise.all([chefv2.poolInfo(poolId), chefv2.lpToken(poolId)]);
 
-      console.log(`Chef v2 address: ${chefv2.address}`);
-      console.log("poolId: " + poolId);
-      console.log("lpTokenAddress: " + lpTokenAddress);
-      console.log("rewarder: " + rewarder);
-      console.log("poolInfo: " + poolInfo);
-      console.log("poolLpToken: " + poolLpToken);
+    console.info(`Chef v2 address: ${chefv2.address}`);
+    console.info("poolId: " + poolId);
+    console.info("lpTokenAddress: " + lpTokenAddress);
+    console.info("rewarder: " + rewarder);
+    console.info("poolInfo: " + poolInfo);
+    console.info("poolLpToken: " + poolLpToken);
 
-      if (poolLpToken === lpTokenAddress) {
-        await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false);
+    if (poolLpToken === lpTokenAddress) {
+      await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false);
 
-        console.info("*** USER ACTION REQUIRED ***");
-        console.info("Go to the Gnosis Safe Web App to confirm the transaction");
-        console.info(`*** Please verify the proposed adding pool to MCV2`);
+      console.info("*** USER ACTION REQUIRED ***");
+      console.info("Go to the Gnosis Safe Web App to confirm the transaction");
+      console.info(`https://gnosis-safe.io/app/aurora:${ops}/transactions/queue`);
+      console.info(`*** Please verify the proposed adding pool to MCV2`);
 
-        // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
-        await fs.remove("./allocationConfig.json");
-        console.info("*** Removed allocationConfig.json file, no longer needed");
-      }
+      // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
+      await fs.remove("./allocationConfig.json");
+      console.info("*** Removed allocationConfig.json file, no longer needed");
     }
   }
 }
