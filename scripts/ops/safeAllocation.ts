@@ -72,7 +72,7 @@ async function main() {
       console.log("poolInfo: " + poolInfo);
       console.log("poolLpToken: " + poolLpToken);
 
-      if (poolLpToken == lpTokenAddress) {
+      if (poolLpToken === lpTokenAddress) {
         await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false);
 
         console.info("*** USER ACTION REQUIRED ***");
