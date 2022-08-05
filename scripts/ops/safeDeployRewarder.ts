@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import { ethers, run } from "hardhat";
+import { ethers } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
@@ -197,12 +197,6 @@ const deployNewRewarder = async (newRewarderConfig: RewarderConfig): Promise<Dep
     );
   await rewarder.deployed();
   console.info(`*** Deployed new rewarder at: ${rewarder.address}`);
-
-  // console.info(`*** Verifying new rewarder `);
-  // await run("verify:verify", {
-  //   address: rewarder.address,
-  //   constructorArguments: rewarderConstructorArgs,
-  // });
 
   return { rewarder };
 };
