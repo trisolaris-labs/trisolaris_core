@@ -757,9 +757,9 @@ async function main(): Promise<void> {
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
-  const allocPoint = 0;
-  const poolId = 22;
-  const lpAddress = "0xbceA13f9125b0E3B66e979FedBCbf7A4AfBa6fd1";
+  const allocPoint = 5;
+  const poolId = 33;
+  const lpAddress = "0xA36DF7c571bEbA7B3fB89F25dFc990EAC75F525A";
   const rewarderAddress = "0x0000000000000000000000000000000000000000";
 
   const updater = new ethers.Contract("0x3838956710bcc9D122Dd23863a0549ca8D5675D6", masterChefV2Abi, safeSigner);
