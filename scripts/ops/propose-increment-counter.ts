@@ -67,6 +67,7 @@ async function main(): Promise<void> {
   const provider = new ethers.providers.JsonRpcProvider(AURORA_URL);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const path = "m/44'/60'/1'/0/0";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const signer = new LedgerSigner(provider as any, undefined, path);
   console.log(await signer.getAddress());
   const service = new SafeService(SAFE_SERVICE_URL);
