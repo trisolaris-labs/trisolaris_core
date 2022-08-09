@@ -32,8 +32,6 @@ const service = new SafeService(SAFE_SERVICE_URL);
 console.info("Setup SafeEthersSigner");
 const ethAdapter = new EthersAdapter({ ethers, signer });
 
-const allocPoint = 0;
-
 console.info("*** Using signer address: ", signer.address);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
@@ -57,7 +55,7 @@ async function main() {
 
     const chefv2 = masterChefV2.attach(chefV2Address);
 
-    const { LpToken: lpTokenAddress, PoolId: poolId, Rewarder: rewarder } = allocationConfig;
+    const { LpToken: lpTokenAddress, PoolId: poolId, Rewarder: rewarder, Allocation: allocPoint } = allocationConfig;
 
     const [poolInfo, poolLpToken] = await Promise.all([chefv2.poolInfo(poolId), chefv2.lpToken(poolId)]);
 
