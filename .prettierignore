@@ -26,3 +26,5 @@ yarn-error.log*
 newRewarderConfig.json
 rewarderConfigs.json
 newRewarderConfig.sample.json
+allocationConfig.json
+allocationConfig.sample.json
