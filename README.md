@@ -128,3 +128,8 @@ yarn lint
 
 - Create new PR with allocation/\*\* branch name
 - Create allocationConfig.json file, fill out value keys from allocationConfig.sample.json
+
+## Update Rewarder Tokens Per Block
+
+- Create new PR with rewarderTokensPerBlock/\*\* branch name
+- Create rewarderTokensPerBlock.json file, fill out value keys from rewarderTokensPerBlock.sample.json
