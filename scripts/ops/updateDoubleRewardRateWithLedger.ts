@@ -408,8 +408,8 @@ async function main(): Promise<void> {
   // const lpAddress = "0xbceA13f9125b0E3B66e979FedBCbf7A4AfBa6fd1";
   // const rewarderAddress = "0x0000000000000000000000000000000000000000";
 
-  const rewarderAddress = "0xD61a0095E287b899D5A3ADf40e51d97237BBaB6B";
-  const tokensPerBlock = "5254629629600000";
+  const rewarderAddress = "0xE3185567D1C5dcA2483485a1A5BC42fE0740acB3";
+  const tokensPerBlock = "270061728395060000000000";
   const updater = new ethers.Contract(rewarderAddress, complexRewarderAbi, safeSigner);
 
   console.log("setting rewarder allocation");
