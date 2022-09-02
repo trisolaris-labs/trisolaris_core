@@ -38,7 +38,8 @@ console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 async function main() {
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
-  const safeSigner = new SafeEthersSigner(safe, service, provider);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safeSigner = new SafeEthersSigner(safe as any, service, provider);
 
   const safeClientService = new SafeServiceClient({
     txServiceUrl: SAFE_SERVICE_URL,

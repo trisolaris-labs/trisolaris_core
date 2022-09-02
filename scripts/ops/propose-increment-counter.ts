@@ -75,7 +75,8 @@ async function main(): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ethAdapter = new EthersAdapter({ ethers, signer: signer as any });
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
-  const safeSigner = new SafeEthersSigner(safe, service, provider);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safeSigner = new SafeEthersSigner(safe as any, service, provider);
 
   const counter = new ethers.Contract("0x5388293e0287f1D1bc196c60fC2Da25D9e181130", counterAbi, safeSigner);
 
