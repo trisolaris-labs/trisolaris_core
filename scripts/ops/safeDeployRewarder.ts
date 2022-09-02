@@ -7,6 +7,7 @@ import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { chefV2Address, ops, triAddress, zeroAddress } from "../constants";
 import { ComplexRewarder } from "../../typechain";
+import SafeServiceClient from "@gnosis.pm/safe-service-client";
 
 type RewarderConfig = {
   LPToken: string;
@@ -122,6 +123,13 @@ const proposeAddPoolChefV2 = async (
   const ethAdapter = new EthersAdapter({ ethers, signer });
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
+
+  const safeClientService = new SafeServiceClient({
+    txServiceUrl: SAFE_SERVICE_URL,
+    ethAdapter,
+  });
+
+  const nonce = await safeClientService.getNextNonce(ops);
 
   const masterChefV2 = await ethers.getContractFactory("MasterChefV2");
   const triToken = await ethers.getContractFactory("Tri");
