@@ -82,5 +82,12 @@ export const nusdPoolSwapUtilsAddress = "0xedbc9d412854585F71c3765697167b462e51B
 export const nusdPoolSwapDepositAddress = "0xCCd87854f58773fe75CdDa542457aC48E46c2D65";
 export const nusdPoolSwapFlashLoanAddress = "0x3CE7AAD78B9eb47Fd2b487c463A17AAeD038B7EC";
 
+// Aurigami Stableswap core contracts
+export const aurigamiTwoPoolLPTokenBaseAddress = "0x895BDc6644Ae2652dB22b9387b004C091eF868fE";
+export const aurigamiTwoPoolAmplificationUtilsAddress = "0x2F928da9eaeCECA6f1D284f48589F7E456A1aBc2";
+export const aurigamiTwoPoolSwapUtilsAddress = "0x0982eBCbf1B77b4dBFB6BcAD62340687237Ac663";
+export const aurigamiTwoPoolSwapFlashLoanAddress = "0x46F27692de8aA76E86e7E665e573828b9ddcB2b8";
+export const aurigamiTwoPoolLpTokenAddress = "0x2e5F03c34A771F50C97E8f77EF801C426636e5Cd";
+
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
