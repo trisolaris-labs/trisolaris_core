@@ -1507,6 +1507,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ethersproject/sha2@npm:^5.7.0":
+  version: 5.7.0
+  resolution: "@ethersproject/sha2@npm:5.7.0"
+  dependencies:
+    "@ethersproject/bytes": ^5.7.0
+    "@ethersproject/logger": ^5.7.0
+    hash.js: 1.1.7
+  checksum: 09321057c022effbff4cc2d9b9558228690b5dd916329d75c4b1ffe32ba3d24b480a367a7cc92d0f0c0b1c896814d03351ae4630e2f1f7160be2bcfbde435dbc
+  languageName: node
+  linkType: hard
+
 "@ethersproject/signing-key@npm:5.4.0, @ethersproject/signing-key@npm:^5.4.0":
   version: 5.4.0
   resolution: "@ethersproject/signing-key@npm:5.4.0"
@@ -1586,6 +1597,20 @@ __metadata:
     "@ethersproject/sha2": ^5.6.1
     "@ethersproject/strings": ^5.6.1
   checksum: a31bd7b98314824d15e28350ee1a21c10e32d2f71579b46c72eab06b895dba147efe966874444a30b17846f9c2ad74043152ec49d4401148262afffb30727087
+  languageName: node
+  linkType: hard
+
+"@ethersproject/solidity@npm:^5.7.0":
+  version: 5.7.0
+  resolution: "@ethersproject/solidity@npm:5.7.0"
+  dependencies:
+    "@ethersproject/bignumber": ^5.7.0
+    "@ethersproject/bytes": ^5.7.0
+    "@ethersproject/keccak256": ^5.7.0
+    "@ethersproject/logger": ^5.7.0
+    "@ethersproject/sha2": ^5.7.0
+    "@ethersproject/strings": ^5.7.0
+  checksum: 9a02f37f801c96068c3e7721f83719d060175bc4e80439fe060e92bd7acfcb6ac1330c7e71c49f4c2535ca1308f2acdcb01e00133129aac00581724c2d6293f3
   languageName: node
   linkType: hard
 
@@ -1872,6 +1897,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@gnosis.pm/safe-core-sdk@npm:latest":
+  version: 3.0.0
+  resolution: "@gnosis.pm/safe-core-sdk@npm:3.0.0"
+  dependencies:
+    "@ethersproject/solidity": ^5.7.0
+    "@gnosis.pm/safe-core-sdk-types": ^1.5.0
+    "@gnosis.pm/safe-deployments": 1.16.0
+    ethereumjs-util: ^7.1.5
+    semver: ^7.3.7
+    web3-utils: ^1.7.5
+  checksum: 77c08ce54f29f9a182ee3ec019fcf116a559a0eed1ed8621770298544f0e84cdb11ef0c2d244fc5ba1ef0939f2d0223165a175fa6a142bc659901798af440f58
+  languageName: node
+  linkType: hard
+
 "@gnosis.pm/safe-deployments@npm:1.16.0":
   version: 1.16.0
   resolution: "@gnosis.pm/safe-deployments@npm:1.16.0"
@@ -1890,7 +1929,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnosis.pm/safe-ethers-adapters@npm:^0.1.0-alpha.9":
+"@gnosis.pm/safe-ethers-adapters@npm:latest":
   version: 0.1.0-alpha.9
   resolution: "@gnosis.pm/safe-ethers-adapters@npm:0.1.0-alpha.9"
   dependencies:
@@ -1919,7 +1958,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnosis.pm/safe-service-client@npm:^1.2.0":
+"@gnosis.pm/safe-service-client@npm:latest":
   version: 1.2.0
   resolution: "@gnosis.pm/safe-service-client@npm:1.2.0"
   dependencies:
@@ -2166,10 +2205,10 @@ __metadata:
     "@ethersproject/bytes": ^5.4.0
     "@ethersproject/hardware-wallets": ^5.6.1
     "@ethersproject/providers": ^5.4.5
-    "@gnosis.pm/safe-core-sdk": ^2.1.0
-    "@gnosis.pm/safe-ethers-adapters": ^0.1.0-alpha.9
+    "@gnosis.pm/safe-core-sdk": latest
+    "@gnosis.pm/safe-ethers-adapters": latest
     "@gnosis.pm/safe-ethers-lib": latest
-    "@gnosis.pm/safe-service-client": ^1.2.0
+    "@gnosis.pm/safe-service-client": latest
     "@nomiclabs/hardhat-ethers": ^2.0.2
     "@nomiclabs/hardhat-etherscan": ^3.0.3
     "@nomiclabs/hardhat-waffle": ^2.0.1
@@ -2476,8 +2515,11 @@ __metadata:
   linkType: hard
 
 "@typechain/ethers-v5@npm:^7.0.1":
-  version: 7.0.1
-  resolution: "@typechain/ethers-v5@npm:7.0.1"
+  version: 7.2.0
+  resolution: "@typechain/ethers-v5@npm:7.2.0"
+  dependencies:
+    lodash: ^4.17.15
+    ts-essentials: ^7.0.1
   peerDependencies:
     "@ethersproject/abi": ^5.0.0
     "@ethersproject/bytes": ^5.0.0
@@ -2485,7 +2527,7 @@ __metadata:
     ethers: ^5.1.3
     typechain: ^5.0.0
     typescript: ">=4.0.0"
-  checksum: 5d09eb6969f7a9dc3d8b4748d63bcdb4b0c54e4397c186c331cbb4c91bba76467b6b5b8e694f00bb5f4656bb97fc5a07b8e1ff73529b7eb7a5ce0b158cab0487
+  checksum: 23c7bcb6ef3582fe7ec32dec26bd5067a751b7e3b88ece0b98b2c4bb9623ac074f079ebe3dbcdf57f7e659d8d3a3f018105bd660806f6e7bdafa0dc56c5de450
   languageName: node
   linkType: hard
 
@@ -7138,7 +7180,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethereumjs-util@npm:^7.1.4":
+"ethereumjs-util@npm:^7.1.4, ethereumjs-util@npm:^7.1.5":
   version: 7.1.5
   resolution: "ethereumjs-util@npm:7.1.5"
   dependencies:
