@@ -6,6 +6,7 @@ import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { chefV2Address, ops } from "../constants";
+import SafeServiceClient from "@gnosis.pm/safe-service-client";
 
 type AllocationConfig = {
   PoolId: number;
@@ -39,6 +40,13 @@ async function main() {
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
+  const safeClientService = new SafeServiceClient({
+    txServiceUrl: SAFE_SERVICE_URL,
+    ethAdapter,
+  });
+
+  const nonce = await safeClientService.getNextNonce(ops);
+
   console.info("*** Proposing updating pool allocation ***");
 
   let allocationConfig: AllocationConfig | undefined;
@@ -67,7 +75,7 @@ async function main() {
     console.info("poolLpToken: " + poolLpToken);
 
     if (poolLpToken === lpTokenAddress) {
-      await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false);
+      await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false, { nonce });
 
       console.info("*** USER ACTION REQUIRED ***");
       console.info("Go to the Gnosis Safe Web App to confirm the transaction");

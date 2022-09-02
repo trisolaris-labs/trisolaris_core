@@ -6,6 +6,7 @@ import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { ops } from "../constants";
+import SafeServiceClient from "@gnosis.pm/safe-service-client";
 
 type RewarderTokensPerBlockConfig = {
   Rewarder: string;
@@ -37,6 +38,13 @@ async function main() {
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
 
+  const safeClientService = new SafeServiceClient({
+    txServiceUrl: SAFE_SERVICE_URL,
+    ethAdapter,
+  });
+
+  const nonce = await safeClientService.getNextNonce(ops);
+
   console.info("*** Proposing updating rewarder tokens per block ***");
 
   let rewarderTokensPerBlockConfig: RewarderTokensPerBlockConfig | undefined;
@@ -56,7 +64,7 @@ async function main() {
     console.info(`Rewarder address: ${rewarder.address}`);
     console.info("Tokens Per Block: " + TokensPerBlock);
 
-    await rewarder.connect(safeSigner).setRewardRate(TokensPerBlock);
+    await rewarder.connect(safeSigner).setRewardRate(TokensPerBlock, { nonce });
 
     console.info("*** USER ACTION REQUIRED ***");
     console.info("Go to the Gnosis Safe Web App to confirm the transaction");
