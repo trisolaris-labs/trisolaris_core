@@ -82,3 +82,5 @@ export const nusdPoolSwapFlashLoanAddress = "0x3CE7AAD78B9eb47Fd2b487c463A17AAeD
 
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
+
+export const auroraChainId = 1313161554;
