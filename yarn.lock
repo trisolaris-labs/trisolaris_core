@@ -44,7 +44,7 @@ __metadata:
 "@boringcrypto/boring-solidity@boringcrypto/BoringSolidity#e06e943e7e8a168ed0395ef663a17fd71a6949a2":
   version: 1.0.4
   resolution: "@boringcrypto/boring-solidity@https://github.com/boringcrypto/BoringSolidity.git#commit=e06e943e7e8a168ed0395ef663a17fd71a6949a2"
-  checksum: 99a11c8abbd9aee7d09654aff7c07613bd4c9942de3b410ea1b084bf4e3fe30d5d4f275c79605eb4dcfcf766a35ebb4c78dbd635124dea6eb8e84942acdf9475
+  checksum: 8377fbe79daaf49cf59efdfb421a707e0aee5004123e1c6c1ffd225b2354d718abd6bccd778b0c3572fffb71434ce5c027c46a385dc9e03c6b6496511ce164d5
   languageName: node
   linkType: hard
 
