@@ -33,6 +33,7 @@
     "@types/node": "^16.7.10",
     "@typescript-eslint/eslint-plugin": "^4.30.0",
     "@typescript-eslint/parser": "^4.30.0",
+    "@uniswap/v3-core": "1.0.1",
     "chai": "^4.3.4",
     "commitizen": "^4.2.4",
     "cross-env": "^7.0.3",
