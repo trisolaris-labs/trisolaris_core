@@ -162,7 +162,7 @@ const config = {
             runs: 800,
           },
         },
-      }
+      },
     ],
   },
   typechain: {
