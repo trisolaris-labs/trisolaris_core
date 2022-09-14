@@ -18,7 +18,9 @@ async function main(): Promise<void> {
   console.log(`Account balance: ${balance.toString()}`);
 
   const gUniRouter: GUniRouter__factory = await ethers.getContractFactory("GUniRouter");
-  const contract = <GUniRouter>await gUniRouter.deploy("0x1F98431c8aD98523631AE4a59f267346ea31F984", "0x4200000000000000000000000000000000000006");
+  const contract = <GUniRouter>(
+    await gUniRouter.deploy("0x1F98431c8aD98523631AE4a59f267346ea31F984", "0x4200000000000000000000000000000000000006")
+  );
   await contract.deployed();
   console.log(`GUniRouter address: ${contract.address}`);
 }
