@@ -7,3 +7,4 @@ contracts/multicall/
 contracts/stableswap/
 contracts/weth/
 contracts/mocks/TestSwapReturnValues.sol
+contracts/vaults/vendor

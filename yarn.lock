@@ -1874,6 +1874,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openzeppelin/contracts-084@npm:@openzeppelin/contracts@4.7.3":
+  version: 4.7.3
+  resolution: "@openzeppelin/contracts@npm:4.7.3"
+  checksum: 18382fcacf7cfd652f5dd0e70c08f08ea74eaa8ff11e9f9850639ada70198ae01a3f9493d89a52d724f2db394e9616bf6258017804612ba273167cf657fbb073
+  languageName: node
+  linkType: hard
+
+"@openzeppelin/contracts-upgradeable-084@npm:@openzeppelin/contracts-upgradeable@4.7.3":
+  version: 4.7.3
+  resolution: "@openzeppelin/contracts-upgradeable@npm:4.7.3"
+  checksum: c9ffb40cb847a975d440204fc6a811f43af960050242f707332b984d29bd16dc242ffa0935de61867aeb9e0357fadedb16b09b276deda5e9775582face831021
+  languageName: node
+  linkType: hard
+
 "@openzeppelin/contracts-upgradeable@npm:3.4.1":
   version: 3.4.1
   resolution: "@openzeppelin/contracts-upgradeable@npm:3.4.1"
@@ -1909,7 +1923,9 @@ __metadata:
     "@nomiclabs/hardhat-etherscan": ^3.0.3
     "@nomiclabs/hardhat-waffle": ^2.0.1
     "@openzeppelin/contracts": ^3.3.0
+    "@openzeppelin/contracts-084": "npm:@openzeppelin/contracts@4.7.3"
     "@openzeppelin/contracts-upgradeable": 3.4.1
+    "@openzeppelin/contracts-upgradeable-084": "npm:@openzeppelin/contracts-upgradeable@4.7.3"
     "@typechain/ethers-v5": ^7.0.1
     "@typechain/hardhat": ^2.3.0
     "@types/chai": ^4.2.21
@@ -1918,6 +1934,7 @@ __metadata:
     "@types/node": ^16.7.10
     "@typescript-eslint/eslint-plugin": ^4.30.0
     "@typescript-eslint/parser": ^4.30.0
+    "@uniswap/v3-core": 1.0.1
     chai: ^4.3.4
     commitizen: ^4.2.4
     cross-env: ^7.0.3
@@ -2631,6 +2648,13 @@ __metadata:
   version: 1.1.2
   resolution: "@ungap/promise-all-settled@npm:1.1.2"
   checksum: 08d37fdfa23a6fe8139f1305313562ebad973f3fac01bcce2773b2bda5bcb0146dfdcf3cb6a722cf0a5f2ca0bc56a827eac8f1e7b3beddc548f654addf1fc34c
+  languageName: node
+  linkType: hard
+
+"@uniswap/v3-core@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@uniswap/v3-core@npm:1.0.1"
+  checksum: 4bfd8b218391a3d9efde44e0f984cfec3bc25889cd4d1386766828521006e71b210a3583ee32b52f3c81d384af9e8c39f471f2229e9af4d50da6801446ecb3e4
   languageName: node
   linkType: hard
 

@@ -84,6 +84,16 @@ const config = {
       },
       chainId: 1313161554,
     },
+    optimism: {
+      url: "https://mainnet.optimism.io/",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic: mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 10,
+    },
   },
   paths: {
     artifacts: "./artifacts",
@@ -135,6 +145,18 @@ const config = {
           },
           // Disable the optimizer when debugging
           // https://hardhat.org/hardhat-network/#solidity-optimizer-support
+          optimizer: {
+            enabled: true,
+            runs: 800,
+          },
+        },
+      },
+      {
+        version: "0.8.4",
+        settings: {
+          metadata: {
+            bytecodeHash: "none",
+          },
           optimizer: {
             enabled: true,
             runs: 800,
