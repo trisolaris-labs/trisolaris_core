@@ -35,6 +35,12 @@ if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
 }
 
+const alchemyID: string | undefined = process.env.ALCHEMY_ID;
+const optimismURL =
+  alchemyID == null ? "https://mainnet.optimism.io/" : `https://opt-mainnet.g.alchemy.com/v2/${alchemyID}`;
+
+  console.log("optimismURL: ", optimismURL);
+
 const config = {
   defaultNetwork: "hardhat",
   gasReporter: {
@@ -85,7 +91,7 @@ const config = {
       chainId: 1313161554,
     },
     optimism: {
-      url: "https://mainnet.optimism.io/",
+      url: optimismURL,
       accounts: {
         count: 10,
         initialIndex: 0,
