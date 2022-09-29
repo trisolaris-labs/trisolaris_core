@@ -36,6 +36,7 @@ export const usnAddress = "0x5183e1b1091804bc2602586919e6880ac1cf2896";
 export const usdTLPAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 export const pTRIAddress = "0xe559092D2e80d9B1d91a641CE25bACC3cFdCF689";
 export const nusdAddress = "0x07379565cD8B0CaE7c60Dc78e7f601b34AF2A21c";
+export const axlUSDCAddress = "0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
 export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
