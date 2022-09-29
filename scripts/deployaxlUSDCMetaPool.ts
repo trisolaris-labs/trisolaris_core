@@ -2,11 +2,14 @@
 // });// but useful for running the script in a standalone fashion through `node <script>`.
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { ethers } from "hardhat";
+import {
+  ethers,
+  //  , run
+} from "hardhat";
 import {
   axlUSDCAddress,
   threePoolAmplificationUtilsAddress,
-  threePoolLpTokenAddress,
+  threePoolLPTokenBaseAddress,
   threePoolSwapFlashLoanAddress,
 } from "./constants";
 
@@ -23,7 +26,7 @@ async function main(): Promise<void> {
 
   const { amplificationUtilsAddress, lpTokenBaseAddress, swapFlashLoanAddress, swapUtilsAddress } = {
     amplificationUtilsAddress: threePoolAmplificationUtilsAddress,
-    lpTokenBaseAddress: threePoolLpTokenAddress,
+    lpTokenBaseAddress: threePoolLPTokenBaseAddress,
     swapFlashLoanAddress: threePoolSwapFlashLoanAddress,
     swapUtilsAddress: threePoolSwapFlashLoanAddress,
   };
@@ -71,7 +74,7 @@ async function main(): Promise<void> {
   const LP_TOKEN_SYMBOL = "axlUSDC-USDC/USDT/USN TLP";
   // TODO:
   const INITIAL_A = 800;
-  const SWAP_FEE = 1e6; // 1bps
+  const SWAP_FEE = 5e6; // 5bps
   const ADMIN_FEE = 5 * 10e8; // 50 %
 
   await metaSwap.initializeMetaSwap(
