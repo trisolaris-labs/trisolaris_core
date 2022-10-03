@@ -36,6 +36,7 @@ export const usnAddress = "0x5183e1b1091804bc2602586919e6880ac1cf2896";
 export const usdTLPAddress = "0x87BCC091d0A7F9352728100268Ac8D25729113bB";
 export const pTRIAddress = "0xe559092D2e80d9B1d91a641CE25bACC3cFdCF689";
 export const nusdAddress = "0x07379565cD8B0CaE7c60Dc78e7f601b34AF2A21c";
+export const axlUSDCAddress = "0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
 export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
@@ -79,6 +80,14 @@ export const nusdPoolAmplificationUtilsAddress = "0xA5782838b39cD618584236614E36
 export const nusdPoolSwapUtilsAddress = "0xedbc9d412854585F71c3765697167b462e51B9C6";
 export const nusdPoolSwapDepositAddress = "0xCCd87854f58773fe75CdDa542457aC48E46c2D65";
 export const nusdPoolSwapFlashLoanAddress = "0x3CE7AAD78B9eb47Fd2b487c463A17AAeD038B7EC";
+
+// axlUSDC-3pool Metapool Stableswap core contracts
+export const axlUSDCPoolLPTokenBaseAddress = "0xB77190A4fD2528d2Bb778B409FB5224f7ffaCB24";
+export const axlUSDCAmplificationUtilsAddress = "0x114ECaa70256aFAd393f733aA4B4bF61c8959fc2";
+export const axlUSDCMetaSwapUtilsAddress = "0x62f6de4027242ADA801A488F95C0767E5e97F7F0";
+export const axlUSDCMetaSwapAddress = "0xc6618d97b96187Cc06C61A32964f2f5D8690aDda";
+export const axlUSDCMetaSwapLPTokenAddress = "0x62A0C1Bb3ff819d7ad8B1d69C2270f473aeF6f55";
+export const axlUSDCMetaSwapDepositAddress = "0x7825C8FD39f0173A019e6fE4440E1BD9C25BA12c";
 
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
