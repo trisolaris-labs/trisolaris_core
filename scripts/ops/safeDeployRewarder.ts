@@ -159,7 +159,7 @@ const proposeAddPoolChefV2 = async (
     const nonce = await safeGetNextNonce();
     await chef
       .connect(safeSigner)
-      .add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString(), { nonce });
+      .add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString(), { nonce: nonce });
 
     console.info("*** USER ACTION REQUIRED ***");
     console.info("Go to the Gnosis Safe Web App to confirm the transaction");
