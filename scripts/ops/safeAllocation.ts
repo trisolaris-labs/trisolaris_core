@@ -6,7 +6,6 @@ import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { chefV2Address, ops } from "../constants";
-import { safeGetNextNonce } from "../utils/safeGetNextNonce";
 
 type AllocationConfig = {
   PoolId: number;
@@ -68,8 +67,7 @@ async function main() {
     console.info("poolLpToken: " + poolLpToken);
 
     if (poolLpToken === lpTokenAddress) {
-      const nonce = await safeGetNextNonce();
-      await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false, { nonce });
+      await chefv2.connect(safeSigner).set(poolId, allocPoint, rewarder, false);
 
       console.info("*** USER ACTION REQUIRED ***");
       console.info("Go to the Gnosis Safe Web App to confirm the transaction");
