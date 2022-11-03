@@ -112,9 +112,7 @@ describe("StableLpMaker - V4", function () {
       await this.swapLPToken.connect(signer).approve(this.metaSwap.address, this.MAX_UINT256);
 
       // Add some liquidity to the base pool
-      await this.swapFlashLoan
-        .connect(signer)
-        .addLiquidity([String(1e20), String(1e20)], 0, this.MAX_UINT256);
+      await this.swapFlashLoan.connect(signer).addLiquidity([String(1e20), String(1e20)], 0, this.MAX_UINT256);
     });
 
     // Test Values
