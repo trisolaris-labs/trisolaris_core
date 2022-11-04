@@ -13,6 +13,7 @@ export const opsMultiSigAddress = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
 export const stableLPMaker = "0xcB251907382aEB3C2edAb766561D5F4E6c78E3FF";
 export const stableLPMakerV2Address = "0x2DF95Be842cd68062Ecdb7a30cA8dD400a8ab86B";
 export const stableLPMakerV3Address = "0x84c1b1986766fD32cfAC340f947217bd1fB8ADed";
+export const stableLPMakerV4Address = "0x5174F1F043A9C66C58f62C3b81a24fb0F31DE94A";
 export const usdcMakerAddress = "0x5EBd5e963A00500B6a1234c621811c52AF0aAade";
 
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
