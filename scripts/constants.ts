@@ -13,6 +13,7 @@ export const opsMultiSigAddress = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
 export const stableLPMaker = "0xcB251907382aEB3C2edAb766561D5F4E6c78E3FF";
 export const stableLPMakerV2Address = "0x2DF95Be842cd68062Ecdb7a30cA8dD400a8ab86B";
 export const stableLPMakerV3Address = "0x84c1b1986766fD32cfAC340f947217bd1fB8ADed";
+export const stableLPMakerV4Address = "0x5174F1F043A9C66C58f62C3b81a24fb0F31DE94A";
 export const usdcMakerAddress = "0x5EBd5e963A00500B6a1234c621811c52AF0aAade";
 
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
@@ -38,6 +39,7 @@ export const pTRIAddress = "0xe559092D2e80d9B1d91a641CE25bACC3cFdCF689";
 export const nusdAddress = "0x07379565cD8B0CaE7c60Dc78e7f601b34AF2A21c";
 export const auUSDCAddress = "0x4f0d864b1ABf4B701799a0b30b57A22dFEB5917b";
 export const auUSDTAddress = "0xaD5A2437Ff55ed7A8Cad3b797b3eC7c5a19B1c54";
+export const axlUSDCAddress = "0x4268B8F0B87b6Eae5d897996E6b845ddbD99Adf3";
 
 export const babooRecepientAddress = "0x7F188C75E887454f5f47bDF76fe2Fa048985930F";
 export const donRecepientAddress = "0xB1B0831466E6432843a27aF36924Df9E56E6C649";
@@ -89,5 +91,14 @@ export const aurigamiTwoPoolSwapUtilsAddress = "0x0982eBCbf1B77b4dBFB6BcAD623406
 export const aurigamiTwoPoolSwapFlashLoanAddress = "0x46F27692de8aA76E86e7E665e573828b9ddcB2b8";
 export const aurigamiTwoPoolLpTokenAddress = "0x2e5F03c34A771F50C97E8f77EF801C426636e5Cd";
 
+// axlUSDC-2pool Metapool Stableswap core contracts
+export const axlUSDCLPTokenBaseAddress = "0x08A8d7dD6E20997680DFd7a5fc7929309c299D72";
+export const axlUSDCPoolAmplificationUtilsAddress = "0xA5782838b39cD618584236614E36F9c9a1b8E50e";
+export const axlUSDCPoolSwapUtilsAddress = "0x87009564b6DFC02256144FaD855c92eC3a384bB6";
+export const axlUSDCPoolSwapDepositAddress = "0xf27FCca3092a8A08d178f064Bf14dB59E99F012C";
+export const axlUSDCPoolSwapFlashLoanAddress = "0x51d96EF6960cC7b4C884E1215564f926011A4064";
+
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
+
+export const auroraChainId = 1313161554;
