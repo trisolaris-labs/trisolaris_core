@@ -86,7 +86,7 @@ export const nusdPoolSwapFlashLoanAddress = "0x3CE7AAD78B9eb47Fd2b487c463A17AAeD
 export const axlUSDCLPTokenBaseAddress = "0x08A8d7dD6E20997680DFd7a5fc7929309c299D72";
 export const axlUSDCPoolAmplificationUtilsAddress = "0xA5782838b39cD618584236614E36F9c9a1b8E50e";
 export const axlUSDCPoolSwapUtilsAddress = "0x87009564b6DFC02256144FaD855c92eC3a384bB6";
-export const axlUSDCPoolSwapDepositAddress = "0xf27FCca3092a8A08d178f064Bf14dB59E99F012C";
+export const axlUSDCPoolSwapDepositAddress = "0xB8e6c85f18525573AaaBdC11a665a5dB4357F54a";
 export const axlUSDCPoolSwapFlashLoanAddress = "0x51d96EF6960cC7b4C884E1215564f926011A4064";
 
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
