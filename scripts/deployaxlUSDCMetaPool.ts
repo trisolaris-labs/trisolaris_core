@@ -8,9 +8,9 @@ import {
 } from "hardhat";
 import {
   axlUSDCAddress,
-  threePoolAmplificationUtilsAddress,
-  threePoolLPTokenBaseAddress,
-  threePoolSwapFlashLoanAddress,
+  twoPoolAmplificationUtilsAddress,
+  twoPoolLPTokenBaseAddress,
+  twoPoolSwapFlashLoanAddress,
 } from "./constants";
 
 async function main(): Promise<void> {
@@ -25,10 +25,10 @@ async function main(): Promise<void> {
   console.log(`Deploying contracts with ${deployer.address}`);
 
   const { amplificationUtilsAddress, lpTokenBaseAddress, swapFlashLoanAddress, swapUtilsAddress } = {
-    amplificationUtilsAddress: threePoolAmplificationUtilsAddress,
-    lpTokenBaseAddress: threePoolLPTokenBaseAddress,
-    swapFlashLoanAddress: threePoolSwapFlashLoanAddress,
-    swapUtilsAddress: threePoolSwapFlashLoanAddress,
+    amplificationUtilsAddress: twoPoolAmplificationUtilsAddress,
+    lpTokenBaseAddress: twoPoolLPTokenBaseAddress,
+    swapFlashLoanAddress: twoPoolSwapFlashLoanAddress,
+    swapUtilsAddress: twoPoolSwapFlashLoanAddress,
   };
 
   // Deploy Metapool attached
@@ -70,8 +70,8 @@ async function main(): Promise<void> {
   // Constructor arguments
   const TOKEN_ADDRESSES = [axlUSDC.address, swapLPToken.address];
   const TOKEN_DECIMALS = [axlUSDCDecimals, swapLPTokenDecimals];
-  const LP_TOKEN_NAME = "Trisolaris axlUSDC-USDC/USDT/USN";
-  const LP_TOKEN_SYMBOL = "axlUSDC-USDC/USDT/USN TLP";
+  const LP_TOKEN_NAME = "Trisolaris axlUSDC-USDC/USDT";
+  const LP_TOKEN_SYMBOL = "axlUSDC-USDC/USDT TLP";
   // TODO:
   const INITIAL_A = 800;
   const SWAP_FEE = 5e6; // 5bps
