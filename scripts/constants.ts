@@ -83,11 +83,10 @@ export const nusdPoolSwapDepositAddress = "0xCCd87854f58773fe75CdDa542457aC48E46
 export const nusdPoolSwapFlashLoanAddress = "0x3CE7AAD78B9eb47Fd2b487c463A17AAeD038B7EC";
 
 // axlUSDC-2pool Metapool Stableswap core contracts
-export const axlUSDCLPTokenBaseAddress = "0x08A8d7dD6E20997680DFd7a5fc7929309c299D72";
-export const axlUSDCPoolAmplificationUtilsAddress = "0xA5782838b39cD618584236614E36F9c9a1b8E50e";
-export const axlUSDCPoolSwapUtilsAddress = "0x87009564b6DFC02256144FaD855c92eC3a384bB6";
-export const axlUSDCPoolSwapDepositAddress = "0xB8e6c85f18525573AaaBdC11a665a5dB4357F54a";
-export const axlUSDCPoolSwapFlashLoanAddress = "0x51d96EF6960cC7b4C884E1215564f926011A4064";
+export const axlUSDCLPTokenAddress = "0x4F13347Fa5eCC4D6a12e7f4F2803616cC0c60E25";
+export const axlUSDCPoolMetaSwapUtilsAddress = "0xac4272228d17d23b759cDBfAdA8C0cF33FF7c4C0";
+export const axlUSDCPoolSwapDepositAddress = "0x85D2cA6C45f15DF8cA07e6481dD2162628Bb314d";
+export const axlUSDCPoolSwapFlashLoanAddress = "0xa2887F7F9CEbD438c679A105d31ABbe94dF72cc0";
 
 export const dao = "0xf86119de6ee8d4447C8219eEC20E7561d09816d3";
 export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";

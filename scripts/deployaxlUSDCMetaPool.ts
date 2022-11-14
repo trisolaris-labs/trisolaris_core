@@ -11,6 +11,7 @@ import {
   twoPoolAmplificationUtilsAddress,
   twoPoolLPTokenBaseAddress,
   twoPoolSwapFlashLoanAddress,
+  twoPoolSwapUtilsAddress,
 } from "./constants";
 
 async function main(): Promise<void> {
@@ -28,7 +29,7 @@ async function main(): Promise<void> {
     amplificationUtilsAddress: twoPoolAmplificationUtilsAddress,
     lpTokenBaseAddress: twoPoolLPTokenBaseAddress,
     swapFlashLoanAddress: twoPoolSwapFlashLoanAddress,
-    swapUtilsAddress: twoPoolSwapFlashLoanAddress,
+    swapUtilsAddress: twoPoolSwapUtilsAddress,
   };
 
   // Deploy Metapool attached
