@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { GUniRouter, GUniRouter__factory, WETH9, WETH9__factory } from "../../typechain";
+import { GUniRouter__factory, WETH9__factory } from "../../typechain";
 import { gUniRouterAddress } from "../constants";
 
 
