@@ -2,29 +2,21 @@ import { ethers } from "hardhat";
 import Safe from "@gnosis.pm/safe-core-sdk";
 import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
-import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { chefAddress, ops } from "../constants";
+import { LedgerSigner } from "@ethersproject/hardware-wallets";
 
 const { SAFE_SIGNER_MNEMONIC = undefined, AURORA_API_KEY } = process.env;
 if (!AURORA_API_KEY) {
   throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
 }
 
-if (!SAFE_SIGNER_MNEMONIC) {
-  throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
-}
-
 const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
 const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
 
-const signer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
 const service = new SafeService(SAFE_SERVICE_URL);
 console.info("Setup SafeEthersSigner");
-const ethAdapter = new EthersAdapter({ ethers, signer });
-
-console.info("*** Using signer address: ", signer.address);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 async function main() {
@@ -33,9 +25,14 @@ async function main() {
 
   const newTriPerBlockFormatted = decimals.mul(newTriPerBlock);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const path = "m/44'/60'/1'/0/0";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const signer = new LedgerSigner(provider as any, undefined, path);
+  console.log(await signer.getAddress());
+  const ethAdapter = new EthersAdapter({ ethers, signer: signer as any });
   const safe = await Safe.create({ ethAdapter, safeAddress: ops });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
-
   console.info("*** Proposing updating pool allocation ***");
 
   const masterChef = await ethers.getContractFactory("MasterChef");
