@@ -28,7 +28,7 @@ console.info("*** Using signer address: ", signer.address);
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 async function main() {
-  const decimals = ethers.BigNumber.from(1e18);
+  const decimals = ethers.BigNumber.from(10).pow(18);
   const newTriPerBlock = 3.25;
 
   const newTriPerBlockFormatted = decimals.mul(newTriPerBlock);
