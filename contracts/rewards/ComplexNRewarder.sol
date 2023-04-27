@@ -183,6 +183,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
             }
         } else {
             for (uint256 i = 0; i < numRewardTokens; i++) {
+                // NOTE - Assumption is that on withdrawal, the user will claim all pending rewards
                 if (_userAmount == 0 || _userRewardDebt[i] == 0) {
                     _rewardAmounts[i] = 0;
                 } else {
@@ -223,6 +224,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
                 _userRewardDebt[_rewardTokenIndex]
             );
         } else {
+            // NOTE - Assumption is that on withdrawal, the user will claim all pending rewards
             if (_userAmount == 0 || _userRewardDebt[_rewardTokenIndex] == 0) {
                 _rewardAmount = 0;
             } else {

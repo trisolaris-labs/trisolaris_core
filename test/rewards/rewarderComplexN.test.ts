@@ -302,6 +302,32 @@ describe("Complex N Rewarder", function () {
       expect(await this.rewardToken1.balanceOf(this.carol.address)).to.equal("2700");
       expect(await this.rewardToken2.balanceOf(this.carol.address)).to.equal("27000");
       // All of them should have 1000 LPs back.
+      const pendingAliceRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
+      expect(pendingAliceRewardAmount0[1]).to.equal("0");
+      const pendingAliceRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
+      expect(pendingAliceRewardAmount1[1]).to.equal("0");
+
+      const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
+      expect(rewardAlice.rewardAmounts[0]).to.equal("0");
+      expect(rewardAlice.rewardAmounts[1]).to.equal("0");
+      //
+      const pendingbobRewardAmount0 = await this.rewarder.pendingToken(this.bob.address, 0);
+      expect(pendingbobRewardAmount0[1]).to.equal("0");
+      const pendingbobRewardAmount1 = await this.rewarder.pendingToken(this.bob.address, 1);
+      expect(pendingbobRewardAmount1[1]).to.equal("0");
+
+      const rewardbob = await this.rewarder.pendingTokens("1", this.bob.address, "0");
+      expect(rewardbob.rewardAmounts[0]).to.equal("0");
+      expect(rewardbob.rewardAmounts[1]).to.equal("0");
+      //
+      const pendingcarolRewardAmount0 = await this.rewarder.pendingToken(this.carol.address, 0);
+      expect(pendingcarolRewardAmount0[1]).to.equal("0");
+      const pendingcarolRewardAmount1 = await this.rewarder.pendingToken(this.carol.address, 1);
+      expect(pendingcarolRewardAmount1[1]).to.equal("0");
+
+      const rewardcarol = await this.rewarder.pendingTokens("1", this.carol.address, "0");
+      expect(rewardcarol.rewardAmounts[0]).to.equal("0");
+      expect(rewardcarol.rewardAmounts[1]).to.equal("0");
     });
 
     it("should distribute no TRIs only rewardTokens since tri emission is 0 for this pool", async function () {
@@ -332,18 +358,28 @@ describe("Complex N Rewarder", function () {
       // Alice gets 500 reward tokens in 5 blocks
       await advanceBlockTo("20604");
       expect(await this.chefv2.pendingTri("1", this.alice.address)).to.equal("0");
-      const pendingRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
+      let pendingRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
       expect(pendingRewardAmount0[1]).to.equal("400");
-      const pendingRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
+      let pendingRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
       expect(pendingRewardAmount1[1]).to.equal("2000");
-      const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
+      let rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
       expect(rewardAlice.rewardAmounts[0]).to.equal("400");
       expect(rewardAlice.rewardAmounts[1]).to.equal("2000");
 
+      // Alice harvests reward tokens
       await this.chefv2.connect(this.alice).harvest(1, this.alice.address);
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("0");
       expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("500");
       expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("2500");
+
+      // No more reward tokens to be claimed
+      pendingRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
+      expect(pendingRewardAmount0[1]).to.equal("0");
+      pendingRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
+      expect(pendingRewardAmount1[1]).to.equal("0");
+      rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
+      expect(rewardAlice.rewardAmounts[0]).to.equal("0");
+      expect(rewardAlice.rewardAmounts[1]).to.equal("0");
     });
 
     it("should return zero pending rewards for a user with no staked LP tokens", async function () {
