@@ -50,8 +50,8 @@ describe("Complex N Rewarder", function () {
     );
     await this.rewarder.deployed();
     expect(await this.rewarder.lpToken()).to.equal(this.lp.address);
-    expect(await this.rewarder.rewardToken(0)).to.equal(this.rewardToken1.address);
-    expect(await this.rewarder.rewardToken(1)).to.equal(this.rewardToken2.address);
+    expect(await this.rewarder.rewardTokens(0)).to.equal(this.rewardToken1.address);
+    expect(await this.rewarder.rewardTokens(1)).to.equal(this.rewardToken2.address);
     expect(await this.rewarder.MCV2()).to.equal(this.chefv2.address);
     expect(await this.rewarder.tokenPerBlock(0)).to.equal("0");
     expect(await this.rewarder.tokenPerBlock(1)).to.equal("0");
@@ -291,26 +291,21 @@ describe("Complex N Rewarder", function () {
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("8999");
       expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("899");
       expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("8999");
-      await this.chefv2.connect(this.bob).harvest(0, this.bob.address);
-      // Bob should have: 6190 + 10*2/6 * 1000 + 10*2/5*1000 = 11831
-      expect(await this.tri.balanceOf(this.bob.address)).to.equal("13999");
-      expect(await this.rewardToken1.balanceOf(this.bob.address)).to.equal("1399");
-      expect(await this.rewardToken2.balanceOf(this.bob.address)).to.equal("13999");
-      await this.chefv2.connect(this.carol).harvest(0, this.carol.address);
-      // Carol should have: 2*3/6*1000 + 20*3/6*1000 + 10*3/5*1000 + 10*1000 = 27000
-      expect(await this.tri.balanceOf(this.carol.address)).to.equal("27000");
-      expect(await this.rewardToken1.balanceOf(this.carol.address)).to.equal("2700");
-      expect(await this.rewardToken2.balanceOf(this.carol.address)).to.equal("27000");
-      // All of them should have 1000 LPs back.
+
       const pendingAliceRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
       expect(pendingAliceRewardAmount0[1]).to.equal("0");
       const pendingAliceRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
       expect(pendingAliceRewardAmount1[1]).to.equal("0");
-
       const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
       expect(rewardAlice.rewardAmounts[0]).to.equal("0");
       expect(rewardAlice.rewardAmounts[1]).to.equal("0");
-      //
+
+      // Bob should have: 6190 + 10*2/6 * 1000 + 10*2/5*1000 = 11831
+      await this.chefv2.connect(this.bob).harvest(0, this.bob.address);
+      expect(await this.tri.balanceOf(this.bob.address)).to.equal("13999");
+      expect(await this.rewardToken1.balanceOf(this.bob.address)).to.equal("1399");
+      expect(await this.rewardToken2.balanceOf(this.bob.address)).to.equal("13999");
+
       const pendingbobRewardAmount0 = await this.rewarder.pendingToken(this.bob.address, 0);
       expect(pendingbobRewardAmount0[1]).to.equal("0");
       const pendingbobRewardAmount1 = await this.rewarder.pendingToken(this.bob.address, 1);
@@ -319,7 +314,13 @@ describe("Complex N Rewarder", function () {
       const rewardbob = await this.rewarder.pendingTokens("1", this.bob.address, "0");
       expect(rewardbob.rewardAmounts[0]).to.equal("0");
       expect(rewardbob.rewardAmounts[1]).to.equal("0");
-      //
+
+      // Carol should have: 2*3/6*1000 + 20*3/6*1000 + 10*3/5*1000 + 10*1000 = 27000
+      await this.chefv2.connect(this.carol).harvest(0, this.carol.address);
+      expect(await this.tri.balanceOf(this.carol.address)).to.equal("27000");
+      expect(await this.rewardToken1.balanceOf(this.carol.address)).to.equal("2700");
+      expect(await this.rewardToken2.balanceOf(this.carol.address)).to.equal("27000");
+
       const pendingcarolRewardAmount0 = await this.rewarder.pendingToken(this.carol.address, 0);
       expect(pendingcarolRewardAmount0[1]).to.equal("0");
       const pendingcarolRewardAmount1 = await this.rewarder.pendingToken(this.carol.address, 1);
@@ -328,6 +329,11 @@ describe("Complex N Rewarder", function () {
       const rewardcarol = await this.rewarder.pendingTokens("1", this.carol.address, "0");
       expect(rewardcarol.rewardAmounts[0]).to.equal("0");
       expect(rewardcarol.rewardAmounts[1]).to.equal("0");
+
+      // All of them should have 1000 LP balance post withdrawal
+      expect(await this.lp.balanceOf(this.alice.address)).to.equal("1000");
+      expect(await this.lp.balanceOf(this.bob.address)).to.equal("1000");
+      expect(await this.lp.balanceOf(this.carol.address)).to.equal("1000");
     });
 
     it("should distribute no TRIs only rewardTokens since tri emission is 0 for this pool", async function () {
@@ -380,6 +386,22 @@ describe("Complex N Rewarder", function () {
       rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
       expect(rewardAlice.rewardAmounts[0]).to.equal("0");
       expect(rewardAlice.rewardAmounts[1]).to.equal("0");
+
+      // Alice withdraws 10 deposited LP tokens so she claims pending reward tokens
+      await this.chefv2.connect(this.alice).withdraw(1, "10", this.alice.address);
+      await advanceBlockTo("20605");
+      expect(await this.lp.balanceOf(this.alice.address)).to.equal("1000");
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal("0");
+      expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("600");
+      expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("3000");
+
+      // Alice harvests zero reward tokens
+      await this.chefv2.connect(this.alice).harvest(1, this.alice.address);
+      await advanceBlockTo("20606");
+      expect(await this.lp.balanceOf(this.alice.address)).to.equal("1000");
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal("0");
+      expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("600");
+      expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("3000");
     });
 
     it("should return zero pending rewards for a user with no staked LP tokens", async function () {

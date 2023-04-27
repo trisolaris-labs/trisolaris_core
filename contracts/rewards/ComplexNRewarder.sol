@@ -19,7 +19,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20[] public rewardToken;
+    IERC20[] public rewardTokens;
     IERC20 public immutable lpToken;
     // solhint-disable-next-line var-name-mixedcase
     IMasterChefV2 public immutable MCV2;
@@ -49,18 +49,18 @@ contract ComplexNRewarder is IRewarder, Ownable {
     }
 
     constructor(
-        IERC20[] memory _rewardToken,
+        IERC20[] memory _rewardTokens,
         IERC20 _lpToken,
         uint256[] memory _tokenPerBlock,
         IMasterChefV2 _mcv2
     ) public {
-        require(_rewardToken.length == _tokenPerBlock.length, "reward tokens and tokenperblock length mismatch");
-        numRewardTokens = _rewardToken.length;
-        rewardToken = _rewardToken;
+        require(_rewardTokens.length == _tokenPerBlock.length, "reward tokens and tokenperblock length mismatch");
+        numRewardTokens = _rewardTokens.length;
+        rewardTokens = _rewardTokens;
         lpToken = _lpToken;
         tokenPerBlock = _tokenPerBlock;
         MCV2 = _mcv2;
-        accTokenPerShare = new uint256[](_rewardToken.length);
+        accTokenPerShare = new uint256[](_rewardTokens.length);
         lastRewardBlock = block.number;
     }
 
@@ -74,7 +74,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
         tokenPerBlock = _tokenPerBlock;
 
         for (uint256 i = 0; i < numRewardTokens; i++) {
-            emit RewardRateUpdated(address(rewardToken[i]), oldRate[i], _tokenPerBlock[i]);
+            emit RewardRateUpdated(address(rewardTokens[i]), oldRate[i], _tokenPerBlock[i]);
         }
     }
 
@@ -137,13 +137,13 @@ contract ComplexNRewarder is IRewarder, Ownable {
             for (uint256 i = 0; i < numRewardTokens; i++) {
                 // solhint-disable-next-line
                 pendingBal = (_userAmount.mul(accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(_userRewardDebt[i]);
-                rewardBal = rewardToken[i].balanceOf(address(this));
+                rewardBal = rewardTokens[i].balanceOf(address(this));
                 if (pendingBal > rewardBal) {
-                    rewardToken[i].safeTransfer(_user, rewardBal);
+                    rewardTokens[i].safeTransfer(_user, rewardBal);
                 } else {
-                    rewardToken[i].safeTransfer(_user, pendingBal);
+                    rewardTokens[i].safeTransfer(_user, pendingBal);
                 }
-                emit OnReward(address(rewardToken[i]), _user, pendingBal);
+                emit OnReward(address(rewardTokens[i]), _user, pendingBal);
             }
         }
 
@@ -163,7 +163,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
         uint256,
         address _user,
         uint256
-    ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+    ) external view override returns (IERC20[] memory, uint256[] memory rewardAmounts) {
         uint256[] memory _rewardAmounts = new uint256[](numRewardTokens);
         uint256 _userAmount = userAmount[_user];
         uint256[] memory _userRewardDebt = userRewardDebt[_user];
@@ -183,11 +183,8 @@ contract ComplexNRewarder is IRewarder, Ownable {
             }
         } else {
             for (uint256 i = 0; i < numRewardTokens; i++) {
-                // NOTE - Assumption is that on withdrawal, the user will claim all pending rewards
-                if (
-                    (_userRewardDebt[i] > (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION)) ||
-                    (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION) == 0
-                ) {
+                // NOTE - On full withdrawal, the user will claim all pending rewards
+                if (_userAmount == 0) {
                     _rewardAmounts[i] = 0;
                 } else {
                     // solhint-disable-next-line
@@ -198,7 +195,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
             }
         }
 
-        return (rewardToken, _rewardAmounts);
+        return (rewardTokens, _rewardAmounts);
     }
 
     /// @notice View function to see pending token rewards by index
@@ -210,6 +207,7 @@ contract ComplexNRewarder is IRewarder, Ownable {
         returns (address _rewardToken, uint256 _rewardAmount)
     {
         require(_rewardTokenIndex < numRewardTokens, "invalid reward token index");
+        _rewardToken = address(rewardTokens[_rewardTokenIndex]);
         uint256 _userAmount = userAmount[_user];
         uint256[] memory _userRewardDebt = userRewardDebt[_user];
         uint256 lpSupply = lpToken.balanceOf(address(MCV2));
@@ -225,11 +223,8 @@ contract ComplexNRewarder is IRewarder, Ownable {
                 _userRewardDebt[_rewardTokenIndex]
             );
         } else {
-            // NOTE - Assumption is that on withdrawal, the user will claim all pending rewards
-            if (
-                (_userRewardDebt[_rewardTokenIndex] > (_userAmount.mul(_accTokenPerShare) / ACC_TOKEN_PRECISION)) ||
-                (_userAmount.mul(_accTokenPerShare) / ACC_TOKEN_PRECISION) == 0
-            ) {
+            // NOTE - On full withdrawal, the user will claim all pending rewards
+            if (_userAmount == 0) {
                 _rewardAmount = 0;
             } else {
                 // solhint-disable-next-line
@@ -237,9 +232,8 @@ contract ComplexNRewarder is IRewarder, Ownable {
                     _userRewardDebt[_rewardTokenIndex]
                 );
             }
-        }
 
-        _rewardToken = address(rewardToken[_rewardTokenIndex]);
-        return (_rewardToken, _rewardAmount);
+            return (_rewardToken, _rewardAmount);
+        }
     }
 }
