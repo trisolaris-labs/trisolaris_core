@@ -5,6 +5,7 @@ import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { chefAddress, ops } from "../constants";
 import { LedgerSigner } from "@ethersproject/hardware-wallets";
+import { multiSigAddress } from "../constants";
 
 const { SAFE_SIGNER_MNEMONIC = undefined, AURORA_API_KEY } = process.env;
 if (!AURORA_API_KEY) {
@@ -16,14 +17,15 @@ const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
 const provider = new JsonRpcProvider(AURORA_URL);
 
 const service = new SafeService(SAFE_SERVICE_URL);
+console.log(provider);
 console.info("Setup SafeEthersSigner");
 console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 async function main() {
   const decimals = ethers.BigNumber.from(10).pow(18);
-  const newTriPerBlock = 3.25;
+  const newTriPerBlock = ethers.BigNumber.from(13);
 
-  const newTriPerBlockFormatted = decimals.mul(newTriPerBlock);
+  const newTriPerBlockFormatted = decimals.mul(newTriPerBlock).div(4); // 3.25
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const path = "m/44'/60'/1'/0/0";
@@ -31,15 +33,18 @@ async function main() {
   const signer = new LedgerSigner(provider as any, undefined, path);
   console.log(await signer.getAddress());
   const ethAdapter = new EthersAdapter({ ethers, signer: signer as any });
-  const safe = await Safe.create({ ethAdapter, safeAddress: ops });
+  const safe = await Safe.create({ ethAdapter, safeAddress: multiSigAddress });
   const safeSigner = new SafeEthersSigner(safe, service, provider);
   console.info("*** Proposing updating pool allocation ***");
 
   const masterChef = await ethers.getContractFactory("MasterChef");
 
-  const chef = masterChef.attach(chefAddress);
+  const chef = masterChef.attach(chefAddress).connect(safeSigner);
+  console.log(await chef.owner());
+  console.log(await chef.triPerBlock());
+  console.log(newTriPerBlockFormatted);
 
-  await chef.connect(safeSigner).updateTriPerBlock(newTriPerBlockFormatted);
+  await chef.updateTriPerBlock(newTriPerBlockFormatted);
 
   console.info("*** USER ACTION REQUIRED ***");
   console.info("Go to the Gnosis Safe Web App to confirm the transaction");
