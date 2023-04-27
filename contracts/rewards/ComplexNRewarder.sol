@@ -176,10 +176,14 @@ contract ComplexNRewarder is IRewarder, Ownable {
                 uint256 tokenReward = blocks.mul(tokenPerBlock[i]);
                 // solhint-disable-next-line
                 _accTokenPerShare[i] = accTokenPerShare[i].add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));
-                // solhint-disable-next-line
-                _rewardAmounts[i] = (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(
-                    _userRewardDebt[i]
-                );
+                if (_userAmount == 0) {
+                    _rewardAmounts[i] = 0;
+                } else {
+                    // solhint-disable-next-line
+                    _rewardAmounts[i] = (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(
+                        _userRewardDebt[i]
+                    );
+                }
             }
         } else {
             for (uint256 i = 0; i < numRewardTokens; i++) {
@@ -218,10 +222,14 @@ contract ComplexNRewarder is IRewarder, Ownable {
             uint256 tokenReward = blocks.mul(tokenPerBlock[_rewardTokenIndex]);
             // solhint-disable-next-line
             _accTokenPerShare = _accTokenPerShare.add((tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply));
-            // solhint-disable-next-line
-            _rewardAmount = (_userAmount.mul(_accTokenPerShare) / ACC_TOKEN_PRECISION).sub(
-                _userRewardDebt[_rewardTokenIndex]
-            );
+            if (_userAmount == 0) {
+                _rewardAmount = 0;
+            } else {
+                // solhint-disable-next-line
+                _rewardAmount = (_userAmount.mul(_accTokenPerShare) / ACC_TOKEN_PRECISION).sub(
+                    _userRewardDebt[_rewardTokenIndex]
+                );
+            }
         } else {
             // NOTE - On full withdrawal, the user will claim all pending rewards
             if (_userAmount == 0) {
