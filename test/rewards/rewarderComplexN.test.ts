@@ -304,7 +304,7 @@ describe("Complex N Rewarder", function () {
       // All of them should have 1000 LPs back.
     });
 
-    it("should distribute no TRIs only rewardToken since tri emission is 0 for this pool", async function () {
+    it("should distribute no TRIs only rewardTokens since tri emission is 0 for this pool", async function () {
       this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", 18, "10000000000");
       await this.lp2.deployed();
 
@@ -332,6 +332,10 @@ describe("Complex N Rewarder", function () {
       // Alice gets 500 reward tokens in 5 blocks
       await advanceBlockTo("20604");
       expect(await this.chefv2.pendingTri("1", this.alice.address)).to.equal("0");
+      const pendingRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
+      expect(pendingRewardAmount0[1]).to.equal("400");
+      const pendingRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
+      expect(pendingRewardAmount1[1]).to.equal("2000");
       const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
       expect(rewardAlice.rewardAmounts[0]).to.equal("400");
       expect(rewardAlice.rewardAmounts[1]).to.equal("2000");
@@ -340,6 +344,41 @@ describe("Complex N Rewarder", function () {
       expect(await this.tri.balanceOf(this.alice.address)).to.equal("0");
       expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("500");
       expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("2500");
+    });
+
+    it("should return zero pending rewards for a user with no staked LP tokens", async function () {
+      this.lp2 = await this.ERC20Mock.connect(this.minter).deploy("LPToken", "LP", 18, "10000000000");
+      await this.lp2.deployed();
+
+      this.rewarder = await this.NRewarder.deploy(
+        [this.rewardToken1.address, this.rewardToken2.address],
+        this.lp2.address,
+        ["0", "0"],
+        this.chefv2.address,
+      );
+      await this.rewarder.deployed();
+      await this.rewarder.setRewardRate([100, 500]);
+      await this.rewardToken1.transfer(this.rewarder.address, "1000000000000");
+      await this.rewardToken2.transfer(this.rewarder.address, "1000000000000");
+
+      await this.chefv2.connect(this.minter).add("10", this.lp.address, this.ZeroAddress);
+      await this.chefv2.connect(this.minter).add("0", this.lp2.address, this.rewarder.address);
+
+      await advanceBlockTo("20605");
+      await advanceBlockTo("20610");
+      expect(await this.chefv2.pendingTri("1", this.alice.address)).to.equal("0");
+      const pendingRewardAmount0 = await this.rewarder.pendingToken(this.alice.address, 0);
+      expect(pendingRewardAmount0[1]).to.equal("0");
+      const pendingRewardAmount1 = await this.rewarder.pendingToken(this.alice.address, 1);
+      expect(pendingRewardAmount1[1]).to.equal("0");
+      const rewardAlice = await this.rewarder.pendingTokens("1", this.alice.address, "0");
+      expect(rewardAlice.rewardAmounts[0]).to.equal("0");
+      expect(rewardAlice.rewardAmounts[1]).to.equal("0");
+
+      await this.chefv2.connect(this.alice).harvest(1, this.alice.address);
+      expect(await this.tri.balanceOf(this.alice.address)).to.equal("0");
+      expect(await this.rewardToken1.balanceOf(this.alice.address)).to.equal("0");
+      expect(await this.rewardToken2.balanceOf(this.alice.address)).to.equal("0");
     });
   });
 });

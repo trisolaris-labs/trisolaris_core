@@ -181,7 +181,59 @@ contract ComplexNRewarder is IRewarder, Ownable {
                     _userRewardDebt[i]
                 );
             }
+        } else {
+            for (uint256 i = 0; i < numRewardTokens; i++) {
+                if (_userAmount == 0 || _userRewardDebt[i] == 0) {
+                    _rewardAmounts[i] = 0;
+                } else {
+                    // solhint-disable-next-line
+                    _rewardAmounts[i] = (_userAmount.mul(_accTokenPerShare[i]) / ACC_TOKEN_PRECISION).sub(
+                        _userRewardDebt[i]
+                    );
+                }
+            }
         }
+
         return (rewardToken, _rewardAmounts);
+    }
+
+    /// @notice View function to see pending token rewards by index
+    /// @param _user Address of user.
+    /// @param _rewardTokenIndex Index of the reward token < numRewardTokens
+    function pendingToken(address _user, uint128 _rewardTokenIndex)
+        external
+        view
+        returns (address _rewardToken, uint256 _rewardAmount)
+    {
+        require(_rewardTokenIndex < numRewardTokens, "invalid reward token index");
+        uint256 _userAmount = userAmount[_user];
+        uint256[] memory _userRewardDebt = userRewardDebt[_user];
+        uint256 lpSupply = lpToken.balanceOf(address(MCV2));
+        uint256 _accTokenPerShare = accTokenPerShare[_rewardTokenIndex];
+
+        if (block.number > lastRewardBlock && lpSupply != 0) {
+            uint256 blocks = block.number.sub(lastRewardBlock);
+            uint256 tokenReward = blocks.mul(tokenPerBlock[_rewardTokenIndex]);
+            // solhint-disable-next-line
+            _accTokenPerShare = accTokenPerShare[_rewardTokenIndex].add(
+                (tokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply)
+            );
+            // solhint-disable-next-line
+            _rewardAmount = (_userAmount.mul(_accTokenPerShare) / ACC_TOKEN_PRECISION).sub(
+                _userRewardDebt[_rewardTokenIndex]
+            );
+        } else {
+            if (_userAmount == 0 || _userRewardDebt[_rewardTokenIndex] == 0) {
+                _rewardAmount = 0;
+            } else {
+                // solhint-disable-next-line
+                _rewardAmount = (_userAmount.mul(_accTokenPerShare) / ACC_TOKEN_PRECISION).sub(
+                    _userRewardDebt[_rewardTokenIndex]
+                );
+            }
+        }
+
+        _rewardToken = address(rewardToken[_rewardTokenIndex]);
+        return (_rewardToken, _rewardAmount);
     }
 }
