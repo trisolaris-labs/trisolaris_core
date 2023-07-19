@@ -5,7 +5,7 @@ import EthersAdapter from "@gnosis.pm/safe-ethers-lib";
 import { SafeEthersSigner, SafeService } from "@gnosis.pm/safe-ethers-adapters";
 import { Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { ops } from "../constants";
+import { ops, SAFE_SERVICE_URL } from "../constants";
 
 type RewarderTokensPerBlockConfig = {
   Rewarder: string;
@@ -22,7 +22,7 @@ if (!SAFE_SIGNER_MNEMONIC) {
 }
 
 const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
-const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
+
 const provider = new JsonRpcProvider(AURORA_URL);
 
 const signer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);

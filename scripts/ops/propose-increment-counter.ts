@@ -10,7 +10,7 @@ import {
   ethers,
   // , run
 } from "hardhat";
-import { ops } from "../constants";
+import { ops, SAFE_SERVICE_URL } from "../constants";
 
 const { AURORA_API_KEY } = process.env;
 if (!AURORA_API_KEY) {
@@ -63,7 +63,6 @@ async function main(): Promise<void> {
   // Constants
 
   const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
-  const SAFE_SERVICE_URL = "https://safe-transaction.aurora.gnosis.io/";
   const provider = new ethers.providers.JsonRpcProvider(AURORA_URL);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const path = "m/44'/60'/1'/0/0";
