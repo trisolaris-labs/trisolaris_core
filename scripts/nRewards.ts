@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { auroraAddress, wnearAddress, chefV2Address } from "./constants";
+import { auroraAddress, wnearAddress, chefV2Address, ops } from "./constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -25,6 +25,24 @@ async function main(): Promise<void> {
     .deploy([auroraAddress, wnearAddress], lpAddress, ["0", "0"], chefV2Address);
   await rewarder.deployed();
   console.log(`Complex N Rewarder address: ${rewarder.address}`);
+
+  console.log("setting reward rate");
+  const rewardRates = [100, 1000];
+
+  await rewarder.setRewardRate(rewardRates);
+  console.log(`reward rates: ${rewardRates}`);
+
+  const numRewardTokens = (await rewarder.numRewardTokens()).toNumber();
+  for (let i = 0; i < numRewardTokens; i++) {
+    console.log(`Reward token ${i}: ${await rewarder.rewardTokens(i)}`);
+    console.log(`accTokenPerShare ${i}: ${await rewarder.accTokenPerShare(i)}`);
+    console.log(`tokenPerBlock ${i}: ${await rewarder.tokenPerBlock(i)}`);
+  }
+
+  console.log(`rewarder owner: ${await rewarder.owner()}`);
+  console.log("transferring ownership");
+  await rewarder.transferOwnership(ops);
+  console.log(`rewarder new owner: ${ops}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
