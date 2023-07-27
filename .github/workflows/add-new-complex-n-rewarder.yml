@@ -1,0 +1,33 @@
+name: Add new Complex N Rewarder
+
+permissions:
+  contents: write
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 12
+      - run: |
+          echo MNEMONIC="test test test test test test test test test test test junk" > .env
+          echo INFURA_API_KEY="test" >> .env
+          echo ETHERSCAN_API_KEY="test" >> .env
+          echo AURORA_API_KEY="test" >> .env
+      - name: Propose new rewarder
+        env:
+          SAFE_SIGNER_MNEMONIC: ${{ secrets.SAFE_SIGNER_MNEMONIC }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          yarn
+          yarn hardhat run scripts/ops/safeDeployComplexNRewarder.ts --network aurora
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Added new Complex N Rewarder config to rewarderConfigs.json
