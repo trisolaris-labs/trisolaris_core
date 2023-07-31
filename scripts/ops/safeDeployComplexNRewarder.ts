@@ -38,27 +38,25 @@ console.info("*** Using SAFE_SERVICE_URL: ", SAFE_SERVICE_URL);
 
 const addNewComplexNRewarderConfigToExistingJSON = async (
   PoolId: number,
-  deployedComplexNRewarder: DeployedComplexNRewarder | undefined,
+  deployedComplexNRewarder: DeployedComplexNRewarder,
   newComplexNRewarderConfig: RewarderConfig,
 ) => {
-  if (deployedComplexNRewarder) {
-    const { rewarder: ComplexNRewarder } = deployedComplexNRewarder;
-    const rewarderConfigsJSON: RewarderConfig[] = await fs.readJSON("./rewarderConfigs.json");
+  const { rewarder: ComplexNRewarder } = deployedComplexNRewarder;
+  const rewarderConfigsJSON: RewarderConfig[] = await fs.readJSON("./rewarderConfigs.json");
 
-    const ComplexNRewarderConfig: RewarderConfig = {
-      ...newComplexNRewarderConfig,
-      Rewarder: ComplexNRewarder.address,
-      PoolId: PoolId,
-    };
-    rewarderConfigsJSON.push(ComplexNRewarderConfig);
+  const ComplexNRewarderConfig: RewarderConfig = {
+    ...newComplexNRewarderConfig,
+    Rewarder: ComplexNRewarder.address,
+    PoolId: PoolId,
+  };
+  rewarderConfigsJSON.push(ComplexNRewarderConfig);
 
-    await fs.writeJSON("./rewarderConfigs.json", rewarderConfigsJSON);
-    console.info("*** Added new ComplexNRewarder config to rewarderConfigs.json");
+  await fs.writeJSON("./rewarderConfigs.json", rewarderConfigsJSON);
+  console.info("*** Added new ComplexNRewarder config to rewarderConfigs.json");
 
-    // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
-    await fs.remove("./newComplexNRewarderConfig.json");
-    console.info("*** Removed newComplexNRewarderConfig.json file, no longer needed");
-  }
+  // NOTE - Used because fs.promises.rm is not a function error on github actions, weird
+  await fs.remove("./newComplexNRewarderConfig.json");
+  console.info("*** Removed newComplexNRewarderConfig.json file, no longer needed");
 };
 
 const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedComplexNRewarder) => {
@@ -70,7 +68,7 @@ const transferRewarderOwnershipToDAO = async ({ rewarder }: DeployedComplexNRewa
 };
 
 const proposeAddPoolChefV2 = async (
-  deployedRewarder: DeployedComplexNRewarder | undefined,
+  deployedRewarder: DeployedComplexNRewarder,
   newComplexNRewarderConfig: RewarderConfig,
 ): Promise<{ PoolId: number }> => {
   // Config
@@ -91,28 +89,16 @@ const proposeAddPoolChefV2 = async (
   console.info(`Chef address: ${chef.address}`);
 
   const poolLength = await chef.poolLength();
-  let canAddPool = true;
-  let PoolId = 0;
-  for (let i = 0; i < poolLength.toNumber(); i++) {
-    const lpTokenAddress = await chef.lpToken(i);
-    if (lpTokenAddress === LPToken) {
-      canAddPool = false;
-    }
+  const PoolId = poolLength.toNumber();
 
-    PoolId = i + 1; // NOTE - iteration started from zero so we add one
-  }
+  const lpTokenAddresses = await Promise.all(Array.from({ length: poolLength.toNumber() }, (_, i) => chef.lpToken(i)));
+  const canAddPool = lpTokenAddresses.find(lpTokenAddress => lpTokenAddress.toLowerCase() === LPToken.toLowerCase());
+
   if (canAddPool) {
     console.info("*** Propose adding new pool to MCV2:", LPToken);
 
-    let chefAddArgs;
-    if (deployedRewarder) {
-      const { rewarder } = deployedRewarder;
-      chefAddArgs = [allocPoint, LPToken, rewarder.address];
-    }
+    const chefAddArgs = [allocPoint, LPToken, deployedRewarder?.rewarder?.address ?? zeroAddress];
     //  NOTE - No deployed rewarder address because no additional reward token to distribute
-    else {
-      chefAddArgs = [allocPoint, LPToken, zeroAddress];
-    }
     console.info(JSON.stringify(chefAddArgs));
 
     await chef.connect(safeSigner).add(chefAddArgs[0], chefAddArgs[1]?.toString(), chefAddArgs[2]?.toString());
@@ -171,18 +157,16 @@ async function main() {
     newComplexNRewarderConfig = await fs.readJSON("./newComplexNRewarderConfig.json");
     console.info("*** newComplexNRewarderConfig.json found ***");
     console.info(JSON.stringify(newComplexNRewarderConfig));
-  } catch (err) {
-    console.info("*** No newComplexNRewarderConfig.json found");
-  }
 
-  if (newComplexNRewarderConfig) {
-    if (newComplexNRewarderConfig?.RewardTokens?.length > 0) {
+    if (newComplexNRewarderConfig && Number(newComplexNRewarderConfig?.RewardTokens?.length) > 0) {
       const rewarder = await deployNewComplexNRewarder(newComplexNRewarderConfig);
       await transferRewarderOwnershipToDAO(rewarder);
       const { PoolId } = await proposeAddPoolChefV2(rewarder, newComplexNRewarderConfig);
 
       await addNewComplexNRewarderConfigToExistingJSON(PoolId, rewarder, newComplexNRewarderConfig);
     }
+  } catch (err) {
+    console.info("*** No newComplexNRewarderConfig.json found");
   }
 }
 
