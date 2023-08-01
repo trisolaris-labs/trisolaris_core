@@ -91,7 +91,7 @@ const proposeAddPoolChefV2 = async (
   const poolLength = await chef.poolLength();
   const PoolId = poolLength.toNumber();
 
-  const lpTokenAddresses = await Promise.all(Array.from({ length: poolLength.toNumber() }, (_, i) => chef.lpToken(i)));
+  const lpTokenAddresses = await Promise.all(Array.from({ length: PoolId }, (_v, i) => chef.lpToken(i)));
   const canAddPool = lpTokenAddresses.find(lpTokenAddress => lpTokenAddress.toLowerCase() === LPToken.toLowerCase());
 
   if (canAddPool) {
@@ -166,6 +166,7 @@ async function main() {
       await addNewComplexNRewarderConfigToExistingJSON(PoolId, rewarder, newComplexNRewarderConfig);
     }
   } catch (err) {
+    console.error(err);
     console.info("*** No newComplexNRewarderConfig.json found");
   }
 }
