@@ -89,13 +89,16 @@ const proposeAddPoolChefV2 = async (
   console.info(`Chef address: ${chef.address}`);
 
   const poolLength = await chef.poolLength();
-
-  const PoolId = Array.from({ length: poolLength.toNumber() }).findIndex(async (_, i) => {
+  let canAddPool = true;
+  let PoolId = 0;
+  for (let i = 0; i < poolLength.toNumber(); i++) {
     const lpTokenAddress = await chef.lpToken(i);
-    return lpTokenAddress === LPToken;
-  });
+    if (lpTokenAddress === LPToken) {
+      canAddPool = false;
+    }
 
-  const canAddPool = PoolId === -1;
+    PoolId = i + 1; // NOTE - iteration started from zero so we add one
+  }
 
   if (canAddPool) {
     console.info("*** Propose adding new pool to MCV2:", LPToken);
