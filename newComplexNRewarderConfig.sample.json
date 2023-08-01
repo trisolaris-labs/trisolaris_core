@@ -1,5 +1,5 @@
 {
   "LPToken": "address",
   "isComplexNRewarder": "true",
-  "rewardTokens": ["address", "address", "address"]
+  "RewardTokens": ["address", "address", "address"]
 }
