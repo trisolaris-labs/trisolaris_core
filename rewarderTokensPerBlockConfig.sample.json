@@ -1,4 +1,4 @@
 {
   "Rewarder": "address",
-  "TokensPerBlock": "address"
+  "TokensPerBlock": "number"
 }
