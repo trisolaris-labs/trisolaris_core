@@ -1,5 +1,6 @@
 {
   "LPToken": "address",
   "isComplexNRewarder": "true",
-  "rewardTokens": ["address", "address", "address"]
+  "RewardTokens": ["address", "address", "address"],
+  "RewarderPriceLPs": ["string: https://www.coingecko.com/en/coins/trisolaris -> CMD+F for 'API id' OR address", "..."]
 }

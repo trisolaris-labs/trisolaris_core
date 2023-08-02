@@ -89,10 +89,16 @@ const proposeAddPoolChefV2 = async (
   console.info(`Chef address: ${chef.address}`);
 
   const poolLength = await chef.poolLength();
-  const PoolId = poolLength.toNumber();
+  let canAddPool = true;
+  let PoolId = 0;
+  for (let i = 0; i < poolLength.toNumber(); i++) {
+    const lpTokenAddress = await chef.lpToken(i);
+    if (lpTokenAddress === LPToken) {
+      canAddPool = false;
+    }
 
-  const lpTokenAddresses = await Promise.all(Array.from({ length: poolLength.toNumber() }, (_, i) => chef.lpToken(i)));
-  const canAddPool = lpTokenAddresses.find(lpTokenAddress => lpTokenAddress.toLowerCase() === LPToken.toLowerCase());
+    PoolId = i + 1; // NOTE - iteration started from zero so we add one
+  }
 
   if (canAddPool) {
     console.info("*** Propose adding new pool to MCV2:", LPToken);
@@ -166,6 +172,7 @@ async function main() {
       await addNewComplexNRewarderConfigToExistingJSON(PoolId, rewarder, newComplexNRewarderConfig);
     }
   } catch (err) {
+    console.error(err);
     console.info("*** No newComplexNRewarderConfig.json found");
   }
 }
