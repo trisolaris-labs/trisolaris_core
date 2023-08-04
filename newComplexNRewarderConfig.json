@@ -1,0 +1,6 @@
+{
+  "LPToken": "0x22E38A04c14624e6deb66762Dc98E793db2C80Cb",
+  "isComplexNRewarder": "true",
+  "RewardTokens": ["0x8BEc47865aDe3B172A928df8f990Bc7f2A3b9f79", "0xc21Ff01229e982d7c8b8691163B0A3Cb8F357453"],
+  "RewarderPriceLPs": ["aurora-near", "meta-pool"]
+}
