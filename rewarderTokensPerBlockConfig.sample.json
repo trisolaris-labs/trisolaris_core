@@ -1,4 +1,4 @@
 {
-  "Rewarder": "address",
-  "TokensPerBlock": "number"
+  "Rewarder": "0x9a418aB67F94164EB931344A4EBF1F7bDd3E97aE",
+  "TokensPerBlock": "0"
 }
