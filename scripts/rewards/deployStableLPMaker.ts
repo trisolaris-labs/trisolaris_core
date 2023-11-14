@@ -5,7 +5,7 @@
 import { ethers, run } from "hardhat";
 import {
   usdtAddress,
-  usdcAddress,
+  usdc_eAddress,
   usnAddress,
   dao,
   threePoolSwapFlashLoanAddress,
@@ -39,7 +39,7 @@ async function main(deployConstructorDependencies: DeployConstructorDependencies
     threePoolSwapFlashLoanAddress,
     pTRI,
     usnAddress,
-    usdcAddress,
+    usdc_eAddress,
     usdtAddress,
     threePoolLpTokenAddress,
     dao,

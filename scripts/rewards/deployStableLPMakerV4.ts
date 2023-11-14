@@ -11,7 +11,7 @@ import {
   twoPoolLpTokenAddress,
   threePoolSwapFlashLoanAddress,
   twoPoolSwapFlashLoanAddress,
-  usdcAddress,
+  usdc_eAddress,
   usdtAddress,
   opsMultiSigAddress,
 } from "../constants";
@@ -49,7 +49,7 @@ async function main(deployConstructorDependencies?: DeployConstructorDependencie
     twoPoolSwapFlashLoanAddress,
     pTRI,
     usdtAddress,
-    usdcAddress,
+    usdc_eAddress,
     twoPoolLpTokenAddress,
     dao,
   ];

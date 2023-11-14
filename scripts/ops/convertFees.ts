@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { triMakerAddress, empyrAddress, usdcAddress } from "../constants";
+import { triMakerAddress, empyrAddress, usdc_eAddress } from "../constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   const triMaker = TriMaker.attach(triMakerAddress);
   console.log(`TriMaker deployed at: ${triMaker.address}`);
 
-  const tx = await triMaker.convert(empyrAddress, usdcAddress);
+  const tx = await triMaker.convert(empyrAddress, usdc_eAddress);
   const receipt = await tx.wait();
   console.log(receipt.logs);
 }

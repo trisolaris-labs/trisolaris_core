@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { usdcAddress, usdtAddress, usnAddress } from "./constants";
+import { usdc_eAddress, usdtAddress, usnAddress } from "./constants";
 
 async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   console.log(`Deploying contracts with ${deployer.address}`);
 
   const erc20Factory = await ethers.getContractFactory("ERC20Mock");
-  const usdc = erc20Factory.attach(usdcAddress);
+  const usdc = erc20Factory.attach(usdc_eAddress);
   const usdt = erc20Factory.attach(usdtAddress);
   const usn = erc20Factory.attach(usnAddress);
 

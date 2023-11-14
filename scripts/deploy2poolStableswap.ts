@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { usdcAddress, usdtAddress } from "./constants";
+import { usdc_eAddress as usdc_eAddress, usdtAddress } from "./constants";
 
 type DeployedContracts = {
   lpTokenBaseAddress: string;
@@ -25,10 +25,10 @@ async function main(): Promise<DeployedContracts> {
   console.log(`Deploying contracts with ${deployer.address}`);
 
   const erc20Factory = await ethers.getContractFactory("ERC20Mock");
-  const usdc = erc20Factory.attach(usdcAddress);
+  const usdc_e = erc20Factory.attach(usdc_eAddress);
   const usdt = erc20Factory.attach(usdtAddress);
 
-  const usdcDecimals = await usdc.decimals();
+  const usdcDecimals = await usdc_e.decimals();
   const usdtDecimals = await usdt.decimals();
 
   const LpTokenFactory = await ethers.getContractFactory("LPToken", deployer);
@@ -57,7 +57,7 @@ async function main(): Promise<DeployedContracts> {
   console.log(`swapFlashLoan deployed at ${swapFlashLoan.address}`);
 
   // Constructor arguments
-  const TOKEN_ADDRESSES = [usdc.address, usdt.address];
+  const TOKEN_ADDRESSES = [usdc_e.address, usdt.address];
   const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals];
   const LP_TOKEN_NAME = "Trisolaris USDC/USDT";
   const LP_TOKEN_SYMBOL = "USDC/USDT TLP";
