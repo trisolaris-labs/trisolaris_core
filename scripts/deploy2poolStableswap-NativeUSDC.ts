@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { usdc_eAddress as usdc_eAddress, usdt_eAddress } from "./constants";
+import { usdc_eAddress, usdt_eAddress } from "./constants";
 
 type DeployedContracts = {
   lpTokenBaseAddress: string;
