@@ -113,7 +113,18 @@ async function main(): Promise<DeployedContracts> {
     lpTokenAddress: lpToken.address,
   };
 
+  console.log({
+    deployedContracts,
+  });
+
   return deployedContracts;
 }
 
-export { main };
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
+main()
+  .then(() => process.exit(0))
+  .catch((error: Error) => {
+    console.error(error);
+    process.exit(1);
+  });
