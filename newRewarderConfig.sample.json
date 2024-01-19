@@ -1,7 +1,4 @@
 {
-  "LPToken": "address",
-  "isStablePool": "`true` if pool will appear on https://www.trisolaris.io/#/pool/stable, otherwise delete this key",
-  "RewardToken": "delete if no additional reward token or address",
-  "CoingeckoRewarderTokenName": "delete if using RewarderPriceLP or string: https://www.coingecko.com/en/coins/trisolaris -> CMD+F for `API id",
-  "RewarderPriceLP": "delete if using CoingeckoRewarderTokenName or address"
+  "LPToken": "0x19e91C9b155D2A8B47B74e9e100f28355AC13879",
+  "isStablePool": "true"
 }
