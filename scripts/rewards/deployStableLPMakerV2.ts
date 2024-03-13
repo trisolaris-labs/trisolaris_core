@@ -10,8 +10,8 @@ import {
   threePoolLpTokenAddress,
   threePoolSwapFlashLoanAddress,
   twoPoolSwapFlashLoanAddress,
-  usdcAddress,
-  usdtAddress,
+  usdc_eAddress,
+  usdt_eAddress,
   usnAddress,
 } from "../constants";
 
@@ -48,8 +48,8 @@ async function main(deployConstructorDependencies?: DeployConstructorDependencie
     threePoolSwapFlashLoanAddress,
     pTRI,
     usnAddress,
-    usdtAddress,
-    usdcAddress,
+    usdt_eAddress,
+    usdc_eAddress,
     threePoolLpTokenAddress,
     dao,
   ];

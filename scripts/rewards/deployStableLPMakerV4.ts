@@ -11,8 +11,8 @@ import {
   twoPoolLpTokenAddress,
   threePoolSwapFlashLoanAddress,
   twoPoolSwapFlashLoanAddress,
-  usdcAddress,
-  usdtAddress,
+  usdc_eAddress,
+  usdt_eAddress,
   opsMultiSigAddress,
 } from "../constants";
 
@@ -48,8 +48,8 @@ async function main(deployConstructorDependencies?: DeployConstructorDependencie
   const stableLPMakerV4ConstructorArgs = [
     twoPoolSwapFlashLoanAddress,
     pTRI,
-    usdtAddress,
-    usdcAddress,
+    usdt_eAddress,
+    usdc_eAddress,
     twoPoolLpTokenAddress,
     dao,
   ];

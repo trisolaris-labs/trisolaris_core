@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { usdc_eAddress as usdc_eAddress, usdt_eAddress } from "./constants";
+import { usdcAddress, usdc_eAddress } from "./constants";
 
 type DeployedContracts = {
   lpTokenBaseAddress: string;
@@ -25,11 +25,11 @@ async function main(): Promise<DeployedContracts> {
   console.log(`Deploying contracts with ${deployer.address}`);
 
   const erc20Factory = await ethers.getContractFactory("ERC20Mock");
+  const usdc = erc20Factory.attach(usdcAddress);
   const usdc_e = erc20Factory.attach(usdc_eAddress);
-  const usdt = erc20Factory.attach(usdt_eAddress);
 
-  const usdcDecimals = await usdc_e.decimals();
-  const usdtDecimals = await usdt.decimals();
+  const usdcDecimals = await usdc.decimals();
+  const usdc_eDecimals = await usdc_e.decimals();
 
   const LpTokenFactory = await ethers.getContractFactory("LPToken", deployer);
   const lpTokenBase = await LpTokenFactory.deploy();
@@ -57,10 +57,10 @@ async function main(): Promise<DeployedContracts> {
   console.log(`swapFlashLoan deployed at ${swapFlashLoan.address}`);
 
   // Constructor arguments
-  const TOKEN_ADDRESSES = [usdc_e.address, usdt.address];
-  const TOKEN_DECIMALS = [usdcDecimals, usdtDecimals];
-  const LP_TOKEN_NAME = "Trisolaris USDC/USDT";
-  const LP_TOKEN_SYMBOL = "USDC/USDT TLP";
+  const TOKEN_ADDRESSES = [usdc.address, usdc_e.address];
+  const TOKEN_DECIMALS = [usdcDecimals, usdc_eDecimals];
+  const LP_TOKEN_NAME = "Trisolaris USDC/USDC.e";
+  const LP_TOKEN_SYMBOL = "USDC/USDC.e TLP";
   const INITIAL_A = 1000;
   const SWAP_FEE = 4e6; // 4bps
   const ADMIN_FEE = 99 * 10e7; // 99%, less than 100% lol
@@ -113,7 +113,18 @@ async function main(): Promise<DeployedContracts> {
     lpTokenAddress: lpToken.address,
   };
 
+  console.log({
+    deployedContracts,
+  });
+
   return deployedContracts;
 }
 
-export { main };
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
+main()
+  .then(() => process.exit(0))
+  .catch((error: Error) => {
+    console.error(error);
+    process.exit(1);
+  });

@@ -3,7 +3,7 @@
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers, run } from "hardhat";
-import { usdcAddress, factoryAddress, wethAddress } from "./constants";
+import { usdc_eAddress, factoryAddress, wethAddress } from "./constants";
 import { main as deployStableLpMakerV2 } from "./rewards/deployStableLPMakerV2";
 import { main as deployPTRI } from "./deployStableTRIStaking";
 
@@ -36,7 +36,7 @@ async function main(): Promise<DeployedContracts> {
   // Deploy UsdcMaker
   const UsdcMaker = await ethers.getContractFactory("UsdcMaker");
 
-  const usdcMakerConstructorArgs = [factoryAddress, stableLPMakerV2, usdcAddress, wethAddress];
+  const usdcMakerConstructorArgs = [factoryAddress, stableLPMakerV2, usdc_eAddress, wethAddress];
   console.log(...usdcMakerConstructorArgs);
 
   const usdcMakerFactory = await UsdcMaker.connect(deployer);

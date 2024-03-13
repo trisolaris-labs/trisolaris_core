@@ -4,8 +4,8 @@
 // Runtime Environment's members available in the global scope.
 import { ethers, run } from "hardhat";
 import {
-  usdtAddress,
-  usdcAddress,
+  usdt_eAddress,
+  usdc_eAddress,
   usnAddress,
   dao,
   threePoolSwapFlashLoanAddress,
@@ -39,8 +39,8 @@ async function main(deployConstructorDependencies: DeployConstructorDependencies
     threePoolSwapFlashLoanAddress,
     pTRI,
     usnAddress,
-    usdcAddress,
-    usdtAddress,
+    usdc_eAddress,
+    usdt_eAddress,
     threePoolLpTokenAddress,
     dao,
   ];
