@@ -19,7 +19,8 @@ export const usdcMakerAddress = "0x5EBd5e963A00500B6a1234c621811c52AF0aAade";
 export const wethAddress = "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB";
 export const wnearAddress = "0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d";
 export const auroraAddress = "0x8bec47865ade3b172a928df8f990bc7f2a3b9f79";
-export const usdcAddress = "0x368EBb46ACa6b8D0787C96B2b20bD3CC3F2c45F7"; // Native USDC, to be confirmed?
+export const usdcAddress = "0x368EBb46ACa6b8D0787C96B2b20bD3CC3F2c45F7"; // Native USDC
+export const usdtAddress = "0x80Da25Da4D783E57d2FCdA0436873A193a4BEccF"; // Native USDT
 export const usdc_eAddress = "0xB12BFcA5A55806AaF64E99521918A4bf0fC40802";
 export const usdt_eAddress = "0x4988a896b1227218e4A686fdE5EabdcAbd91571f";
 export const flxAddress = "0xea62791aa682d455614eaA2A12Ba3d9A2fD197af";
@@ -54,6 +55,13 @@ export const amplificationUtilsAddress = "0x4135b66b138f281e0173550C3fb9A706Acc7
 export const swapUtilsAddress = "0x518B8E8338864f229f762aAFFC0A9f0c4722900B";
 export const swapFlashLoanAddress = "0x13e7a001EC72AB30D66E2f386f677e25dCFF5F59";
 export const lpTokenAddress = "0x5EB99863f7eFE88c447Bc9D52AA800421b1de6c9";
+
+// USDT/USDT.e Stableswap core contracts
+export const usdtPoolLPTokenBaseAddress = "0xEf802fE735774144709581D705183F9B5bb0F87D";
+export const usdtPoolAmplificationUtilsAddress = "0x6d28B0C6adF9B34584e451ae931f8E7f43dA5e5c";
+export const usdtPoolSwapUtilsAddress = "0x8740b52419Ea52FB02c48F3C28246a1D491bB3E1";
+export const usdtPoolSwapFlashLoanAddress = "0x3e8795F95B6D0B063A054f40e3D50178fc463763";
+export const usdtPoolLpTokenAddress = "0x261ed544822455101F5D2Baa66ED5C7A004A42C7";
 
 // USDC/USDC.e Stableswap core contracts
 export const usdcPoolLPTokenBaseAddress = "0xa6d6501dEeDeEAb1a068b6b1e029a19307b1AA4C";
