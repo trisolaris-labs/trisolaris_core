@@ -56,6 +56,13 @@ export const swapUtilsAddress = "0x518B8E8338864f229f762aAFFC0A9f0c4722900B";
 export const swapFlashLoanAddress = "0x13e7a001EC72AB30D66E2f386f677e25dCFF5F59";
 export const lpTokenAddress = "0x5EB99863f7eFE88c447Bc9D52AA800421b1de6c9";
 
+// USDT/USDT.e Stableswap core contracts
+export const usdtPoolLPTokenBaseAddress = "0xEf802fE735774144709581D705183F9B5bb0F87D";
+export const usdtPoolAmplificationUtilsAddress = "0x6d28B0C6adF9B34584e451ae931f8E7f43dA5e5c";
+export const usdtPoolSwapUtilsAddress = "0x8740b52419Ea52FB02c48F3C28246a1D491bB3E1";
+export const usdtPoolSwapFlashLoanAddress = "0x3e8795F95B6D0B063A054f40e3D50178fc463763";
+export const usdtPoolLpTokenAddress = "0x261ed544822455101F5D2Baa66ED5C7A004A42C7";
+
 // USDC/USDC.e Stableswap core contracts
 export const usdcPoolLPTokenBaseAddress = "0xa6d6501dEeDeEAb1a068b6b1e029a19307b1AA4C";
 export const usdcPoolAmplificationUtilsAddress = "0x9F5104881F9e62Ff6f41E4322856D124D11359bE";
