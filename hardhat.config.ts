@@ -10,7 +10,7 @@ import "./tasks/clean";
 import { resolve } from "path";
 
 import { config as dotenvConfig } from "dotenv";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-verify";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
@@ -43,6 +43,16 @@ const config = {
     excludeContracts: [],
     src: "./contracts",
   },
+  customChains: [
+    {
+      network: "aurora",
+      urls: {
+        apiURL: "https://explorer.aurora.dev/api",
+        browserURL: "https://explorer.aurora.dev",
+      },
+      chainId: 1313161554,
+    },
+  ],
   networks: {
     ropsten: {
       url: "https://ropsten.infura.io/v3/" + infuraApiKey,
@@ -75,7 +85,11 @@ const config = {
       chainId: 1313161555,
     },
     aurora: {
-      url: "https://mainnet.aurora.dev/" + auroraApiKey,
+      url: "https://mainnet.aurora.dev/",
+      urls: {
+        apiURL: "https://explorer.aurora.dev/api",
+        browserURL: "https://explorer.aurora.dev",
+      },
       accounts: {
         count: 10,
         initialIndex: 0,
