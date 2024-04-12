@@ -34,6 +34,16 @@ const etherscanKey: string | undefined = process.env.ETHERSCAN_API_KEY;
 if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
 }
+const outputSelection = {
+  "*": {
+    "*": [
+      "abi",
+      "evm.bytecode",
+      "evm.deployedBytecode",
+      "metadata", // <-- this enables verifying with sourcify
+    ],
+  },
+};
 
 const config = {
   defaultNetwork: "hardhat",
@@ -131,6 +141,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
       {
@@ -147,6 +158,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
       {
@@ -163,6 +175,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
       {
@@ -175,6 +188,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
     ],
@@ -200,6 +214,9 @@ const config = {
   },
   etherscan: {
     apiKey: etherscanKey,
+  },
+  sourcify: {
+    enabled: true,
   },
 };
 
