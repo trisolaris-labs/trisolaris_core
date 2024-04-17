@@ -20,6 +20,7 @@
     "@gnosis.pm/safe-core-sdk": "^2.1.0",
     "@gnosis.pm/safe-ethers-adapters": "^0.1.0-alpha.9",
     "@gnosis.pm/safe-ethers-lib": "^1.1.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.5",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -92,5 +93,9 @@
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "watch-test": "npx hardhat watch test",
     "watch-compile": "npx hardhat watch compilation"
+  },
+  "packageManager": "yarn@3.1.0",
+  "engines": {
+    "node": "16.x"
   }
 }

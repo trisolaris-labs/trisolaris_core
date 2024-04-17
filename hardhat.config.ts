@@ -10,7 +10,7 @@ import "./tasks/clean";
 import { resolve } from "path";
 
 import { config as dotenvConfig } from "dotenv";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-verify";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
@@ -34,6 +34,16 @@ const etherscanKey: string | undefined = process.env.ETHERSCAN_API_KEY;
 if (!etherscanKey) {
   throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
 }
+const outputSelection = {
+  "*": {
+    "*": [
+      "abi",
+      "evm.bytecode",
+      "evm.deployedBytecode",
+      "metadata", // <-- this enables verifying with sourcify
+    ],
+  },
+};
 
 const config = {
   defaultNetwork: "hardhat",
@@ -43,6 +53,16 @@ const config = {
     excludeContracts: [],
     src: "./contracts",
   },
+  customChains: [
+    {
+      network: "aurora",
+      urls: {
+        apiURL: "https://explorer.aurora.dev/api",
+        browserURL: "https://explorer.aurora.dev",
+      },
+      chainId: 1313161554,
+    },
+  ],
   networks: {
     ropsten: {
       url: "https://ropsten.infura.io/v3/" + infuraApiKey,
@@ -75,7 +95,11 @@ const config = {
       chainId: 1313161555,
     },
     aurora: {
-      url: "https://mainnet.aurora.dev/" + auroraApiKey,
+      url: "https://mainnet.aurora.dev/",
+      urls: {
+        apiURL: "https://explorer.aurora.dev/api",
+        browserURL: "https://explorer.aurora.dev",
+      },
       accounts: {
         count: 10,
         initialIndex: 0,
@@ -117,6 +141,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
       {
@@ -133,6 +158,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
       {
@@ -149,6 +175,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
       {
@@ -161,6 +188,7 @@ const config = {
             enabled: true,
             runs: 800,
           },
+          outputSelection,
         },
       },
     ],
@@ -186,6 +214,9 @@ const config = {
   },
   etherscan: {
     apiKey: etherscanKey,
+  },
+  sourcify: {
+    enabled: true,
   },
 };
 
