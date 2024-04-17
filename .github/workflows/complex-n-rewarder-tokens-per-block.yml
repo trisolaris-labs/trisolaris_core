@@ -12,9 +12,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.head_ref }}
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
-          node-version: 12
+          node-version: 16
       - run: |
           echo MNEMONIC="test test test test test test test test test test test junk" > .env
           echo INFURA_API_KEY="test" >> .env

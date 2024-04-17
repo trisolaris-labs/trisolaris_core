@@ -94,5 +94,8 @@
     "watch-test": "npx hardhat watch test",
     "watch-compile": "npx hardhat watch compilation"
   },
-  "packageManager": "yarn@4.1.1"
+  "packageManager": "yarn@4.1.1",
+  "engines": {
+    "node": "16.x"
+  }
 }
