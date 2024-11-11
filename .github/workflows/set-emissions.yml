@@ -1,0 +1,31 @@
+name: Set MCV1 Emissions
+
+permissions:
+  contents: write
+
+on: [workflow_dispatch]
+
+jobs:
+  setAllocation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+      - name: Set required env variables
+        run: |
+          echo MNEMONIC="test test test test test test test test test test test junk" > .env
+          echo INFURA_API_KEY="test" >> .env
+          echo ETHERSCAN_API_KEY="test" >> .env
+          echo AURORA_API_KEY="test" >> .env
+      - name: Propose updateTriPerBlock
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_DAO_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          yarn
+          yarn hardhat run scripts/ops/safeProposerUpdateTriPerBlock.ts --network aurora
