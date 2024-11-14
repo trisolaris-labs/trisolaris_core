@@ -6,33 +6,24 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
-      - run: |
-          echo MNEMONIC="test test test test test test test test test test test junk" > .env
-          echo INFURA_API_KEY="test" >> .env
-          echo ETHERSCAN_API_KEY="test" >> .env
-          echo AURORA_API_KEY="test" >> .env
-      - run: |
-          yarn
-          yarn compile
+          node-version: 18
+          cache: "yarn"
+      - run: cp .env.example .env
+      - run: yarn
+      - run: yarn compile
       - run: yarn lint
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
           cache: "yarn"
-      - run: |
-          echo MNEMONIC="test test test test test test test test test test test junk" > .env
-          echo INFURA_API_KEY="test" >> .env
-          echo ETHERSCAN_API_KEY="test" >> .env
-          echo AURORA_API_KEY="test" >> .env
-      - run: |
-          yarn
-          yarn compile
+      - run: cp .env.example .env
+      - run: yarn
+      - run: yarn compile
       - run: yarn test
