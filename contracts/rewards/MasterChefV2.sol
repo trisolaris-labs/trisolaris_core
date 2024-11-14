@@ -3,9 +3,9 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "@boringcrypto/boring-solidity/contracts/libraries/BoringMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../libraries/BoringMath.sol";
 import "../libraries/SignedSafeMath.sol";
 import "../interfaces/IRewarder.sol";
 import "../interfaces/IMasterChef.sol";
