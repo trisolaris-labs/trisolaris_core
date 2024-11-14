@@ -44,14 +44,12 @@ async function main() {
   console.log(`Updated: ${newTriPerBlock.mul(100).div(decimals).toNumber() / 100}`);
 
   console.info("*** Proposing updateTriPerBlock ***");
-  // await masterchef.updateTriPerBlock(newTriPerBlock);
-  const proposedTx = await masterchef.functions.updateTriPerBlock(newTriPerBlock);
+  await masterchef.updateTriPerBlock(newTriPerBlock);
 
   console.info("*** USER ACTION REQUIRED ***");
   console.info("Go to the Gnosis Safe Web App to confirm the transaction");
   console.info(`https://gnosis-safe.io/app/aurora:${dao}/transactions/queue`);
   console.info(`*** Please verify the proposed changing the tri per block on MCV1`);
-  await proposedTx.wait();
 }
 
 // We recommend this pattern to be able to use async/await everywhere
