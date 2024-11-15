@@ -9,25 +9,21 @@ jobs:
   rewarderTokensPerBlock:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
-      - run: |
-          echo MNEMONIC="test test test test test test test test test test test junk" > .env
-          echo INFURA_API_KEY="test" >> .env
-          echo ETHERSCAN_API_KEY="test" >> .env
-          echo AURORA_API_KEY="test" >> .env
+          node-version: 18
+          cache: yarn
+      - run: cp .env.example .env
+      - run: yarn
       - name: Propose pool allocation
         env:
-          SAFE_SIGNER_MNEMONIC: ${{ secrets.SAFE_SIGNER_MNEMONIC }}
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_OPS_PROPOSER }}
           AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        run: |
-          yarn
-          yarn hardhat run scripts/ops/safeRewarderTokensPerBlock.ts --network aurora
+        run: yarn hardhat run scripts/ops/proposerRewarderTokensPerBlock.ts --network aurora
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Removed rewarderTokensPerBlock.json due to transaction proposed on gnosis safe
