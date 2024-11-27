@@ -3,7 +3,10 @@ name: Set Pool Allocation
 permissions:
   contents: write
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - "allocation/set/**"
 
 jobs:
   setAllocation:
