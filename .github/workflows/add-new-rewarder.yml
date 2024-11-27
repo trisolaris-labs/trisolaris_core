@@ -3,7 +3,10 @@ name: Add new rewarder
 permissions:
   contents: write
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - "rewarder/add/**"
 
 jobs:
   test:
@@ -14,20 +17,16 @@ jobs:
           ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
-      - run: |
-          echo MNEMONIC="test test test test test test test test test test test junk" > .env
-          echo INFURA_API_KEY="test" >> .env
-          echo ETHERSCAN_API_KEY="test" >> .env
-          echo AURORA_API_KEY="test" >> .env
+          node-version: 18
+          cache: yarn
+      - run: cp .env.example .env
+      - run: yarn
       - name: Propose new rewarder
         env:
           SAFE_SIGNER_MNEMONIC: ${{ secrets.SAFE_SIGNER_MNEMONIC }}
           AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        run: |
-          yarn
-          yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
+        run: yarn hardhat run scripts/ops/safeDeployRewarder.ts --network aurora
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Added new rewarder config to rewarderConfigs.json
+          commit_message: Added new Rewarder config to rewarderConfigs.json
