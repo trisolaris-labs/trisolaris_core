@@ -3,7 +3,10 @@ name: Update Rewarder Tokens Per Block
 permissions:
   contents: write
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - "rewarder/set/**"
 
 jobs:
   rewarderTokensPerBlock:

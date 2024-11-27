@@ -1,6 +1,9 @@
 name: Set MCV1 Emissions
 
-on: [workflow_dispatch]
+on:
+  pull_request:
+    branches:
+      - "emissions/set/**"
 
 jobs:
   setAllocation:
