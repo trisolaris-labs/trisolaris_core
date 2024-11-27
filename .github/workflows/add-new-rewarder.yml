@@ -3,13 +3,11 @@ name: Add new rewarder
 permissions:
   contents: write
 
-on:
-  pull_request:
-    branches:
-      - "rewarder/add/**"
+on: [pull_request]
 
 jobs:
-  test:
+  deployRewarder:
+    if: startsWith(github.head_ref, 'rewarder/add/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

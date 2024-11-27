@@ -3,13 +3,11 @@ name: Update Rewarder Tokens Per Block
 permissions:
   contents: write
 
-on:
-  pull_request:
-    branches:
-      - "rewarder/set/**"
+on: [pull_request]
 
 jobs:
   rewarderTokensPerBlock:
+    if: startsWith(github.head_ref, 'rewarder/set/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

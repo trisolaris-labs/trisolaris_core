@@ -3,13 +3,11 @@ name: Add new Complex N Rewarder
 permissions:
   contents: write
 
-on:
-  pull_request:
-    branches:
-      - "complexrewarder/add/**"
+on: [pull_request]
 
 jobs:
-  test:
+  deployComplexNRewarder:
+    if: startsWith(github.head_ref, 'complexrewarder/add/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

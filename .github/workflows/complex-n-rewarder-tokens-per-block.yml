@@ -3,13 +3,11 @@ name: Update Complex N Rewarder Tokens Per Block
 permissions:
   contents: write
 
-on:
-  pull_request:
-    branches:
-      - "complexrewarder/set/**"
+on: [pull_request]
 
 jobs:
   complexNRewarderTokensPerBlock:
+    if: startsWith(github.head_ref, 'complexrewarder/set/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
