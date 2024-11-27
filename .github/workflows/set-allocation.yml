@@ -5,6 +5,8 @@ permissions:
 
 on:
   pull_request:
+    types:
+      - opened
     branches:
       - "allocation/set/**"
 
