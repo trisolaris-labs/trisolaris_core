@@ -10,14 +10,17 @@ async function main(): Promise<void> {
   // to make sure everything is compiled
   // await run("compile");
   // We get the contract to deploy
-  const [_, deployer] = await ethers.getSigners();
+  // const [_, deployer] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  console.log(signers)
+  const deployer = signers[7]
   console.log(`Address: ${deployer.address}`);
 
   const balance = await deployer.getBalance();
   console.log(`Account balance: ${balance.toString()}`);
 
-  const rewarderAddress = "0xeC679452e1A6D404014fe3363Ac041BD79844F82";
-  const tokensPerBlock = 1286008230000000;
+  const rewarderAddress = "0xD59c44fb39638209ec4ADD6DcD7A230a286055ee";//META
+  const tokensPerBlock = "300000000000000000000000";
 
   const complexRewarder = await ethers.getContractFactory("ComplexRewarder");
   const rewarder = complexRewarder.attach(rewarderAddress);
