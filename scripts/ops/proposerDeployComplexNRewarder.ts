@@ -18,19 +18,18 @@ type DeployedComplexNRewarder = {
   rewarder: ComplexNRewarder;
 };
 
-const { SAFE_SIGNER_MNEMONIC = undefined, AURORA_API_KEY } = process.env;
+const { AURORA_API_KEY, SAFE_PROPOSER_PRIVATE_KEY } = process.env;
 if (!AURORA_API_KEY) {
   throw new Error("*** AURORA_API_KEY NOT FOUND IN ENV");
+}
+if (!SAFE_PROPOSER_PRIVATE_KEY) {
+  throw new Error("*** SAFE_PROPOSER_PRIVATE_KEY NOT FOUND IN ENV");
 }
 
 const AURORA_URL = "https://mainnet.aurora.dev/" + AURORA_API_KEY;
 const provider = new JsonRpcProvider(AURORA_URL);
 
-if (!SAFE_SIGNER_MNEMONIC) {
-  throw new Error("*** SAFE_SIGNER_MNEMONIC NOT FOUND IN ENV ***");
-}
-
-const deployer = Wallet.fromMnemonic(SAFE_SIGNER_MNEMONIC).connect(provider);
+const deployer = new Wallet(SAFE_PROPOSER_PRIVATE_KEY).connect(provider);
 const allocPoint = 0;
 
 console.info("*** Using deployer address: ", deployer.address);

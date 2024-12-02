@@ -1,0 +1,109 @@
+name: Proposer Workflows
+
+permissions:
+  contents: write
+
+on:
+  pull_request:
+
+jobs:
+  propose:
+    if: startsWith(github.head_ref, 'proposer/')
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Set up Node.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Cache dependencies
+      - uses: actions/cache@v4
+        id: cache-deps
+        with:
+          path: |
+            node_modules
+            ~/.cache/yarn
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Install dependencies if cache miss
+      - name: Install Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          cp .env.example .env
+          yarn install --frozen-lockfile
+
+      # Prepare environment
+      - run: cp .env.example .env
+
+      - name: Propose (set-allocation)
+        if: contains(github.head_ref, 'set-allocation')
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_OPS_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: yarn hardhat run scripts/ops/proposerSetAllocation.ts --network aurora
+
+      - name: Propose (set-rewarder)
+        if: contains(github.head_ref, 'set-rewarder')
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_OPS_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: yarn hardhat run scripts/ops/proposerRewarderTokensPerBlock.ts --network aurora
+
+      - name: Propose (set-complexrewarder)
+        if: contains(github.head_ref, 'set-complexrewarder')
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_OPS_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: yarn hardhat run scripts/ops/proposerComplexNRewarderTokensPerBlock.ts --network aurora
+
+      - name: Propose (add-rewarder)
+        if: contains(github.head_ref, 'add-rewarder')
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_OPS_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: yarn hardhat run scripts/ops/proposerDeployRewarder.ts --network aurora
+
+      - name: Propose (add-complexrewarder)
+        if: contains(github.head_ref, 'add-complexrewarder')
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_OPS_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: yarn hardhat run scripts/ops/proposerDeployComplexNRewarder.ts --network aurora
+
+      - name: Propose (set-emissions)
+        if: contains(github.head_ref, 'set-emissions')
+        env:
+          SAFE_PROPOSER_PRIVATE_KEY: ${{ secrets.SAFE_DAO_PROPOSER }}
+          AURORA_API_KEY: ${{ secrets.AURORA_API_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: yarn hardhat run scripts/ops/proposerUpdateTriPerBlock.ts --network aurora
+
+      - name: Commit changes
+        if: |
+          steps.propose_pool_allocation.outcome == 'success' ||
+          steps.propose_rewarder_tokens_per_block.outcome == 'success' ||
+          steps.propose_complex_n_rewarder_tokens_per_block.outcome == 'success' ||
+          steps.propose_new_rewarder.outcome == 'success' ||
+          steps.propose_new_complex_n_rewarder.outcome == 'success'
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: |
+            Updated configuration files after proposing transactions
+          commit_options: "--no-verify"
+          file_pattern: |
+            allocationConfig.json
+            rewarderTokensPerBlock.json
+            complexNRewarderTokensPerBlock.json
+            rewarderConfigs.json
