@@ -225,6 +225,16 @@ const config = {
   },
   etherscan: {
     apiKey: etherscanKey,
+    customChains: [
+      {
+        network: "turbo",
+        urls: {
+          apiURL: "https://explorer.turbo.aurora.dev/api",
+          browserURL: "https://explorer.turbo.aurora.dev",
+        },
+        chainId: 1313161567,
+      },
+    ],
   },
   sourcify: {
     enabled: true,
