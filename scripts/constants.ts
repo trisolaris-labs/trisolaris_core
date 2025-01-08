@@ -110,3 +110,5 @@ export const ops = "0x99cbfCf7134228e12e9ED0F534C73C85A03C91E1";
 export const auroraChainId = 1313161554;
 
 export const SAFE_SERVICE_URL = "https://safe-transaction-aurora.safe.global/";
+
+export const wturboTurboAddress = "0x21Cc007d2b777BBaB55d51e62F5C3F31DEaa7E5d";
