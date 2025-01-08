@@ -119,6 +119,16 @@ const config = {
       },
       chainId: 10,
     },
+    turbo: {
+      url: "https://rpc-0x4e45415f.aurora-cloud.dev",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 1313161567,
+    },
   },
   paths: {
     artifacts: "./artifacts",
