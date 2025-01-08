@@ -6,6 +6,7 @@ import "hardhat-watcher";
 
 import "./tasks/accounts";
 import "./tasks/clean";
+import "./tasks/generate";
 
 import { resolve } from "path";
 
