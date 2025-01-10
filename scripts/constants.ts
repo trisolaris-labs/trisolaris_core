@@ -111,5 +111,9 @@ export const auroraChainId = 1313161554;
 
 export const SAFE_SERVICE_URL = "https://safe-transaction-aurora.safe.global/";
 
+// TODO: change to multisig address
+export const opsTurboAddress = "0x881A5B1BAf05df52EB201D1BF4808ee6bcdb5314";
+
 export const wturboTurboAddress = "0x21Cc007d2b777BBaB55d51e62F5C3F31DEaa7E5d";
 export const mockTriTurboAddress = "0xb14e7F8D5C307495AD24256A2FDa0C56Ae953CA1";
+export const factoryTurboAddress = "0xf0BE0075F8De10044a7115FdCf7feC3afB3B8FE0";
