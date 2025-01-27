@@ -13,7 +13,7 @@ import { config as dotenvConfig } from "dotenv";
 import "@nomicfoundation/hardhat-verify";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
-
+// console.log(process.env.MNEMONIC)
 // Ensure that we have all the environment variables we need.
 const mnemonic: string | undefined = process.env.MNEMONIC;
 if (!mnemonic) {
