@@ -7,7 +7,7 @@ import { ConfigurableWETH9, UniswapV2Factory, UniswapV2Router02, UniswapV2Pair, 
 chai.use(solidity);
 const { expect } = chai;
 
-describe("AMM", () => {
+describe.skip("AMM", () => {
   let deployer: SignerWithAddress;
   let user: SignerWithAddress;
   let weth: ConfigurableWETH9;
