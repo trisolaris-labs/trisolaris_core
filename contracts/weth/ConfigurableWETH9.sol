@@ -28,9 +28,10 @@ contract ConfigurableWETH9 {
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
 
-    constructor(string _name, string _symbol) public {
+    constructor(string _name, string _symbol, uint8 _decimals) public {
         name = _name;
         symbol = _symbol;
+        decimals = _decimals;
     }
 
     function() external payable {
