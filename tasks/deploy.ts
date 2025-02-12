@@ -6,6 +6,7 @@ import path from "path";
 interface DeployArgs {
   wethName: string;
   wethSymbol: string;
+  wethDecimals: number;
   feeTo: string;
 }
 
@@ -13,6 +14,7 @@ task("deploy", "Deploys amm and aux contracts")
   // Optional parameters for WETH name and symbol with defaults.
   .addOptionalParam("wethName", "Name for the WETH token", "Wrapped Ether", types.string)
   .addOptionalParam("wethSymbol", "Symbol for the WETH token", "WETH", types.string)
+  .addOptionalParam("wethDecimals", "Decimals for the WETH token", 18, types.int)
   .addOptionalParam("feeTo", "The feeTo address for the Factory contract", undefined, types.string)
   // Required parameter for the feeTo address for the Factory contract.
   .setAction(async (taskArgs: DeployArgs, hre: HardhatRuntimeEnvironment) => {
@@ -27,7 +29,7 @@ task("deploy", "Deploys amm and aux contracts")
     // Assuming your WETH contract takes a name and symbol in the constructor.
     // If your version of WETH doesn't require these parameters, adjust accordingly.
     const WETHFactory = await ethers.getContractFactory("ConfigurableWETH9");
-    const weth = await WETHFactory.deploy(taskArgs.wethName, taskArgs.wethSymbol);
+    const weth = await WETHFactory.deploy(taskArgs.wethName, taskArgs.wethSymbol, taskArgs.wethDecimals);
     await weth.deployed();
     console.log(`WETH deployed at: ${weth.address}`);
 
