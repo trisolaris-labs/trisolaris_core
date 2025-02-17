@@ -39,6 +39,8 @@ task("deploy", "Deploys amm and aux contracts")
     await factory.deployed();
     console.log(`Factory deployed at: ${factory.address}`);
 
+    const initCodeHash = await factory.INIT_CODE_PAIR_HASH();
+
     // --- Deploy Router ---
     console.log("Deploying Router...");
     const RouterFactory = await ethers.getContractFactory("UniswapV2Router02");
@@ -60,6 +62,7 @@ task("deploy", "Deploys amm and aux contracts")
       router: router.address,
       weth: weth.address,
       multicall: multicall.address,
+      initCodeHash: initCodeHash.toString(),
     };
 
     // Ensure the deployments folder exists (create if not)
