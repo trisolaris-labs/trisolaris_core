@@ -3,7 +3,7 @@ import { Contract } from "ethers";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-describe.skip("FeeCollector", function () {
+describe("FeeCollector", function () {
   let feeCollector: Contract;
   let erc20Mock: Contract;
   let owner: SignerWithAddress;
@@ -17,7 +17,7 @@ describe.skip("FeeCollector", function () {
     [owner, feeManager1, feeManager2, feeManager3, nonFeeManager] = await ethers.getSigners();
 
     // Deploy ERC20Mock for testing.
-    const ERC20MockFactory = await ethers.getContractFactory("ERC20Mock");
+    const ERC20MockFactory = await ethers.getContractFactory("TestTokenMock");
     const decimals = ethers.BigNumber.from("1000000000000000000");
     const supply = ethers.BigNumber.from("1000000000").mul(decimals);
     erc20Mock = await ERC20MockFactory.deploy("TestToken", "TT", 18, supply);
