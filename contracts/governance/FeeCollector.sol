@@ -48,7 +48,11 @@ contract FeeCollector is AccessControl {
      * @param recipient The address to which the tokens should be sent.
      * @param amount The amount of tokens to withdraw.
      */
-    function withdrawToken(address token, address recipient, uint256 amount) external {
+    function withdrawToken(
+        address token,
+        address recipient,
+        uint256 amount
+    ) external {
         require(hasRole(FEE_MANAGER_ROLE, msg.sender), "Caller is not a fee manager");
         IERC20 erc20 = IERC20(token);
         require(erc20.balanceOf(address(this)) >= amount, "Insufficient token balance");
