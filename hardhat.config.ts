@@ -130,6 +130,16 @@ const config = {
       },
       chainId: 1313161567,
     },
+    tuxa: {
+      url: "https://rpc-0x4e454165.aurora-cloud.dev",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 1313161573,
+    },
   },
   paths: {
     artifacts: "./artifacts",
