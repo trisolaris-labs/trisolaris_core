@@ -140,6 +140,16 @@ const config = {
       },
       chainId: 1313161573,
     },
+    neat: {
+      url: "https://rpc-0x4e454171.aurora-cloud.dev",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 1313161585,
+    },
   },
   paths: {
     artifacts: "./artifacts",
