@@ -65,7 +65,11 @@ contract VirtualMasterChef is Ownable {
     event LogSetPool(uint256 indexed pid, uint256 allocPoint, IRewarder indexed rewarder, bool overwrite);
     event LogUpdatePool(uint256 indexed pid, uint256 lastRewardBlock, uint256 lpSupply, uint256 accSushiPerShare);
 
-    constructor(Tri _tri, uint256 _triPerBlock, uint256 _startBlock) public {
+    constructor(
+        Tri _tri,
+        uint256 _triPerBlock,
+        uint256 _startBlock
+    ) public {
         tri = _tri;
         triPerBlock = _triPerBlock;
         startBlock = _startBlock;
@@ -83,7 +87,12 @@ contract VirtualMasterChef is Ownable {
 
     // Add a new lp to the pool. Can only be called by the owner.
     // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
-    function add(uint256 _allocPoint, IERC20 _lpToken, IRewarder _rewarder, bool _withUpdate) public onlyOwner {
+    function add(
+        uint256 _allocPoint,
+        IERC20 _lpToken,
+        IRewarder _rewarder,
+        bool _withUpdate
+    ) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -168,7 +177,11 @@ contract VirtualMasterChef is Ownable {
     }
 
     // Internal deposit function to deposit LP tokens to MasterChef for TRI allocation.
-    function _deposit(uint256 _pid, uint256 _amount, address userAddress) internal {
+    function _deposit(
+        uint256 _pid,
+        uint256 _amount,
+        address userAddress
+    ) internal {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][userAddress];
         updatePool(_pid);
