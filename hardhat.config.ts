@@ -150,6 +150,16 @@ const config = {
       },
       chainId: 1313161585,
     },
+    vertex: {
+      url: "https://rpc-0x4e454173.aurora-cloud.dev",
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic,
+        path: "m/44'/60'/0'/0",
+      },
+      chainId: 1313161587,
+    },
   },
   paths: {
     artifacts: "./artifacts",
@@ -271,6 +281,30 @@ const config = {
           browserURL: "https://explorer.turbo.aurora.dev",
         },
         chainId: 1313161567,
+      },
+      {
+        network: "tuxa",
+        urls: {
+          apiURL: "https://explorer.tuxa.aurora.dev/api",
+          browserURL: "https://explorer.tuxa.aurora.dev",
+        },
+        chainId: 1313161573,
+      },
+      {
+        network: "neat",
+        urls: {
+          apiURL: "https://explorer.0x4e454171.aurora-cloud.dev/api",
+          browserURL: "https://explorer.0x4e454171.aurora-cloud.dev",
+        },
+        chainId: 1313161585,
+      },
+      {
+        network: "vertex",
+        urls: {
+          apiURL: "https://explorer.0x4e454173.aurora-cloud.dev/api",
+          browserURL: "https://explorer.0x4e454173.aurora-cloud.dev",
+        },
+        chainId: 1313161587,
       },
     ],
   },
